@@ -78,10 +78,12 @@ class Embedding(nn.Module):
     L: int
     dm: int = DM
 
-    @nn.compact
+    def setup(self):
+        self.embed = nn.Embed(self.V, self.dm)
+
     def __call__(self, text: ArrayLike) -> Array:
         """
-        Embed
+        Call Embedding
 
         Parameters
         ----------
@@ -94,7 +96,7 @@ class Embedding(nn.Module):
             Embedded features with positional encoding. [B, L, dm]
         """
         # embedded: [B, L, dm]
-        embedded = nn.Embed(self.V, self.dm)(text)
+        embedded = self.embed(text)
         assert embedded.shape == (text.shape[0], self.L, self.dm), "BUG"
 
         half: int = self.dm // 2
@@ -114,6 +116,22 @@ class Embedding(nn.Module):
                     .at[:,:,1::2].add(jnp.cos(theta.at[:,:cos_dim].get()))) # Odd
 
         return embedded
+
+    def attend(self, query: ArrayLike) -> Array:
+        """
+        De-embed Embedded Features
+
+        Parameters
+        ----------
+        query : ArrayLike
+            Query. [B, L, dm]
+
+        Returns
+        -------
+        value : ArrayLike
+            Attended. [B, L, V]
+        """
+        return self.embed.attend(query)
 
 
 class FeedForward(nn.Module):
