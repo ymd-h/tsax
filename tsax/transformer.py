@@ -711,6 +711,10 @@ class Transformer(nn.Module):
         -------
         y : Array
             Batched Token Probability. [B, L, V]
+
+        Notes
+        -----
+        This method calls `encode()` then `decode()` internally.
         """
         assert inputs.shape == outputs.shape, "BUG"
         assert inputs.shape[1] == self.L, "BUG"
