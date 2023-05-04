@@ -62,6 +62,11 @@ EPS: float = 1e-12
 Default Value for Small Positive Value of Layer Normalization
 """
 
+PDROP: float = 0.1
+"""
+Default Probability of Dropout Rate
+"""
+
 
 class Embedding(nn.Module):
     """
@@ -144,11 +149,14 @@ class FeedForward(nn.Module):
     ----------
     dff : int
         Number of Hidden Units at Feed Forward
+    Pdrop : float
+        Dropout Rate
     """
     dff: int = DFF
+    Pdrop: float = PDROP
 
     @nn.compact
-    def __call__(self, x: ArrayLike) -> Array:
+    def __call__(self, x: ArrayLike, with_dropout: bool = False) -> Array:
         """
         Call Position-wise Feed Forward Network
 
@@ -156,6 +164,8 @@ class FeedForward(nn.Module):
         ----------
         x : ArrayLike
             Inputs. [B, L, dm]
+        with_dropout : bool, optional
+            Whether dropout or not.
 
         Returns
         -------
@@ -169,6 +179,10 @@ class FeedForward(nn.Module):
 
         # y: [B, L, dm]
         y = nn.Dense(dm)(h)
+
+        if with_dropout:
+            y = y.at[:].set(nn.Dropout(self.Pdrop)(y))
+
         return y
 
 class Attention(nn.Module):
@@ -249,16 +263,20 @@ class MultiHeadAttention(nn.Module):
         Number of Multi Head
     dm : int
         Model Dimension
+    Pdrop : float
+        Dropout Rate
     """
     nH: int = NH
     dm: int = DM
+    Pdrop: float = PDROP
 
     @nn.compact
     def __call__(self,
                  Q: ArrayLike,
                  K: ArrayLike,
                  V: ArrayLike,
-                 mask: Optional[ArrayLike] = None) -> Array:
+                 mask: Optional[ArrayLike] = None,
+                 with_dropout: bool = False) -> Array:
         """
         Multi Head Attention
 
@@ -272,6 +290,8 @@ class MultiHeadAttention(nn.Module):
             Value. [B, L, dm]
         mask : ArrayLike, optional
             Batched Token Mask. [B, L]
+        with_dropout : bool, optional
+            Whether dropout or not.
 
         Returns
         -------
@@ -292,6 +312,9 @@ class MultiHeadAttention(nn.Module):
         MHA = nn.Dense(features=self.dm, use_bias=False, name="WO")(x)
         assert Q.shape == MHA.shape, "BUG"
 
+        if with_dropout:
+            MHA = MHA.at[:].set(nn.Dropout(self.Pdrop)(MHA))
+
         return MHA
 
 
@@ -309,14 +332,17 @@ class EncoderLayer(nn.Module):
         Number of Hidden Units at Feed Forward
     eps : float
         Small Positive Value for Layer Normalization
+    Pdrop : float
+        Dropout Rate
     """
     nH: int = NH
     dm: int = DM
     dff: int = DFF
     eps: float = EPS
+    Pdrop: float = PDROP
 
     @nn.compact
-    def __call__(self, inputs: ArrayLike) -> Array:
+    def __call__(self, inputs: ArrayLike, with_dropout: bool = False) -> Array:
         """
         Call Encoder Layer
 
@@ -324,6 +350,8 @@ class EncoderLayer(nn.Module):
         ----------
         inputs : ArrayLike
             Inputs. [B, L, dm]
+        with_dropout : bool, optional
+            Whether dropout or not.
 
         Returns
         -------
@@ -332,12 +360,14 @@ class EncoderLayer(nn.Module):
         """
         shape = inputs.shape
 
-        mha = MultiHeadAttention(nH=self.nH, dm=self.dm)
-        ff = FeedForward(dff=self.dff)
+        mha = MultiHeadAttention(nH=self.nH, dm=self.dm, Pdrop=self.Pdrop)
+        ff = FeedForward(dff=self.dff, Pdrop=self.Pdrop)
 
         # x: [B, L, m]
-        inputs = ResidualLayerNorm(lambda i: mha(i, i, i), eps)(inputs)
-        inputs = x.at[:].set(ResidualLayerNorm(lambda i: ff(i), eps)(inputs))
+        inputs = ResidualLayerNorm(lambda i: mha(i, i, i, with_dropout), eps)(inputs)
+        inputs = inputs.at[:].set(
+            ResidualLayerNorm(lambda i: ff(i, with_dropout), eps)(inputs)
+        )
 
         assert inputs.shape == shape, "BUG"
         return inputs
@@ -357,17 +387,21 @@ class DecoderLayer(nn.Module):
         Number of Hidden Units at Feed Forward
     eps : float
         Small Positive Value for Layer Normalization
+    Pdrop : float
+        Dropout Rate
     """
     nH: int = NH
     dm: int = DM
     dff: int = DFF
     eps: float = EPS
+    Pdrop: float = PDROP
 
     @nn.compact
     def __call__(self,
                  inputs: ArrayLike,
                  outputs: ArrayLike,
-                 mask: ArrayLike) -> Array:
+                 mask: ArrayLike,
+                 with_dropout: bool = False) -> Array:
         """
         Call Decoder Layer
 
@@ -379,6 +413,8 @@ class DecoderLayer(nn.Module):
             Outputs. [B, L, dm]
         mask : ArrayLike
             Batched Token Mask. [B, L]
+        with_dropout : bool, optional
+            Whether dropout or not.
 
         Returns
         -------
@@ -389,16 +425,19 @@ class DecoderLayer(nn.Module):
         assert inputs.shape[:2] == mask.shape, "BUG"
 
         d: int = self.dm // self.nH
-        mmha = MultiHeadAttention(nH=self.nH, dk=d, dv=d,
+        mmha = MultiHeadAttention(nH=self.nH, dk=d, dv=d, Pdrop=self.Pdrop,
                                   name="MaskedMultiHeadAttention")
-        mha = MultiHeadAttention(nH=self.nH, dk=d, dv=d, name="MultiHeadAttention")
-        ff = FeedForward(dff=self.dff)
+        mha  = MultiHeadAttention(nH=self.nH, dk=d, dv=d, Pdrop=self.Pdrop,
+                                  name="MultiHeadAttention")
+        ff = FeedForward(dff=self.dff, Pdrop=self.Pdrop)
 
-        outputs = ResidualLayerNorm(lambda o: mmha(o, o, o, mask), eps)(outputs)
-        outputs = outputs.at[:].set(
-            ResidualLayerNorm(lambda o: mha(inputs, inputs, o), eps)(outputs)
-        )
-        outputs = outputs.at[:].set(ResidualLayerNorm(lambda o: ff(o), eps)(outputs))
+        mmha_f = lambda o: mmha(o, o, o, mask, with_dropout)
+        mha_f = lambda o: mha(inputs, inputs, o, with_dropout)
+        ff_f = lambda o: ff(o, with_dropout)
+
+        outputs = ResidualLayerNorm(mmha_f, eps)(outputs)
+        outputs = outputs.at[:].set(ResidualLayerNorm(mha_f, eps)(outputs))
+        outputs = outputs.at[:].set(ResidualLayerNorm(ff_f, eps)(outputs))
 
         assert inputs.shape == outputs.shape, "BUG"
         return outputs
@@ -420,15 +459,18 @@ class EncoderStack(nn.Module):
         Number of Hidden Units at Feed Forward
     eps : float
         Small Positive Value for Layer Normalization
+    Pdrop : float
+        Dropout Rate
     """
     N: int = N
     nH: int = NH
     dm: int = DM
     dff: int = DFF
     eps: float = EPS
+    Pdrop: float = PDROP
 
     @nn.compact
-    def __call__(self, inputs: ArrayLike) -> Array:
+    def __call__(self, inputs: ArrayLike, with_dropout: bool = False) -> Array:
         """
         Call Encoder Stack
 
@@ -436,6 +478,8 @@ class EncoderStack(nn.Module):
         ----------
         inputs : ArrayLike
             Inputs. [B, L, dm]
+        with_dropout : bool, optional
+            Whether dropout or not.
 
         Returns
         -------
@@ -449,7 +493,8 @@ class EncoderStack(nn.Module):
                                   dm=self.dm,
                                   dff=self.dff,
                                   eps=self.eps,
-                                  name=f"EncoderLayer_{i}")(inputs)
+                                  Pdrop=self.Pdrop,
+                                  name=f"EncoderLayer_{i}")(inputs, with_dropout)
 
         assert inputs.shape == shape, "BUG"
         return inputs
@@ -471,18 +516,22 @@ class DecoderStack(nn.Module):
         Number of Hidden Units at Feed Forward
     eps : float
         Small Positive Value for Layer Normalization
+    Pdrop : float
+        Dropout Rate
     """
     N: int = N
     nH: int = NH
     dm: int = DM
     dff:int = DFF
     eps: float = EPS
+    Pdrop: float = PDROP
 
     @nn.compact
     def __call__(self,
                  inputs: ArrayLike,
                  outputs: ArrayLike,
-                 mask: ArrayLike) -> Array:
+                 mask: ArrayLike,
+                 with_dropout: bool = False) -> Array:
         """
         Call Decoder Stack
 
@@ -494,6 +543,8 @@ class DecoderStack(nn.Module):
             Outputs. [B, L, dm]
         mask : ArrayLike
             Batched Token Mask. [B, L]
+        with_dropout : bool, optional
+            Whether dropout or not.
 
         Returns
         -------
@@ -508,7 +559,11 @@ class DecoderStack(nn.Module):
                                    dm=self.dm,
                                    dff=self.dff,
                                    eps=self.eps,
-                                   name=f"DecoderLayer_{i}")(inputs, outputs, mask)
+                                   Pdrop=self.Pdrop,
+                                   name=f"DecoderLayer_{i}")(inputs,
+                                                             outputs,
+                                                             mask,
+                                                             with_dropout)
 
         assert inputs.shape == outputs.shape, "BUG"
         return outputs
@@ -534,6 +589,8 @@ class Transformer(nn.Module):
         Number of Hidden Units at Feed Forward
     eps : float
         Small Positive Value for Layer Normalization
+    Pdrop : float
+        Dropout Rate
     """
     V: int
     L: int
@@ -542,10 +599,13 @@ class Transformer(nn.Module):
     nH: int = NH
     dff: int = DFF
     eps: float = EPS
-
+    Pdrop: float = PDROP
 
     @nn.compact
-    def __call__(self, x: ArrayLike, mask: ArrayLike) -> Array:
+    def __call__(self,
+                 x: ArrayLike,
+                 mask: ArrayLike,
+                 with_dropout: bool=False) -> Array:
         """
         Transformer
 
@@ -555,13 +615,16 @@ class Transformer(nn.Module):
             Batched Tokenized Text. [B, L]
         mask : ArrayLike
             Batched Token Mask. [B, L]
+        with_dropout : bool, optional
+            Whether dropout or not.
 
         Returns
         -------
         y : Array
             Batched Token Probability. [B, L, V]
         """
-        assert x.shape[1] == self.L
+        assert x.shape[1] == self.L, "BUG"
+        assert isinstance(with_dropout, bool), "BUG"
 
         inputs, outputs = x, x
 
@@ -576,7 +639,8 @@ class Transformer(nn.Module):
                               dm=self.dm,
                               nH=self.nH,
                               dff=self.dff,
-                              eps=self.eps)(inputs)
+                              eps=self.eps,
+                              Pdrop=self.Pdrop)(inputs, with_dropout)
         assert inputs.shape == (x.shape[0], self.L, self.dm), "BUG"
 
         # outputs: [B, L, dm]
@@ -584,7 +648,8 @@ class Transformer(nn.Module):
                                dm=self.dm,
                                nH=self.nH,
                                dff=self.dff,
-                               eps=self.eps)(inputs, outputs, mask)
+                               eps=self.eps,
+                               Pdrop=self.Pdrop)(inputs, outputs, mask, with_dropout)
         assert outputs.shape == (x.shape[0], self.L, self.dm), "BUG"
 
         # y: [B, L, V]
