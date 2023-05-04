@@ -442,7 +442,7 @@ class DecoderLayer(nn.Module):
         ff = FeedForward(dff=self.dff, Pdrop=self.Pdrop)
 
         mmha_f = lambda o: mmha(o, o, o, mask, with_dropout)
-        mha_f = lambda o: mha(inputs, inputs, o, with_dropout)
+        mha_f = lambda o: mha(o, inputs, inputs, with_dropout)
         ff_f = lambda o: ff(o, with_dropout)
 
         outputs = ResidualLayerNorm(mmha_f, eps)(outputs)
