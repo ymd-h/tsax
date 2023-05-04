@@ -611,7 +611,21 @@ class Transformer(nn.Module):
     eps: float = EPS
     Pdrop: float = PDROP
 
-    @nn.compact
+    def setup(self):
+        self.embed = Embedding(V=self.V, dm=self.dm, L=self.L, Pdrop=self.Pdrop)
+        self.encoder = EncoderStack(N=self.N,
+                                    dm=self.dm,
+                                    nH=self.nH,
+                                    dff=self.dff,
+                                    eps=self.eps,
+                                    Pdrop=self.Pdrop)
+        self.decoder = DecoderStack(N=self.N,
+                                    dm=self.dm,
+                                    nH=self.nH,
+                                    dff=self.dff,
+                                    eps=self.eps,
+                                    Pdrop=self.Pdrop)
+
     def __call__(self,
                  inputs: ArrayLike,
                  outputs: ArrayLike,
@@ -640,32 +654,20 @@ class Transformer(nn.Module):
         assert inputs.shape[1] == self.L, "BUG"
         assert isinstance(with_dropout, bool), "BUG"
 
-        embed = Embedding(V=self.V, dm=self.dm, L=self.L, Pdrop=self.Pdrop)
-
         # Share Embedding Weight Matrix
-        inputs = embed(inputs, with_dropout)
-        outputs = embed(outputs, with_dropout)
+        inputs = self.embed(inputs, with_dropout)
+        outputs = self.embed(outputs, with_dropout)
 
         # inputs: [B, L, dm]
-        inputs = EncoderStack(N=self.N,
-                              dm=self.dm,
-                              nH=self.nH,
-                              dff=self.dff,
-                              eps=self.eps,
-                              Pdrop=self.Pdrop)(inputs, with_dropout)
+        inputs = self.encoder(inputs, with_dropout)
         assert inputs.shape == (x.shape[0], self.L, self.dm), "BUG"
 
         # outputs: [B, L, dm]
-        outputs = DecoderStack(N=self.N,
-                               dm=self.dm,
-                               nH=self.nH,
-                               dff=self.dff,
-                               eps=self.eps,
-                               Pdrop=self.Pdrop)(inputs, outputs, mask, with_dropout)
+        outputs = self.decoder(inputs, outputs, mask, with_dropout)
         assert outputs.shape == (x.shape[0], self.L, self.dm), "BUG"
 
         # y: [B, L, V]
-        y = embed.attend(outputs)
+        y = self.embed.attend(outputs)
         assert y.shape == (x.shape[0], self.L, self.V), "BUG"
 
         # y: [B, L, V]
