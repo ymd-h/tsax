@@ -16,41 +16,35 @@ from tsax.transformer import (
 )
 
 class TestEmbedding(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.B = 4
+        cls.L = 12
+        cls.V = 5
+        cls.dm = 3
+
+        key, key2 = jax.random.split(jax.random.PRNGKey(0), 2)
+
+        cls.text = jax.random.randint(key, (cls.B, cls.L), 0, cls.V)
+        cls.e = Embedding(V=cls.V, L=cls.L, dm=cls.dm)
+
+        cls.params = cls.e.init(key2, cls.text)
+
     def test_without_jit(self):
-        B = 4
-        L = 12
-        V = 5
-        dm = 3
+        emb = self.e.apply(self.params, self.text)
+        self.assertEqual(emb.shape, (self.B, self.L, self.dm))
 
-        key = jax.random.PRNGKey(0)
-        text = jnp.zeros((B, L), dtype=int)
-
-        e = Embedding(V=V, L=L, dm=dm)
-        params = e.init(key, text)
-
-        emb = e.apply(params, text)
-        self.assertEqual(emb.shape, (B, L, dm))
-
-        v = e.apply(params, emb, method=e.attend)
-        self.assertEqual(v.shape, (B, L, V))
+        v = self.e.apply(self.params, emb, method=self.e.attend)
+        self.assertEqual(v.shape, (self.B, self.L, self.V))
 
     def test_with_jit(self):
-        B = 4
-        L = 12
-        V = 5
-        dm = 3
+        emb = jax.jit(self.e.apply)(self.params, self.text)
+        self.assertEqual(emb.shape, (self.B, self.L, self.dm))
 
-        key = jax.random.PRNGKey(0)
-        text = jnp.zeros((B, L), dtype=int)
-
-        e = Embedding(V=V, L=L, dm=dm)
-        params = e.init(key, text)
-
-        emb = jax.jit(e.apply)(params, text)
-        self.assertEqual(emb.shape, (B, L, dm))
-
-        v = jax.jit(e.apply, static_argnames="method")(params, emb, method=e.attend)
-        self.assertEqual(v.shape, (B, L, V))
+        v = jax.jit(self.e.apply, static_argnames="method")(self.params,
+                                                            emb,
+                                                            method=self.e.attend)
+        self.assertEqual(v.shape, (self.B, self.L, self.V))
 
 
 class TestFeedForward(unittest.TestCase):
