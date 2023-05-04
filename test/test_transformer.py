@@ -16,7 +16,7 @@ from tsax.transformer import (
 )
 
 class TestEmbedding(unittest.TestCase):
-    def test_no_error(self):
+    def test_without_jit(self):
         B = 4
         L = 12
         V = 5
@@ -34,7 +34,7 @@ class TestEmbedding(unittest.TestCase):
         v = e.apply(params, emb, method=e.attend)
         self.assertEqual(v.shape, (B, L, V))
 
-    def test_no_error_jit(self):
+    def test_with_jit(self):
         B = 4
         L = 12
         V = 5
