@@ -67,16 +67,16 @@ class Embedding(nn.Module):
 
     Attributes
     ----------
-    dm : int
-        Model Dimension
     V : int
         Vocabulary Size
     L : int
         Tokenized Text Length
+    dm : int
+        Model Dimension
     """
-    dm: int = DM
     V: int
     L: int
+    dm: int = DM
 
     @nn.compact
     def __call__(self, text: ArrayLike) -> Array:
@@ -505,14 +505,14 @@ class Transformer(nn.Module):
 
     Attributes
     ----------
-    N : int
-        Number of Layers at Encoder Stack & Decoder Stack
     V : int
         Vocabulary Size
-    dm : int
-        Model Dimension
     L : int
         Input Tokenized Text Length
+    N : int
+        Number of Layers at Encoder Stack & Decoder Stack
+    dm : int
+        Model Dimension
     nH : int
         Number of Multi Head
     dff : int
@@ -520,13 +520,14 @@ class Transformer(nn.Module):
     eps : float
         Small Positive Value for Layer Normalization
     """
-    N: int = N
     V: int
-    dm: int = DM
     L: int
+    N: int = N
+    dm: int = DM
     nH: int = NH
     dff: int = DFF
     eps: float = EPS
+
 
     @nn.compact
     def __call__(self, x: ArrayLike, mask: ArrayLike) -> Array:
