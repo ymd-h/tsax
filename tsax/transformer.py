@@ -108,7 +108,7 @@ class Embedding(nn.Module):
             Embedded features with positional encoding. [B, L, dm]
         """
         # embedded: [B, L, dm]
-        embedded = self.embed(text)
+        embedded = self.embed(text) * jnp.sqrt(self.dm)
         assert embedded.shape == (text.shape[0], self.L, self.dm), "BUG"
 
         half: int = self.dm // 2
