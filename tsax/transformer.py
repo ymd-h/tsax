@@ -181,7 +181,7 @@ class FeedForward(nn.Module):
         y = nn.Dense(dm)(h)
 
         if with_dropout:
-            y = y.at[:].set(nn.Dropout(self.Pdrop)(y))
+            y = y.at[:].set(nn.Dropout(self.Pdrop, deterministic=False)(y))
 
         return y
 
@@ -313,7 +313,7 @@ class MultiHeadAttention(nn.Module):
         assert Q.shape == MHA.shape, "BUG"
 
         if with_dropout:
-            MHA = MHA.at[:].set(nn.Dropout(self.Pdrop)(MHA))
+            MHA = MHA.at[:].set(nn.Dropout(self.Pdrop, deterministic=False)(MHA))
 
         return MHA
 
