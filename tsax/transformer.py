@@ -106,7 +106,7 @@ class Embedding(nn.Module):
         exponent = 2 * jnp.arange(sin_dim) / self.dm
 
         # theta: [L, sin_dim]
-        theta = jnp.vmap(lambda pos: (pos / 10000) ** exponent)(jnp.arange(self.L))
+        theta = jax.vmap(lambda pos: (pos / 10000) ** exponent)(jnp.arange(self.L))
         assert theta.shape == (self.L, sin_dim), "BUG"
 
         embedded = (embedded
