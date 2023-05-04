@@ -192,7 +192,7 @@ class Attention(nn.Module):
         """
         assert Q.shape == K.shape == V.shape, "BUG"
         assert Q.shape[:2] == mask.shape, "BUG"
-        
+
         # Q, K: [B, L, dm] -> [B, L, dk]
         Q = nn.Dense(features=self.dk, use_bias=False, name="WQ")(Q)
         K = nn.Dense(features=self.dk, use_bias=False, name="WK")(K)
@@ -215,7 +215,7 @@ class Attention(nn.Module):
         # A: [B, L, dv]
         A: Array = jnp.matmul(nn.activation.softmax(QK), V)
         assert A.shape == (*Q.shape[:2], self.dv)
-        
+
         return A
 
 
