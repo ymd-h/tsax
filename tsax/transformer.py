@@ -80,15 +80,18 @@ class Embedding(nn.Module):
         Tokenized Text Length
     dm : int
         Model Dimension
+    Pdrop : float
+        Dropout Rate
     """
     V: int
     L: int
     dm: int = DM
+    Pdrop: float = PDROP
 
     def setup(self):
         self.embed = nn.Embed(self.V, self.dm)
 
-    def __call__(self, text: ArrayLike) -> Array:
+    def __call__(self, text: ArrayLike, with_dropout: bool = False) -> Array:
         """
         Call Embedding
 
@@ -96,6 +99,8 @@ class Embedding(nn.Module):
         ----------
         text : ArrayLike
             Input Tokenized Text. [B, L]
+        with_dropout : bool
+            Whether to use dropout or not.
 
         Returns
         -------
@@ -121,6 +126,11 @@ class Embedding(nn.Module):
         embedded = (embedded
                     .at[:,:,0::2].add(jnp.sin(theta))                       # Even
                     .at[:,:,1::2].add(jnp.cos(theta.at[:,:cos_dim].get()))) # Odd
+
+        if with_dropout:
+            embedded = embedded.at[:].set(
+                nn.Dropout(self.Pdrop, deterministic=False)(embedded)
+            )
 
         return embedded
 
@@ -628,11 +638,11 @@ class Transformer(nn.Module):
 
         inputs, outputs = x, x
 
-        embed = Embedding(V=self.V, dm=self.dm, L=self.L)
+        embed = Embedding(V=self.V, dm=self.dm, L=self.L, Pdrop=self.Pdrop)
 
         # Share Embedding Weight Matrix
-        inputs = embed(inputs)
-        outputs = embed(outputs)
+        inputs = embed(inputs, with_dropout)
+        outputs = embed(outputs, with_dropout)
 
         # inputs: [B, L, dm]
         inputs = EncoderStack(N=self.N,
