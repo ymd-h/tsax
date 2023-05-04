@@ -19,7 +19,7 @@ from typing import Optional
 
 import jax
 import jax.numpy as jnp
-from jax import array
+from jax import Array
 from jax.typing import ArrayLike
 from flax import linen as nn
 
