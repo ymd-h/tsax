@@ -23,6 +23,8 @@ from jax import Array
 from jax.typing import ArrayLike
 from flax import linen as nn
 
+from .core import ResidualLayerNorm
+
 __all__ = [
     "Transformer",
     "Embedding",
@@ -334,10 +336,8 @@ class EncoderLayer(nn.Module):
         ff = FeedForward(dff=self.dff)
 
         # x: [B, L, m]
-        inputs = nn.LayerNorm(epsilon=self.eps)(inputs + mha(inputs, inputs, inputs))
-        inputs = x.at[:,:,:].set(
-            nn.LayerNorm(epsilon=self.eps)(inputs + ff(inputs))
-        )
+        inputs = ResidualLayerNorm(lambda i: mha(i, i, i), eps)(inputs)
+        inputs = x.at[:].set(ResidualLayerNorm(lambda i: ff(i), eps)(inputs))
 
         assert inputs.shape == shape, "BUG"
         return inputs
@@ -394,14 +394,11 @@ class DecoderLayer(nn.Module):
         mha = MultiHeadAttention(nH=self.nH, dk=d, dv=d, name="MultiHeadAttention")
         ff = FeedForward(dff=self.dff)
 
-        outputs = nn.LayerNorm(epsilon=self.eps)(outputs + mmha(outputs,
-                                                                outputs,
-                                                                outputs,
-                                                                mask))
-        outputs = nn.LayerNorm(epsilon=self.eps)(outputs + mha(inputs,
-                                                               inputs,
-                                                               outputs))
-        outputs = nn.LayerNorm(epsilon=self.eps)(outputs + ff(outputs))
+        outputs = ResidualLayerNorm(lambda o: mmha(o, o, o, mask), eps)(outputs)
+        outputs = outputs.at[:].set(
+            ResidualLayerNorm(lambda o: mha(inputs, inputs, o), eps)(outputs)
+        )
+        outputs = outputs.at[:].set(ResidualLayerNorm(lambda o: ff(o), eps)(outputs))
 
         assert inputs.shape == outputs.shape, "BUG"
         return outputs
