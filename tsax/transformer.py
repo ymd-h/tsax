@@ -626,13 +626,75 @@ class Transformer(nn.Module):
                                     eps=self.eps,
                                     Pdrop=self.Pdrop)
 
+    def encode(self, inputs: ArrayLike, with_dropout: bool = False) -> Array:
+        """
+        Encode with Transformer
+
+        Parameters
+        ----------
+        inputs : ArrayLike
+            Batched Tokenized Input Text. [B, L]
+        with_dropout : bool, optional
+            Whether to use dropout or not.
+
+        Returns
+        -------
+        inputs : Array
+            Encoded Inputs
+        """
+        inputs = self.embed(inputs, with_dropout)
+
+        # inputs: [B, L, dm]
+        inputs = self.encoder(inputs, with_dropout)
+        assert inputs.shape == (x.shape[0], self.L, self.dm), "BUG"
+
+        return inputs
+
+    def decode(self,
+               inputs: ArrayLike,
+               outputs: ArrayLike,
+               mask: ArrayLike,
+               with_dropout: bool = False) -> Array:
+        """
+        Decode with Transformer
+
+        Parameters
+        ----------
+        inputs : ArrayLike
+            Batched Encoded Input. [B, L]
+        outputs : ArrayLike
+            Batched Tokenized Output Text. [B, L]
+        mask : ArrayLike
+            Batched Token Mask. [B, L]
+        with_dropout : bool, optional
+            Whether dropout or not.
+
+        Returns
+        -------
+        p : Array
+            Batched Token Probability. [B, L, V]
+        """
+        outputs = self.embed(outputs, with_dropout)
+
+        # outputs: [B, L, dm]
+        outputs = self.decoder(inputs, outputs, mask, with_dropout)
+        assert outputs.shape == (x.shape[0], self.L, self.dm), "BUG"
+
+        # y: [B, L, V]
+        p = self.embed.attend(outputs)
+        assert p.shape == (outputs.shape[0], self.L, self.V), "BUG"
+
+        # y: [B, L, V]
+        p = nn.activation.softmax(p)
+        return p
+
     def __call__(self,
                  inputs: ArrayLike,
                  outputs: ArrayLike,
                  mask: ArrayLike,
                  with_dropout: bool=False) -> Array:
         """
-        Transformer
+        Call Transformer
 
         Parameters
         ----------
@@ -654,22 +716,6 @@ class Transformer(nn.Module):
         assert inputs.shape[1] == self.L, "BUG"
         assert isinstance(with_dropout, bool), "BUG"
 
-        # Share Embedding Weight Matrix
-        inputs = self.embed(inputs, with_dropout)
-        outputs = self.embed(outputs, with_dropout)
+        inputs = self.encode(inputs, with_dropout)
 
-        # inputs: [B, L, dm]
-        inputs = self.encoder(inputs, with_dropout)
-        assert inputs.shape == (x.shape[0], self.L, self.dm), "BUG"
-
-        # outputs: [B, L, dm]
-        outputs = self.decoder(inputs, outputs, mask, with_dropout)
-        assert outputs.shape == (x.shape[0], self.L, self.dm), "BUG"
-
-        # y: [B, L, V]
-        y = self.embed.attend(outputs)
-        assert y.shape == (x.shape[0], self.L, self.V), "BUG"
-
-        # y: [B, L, V]
-        y = nn.activation.softmax(y)
-        return y
+        return self.decode(inputs, outputs, mask, with_dropout)
