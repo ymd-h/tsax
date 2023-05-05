@@ -216,7 +216,7 @@ class Attention(nn.Module):
                  Q: ArrayLike,
                  K: ArrayLike,
                  V: ArrayLike,
-                 mask: Optional[ArrayLike]) -> Array:
+                 mask: Optional[ArrayLike] = None) -> Array:
         """
         Call Attention Layer
 
