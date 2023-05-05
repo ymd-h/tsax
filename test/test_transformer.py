@@ -331,6 +331,57 @@ class TestDecoderLayer(unittest.TestCase):
 
         self.assertTrue(jnp.allclose(D_drop, D_drop_jit, atol=1e-6))
 
+class TestEncoderStack(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.B = 3
+        cls.L = 12
+        cls.N = 2
+        cls.dm = 10
+        cls.nH = 5
+        cls.dff = 32
+        cls.Pdrop = 0.8
+
+        key = jax.random.split(jax.random.PRNGKey(0), 3)
+        cls.key = key[0]
+        cls.x = jax.random.normal(key[1], (cls.B, cls.L, cls.dm))
+        cls.mask = jnp.asarray([[1,1,1,1,1,0,0,0,0,0,0,0],
+                                [1,0,0,0,0,0,0,0,0,0,0,0],
+                                [1,1,1,1,1,1,1,1,1,0,0,0]], dtype=int)
+
+        cls.e = EncoderStack(N=cls.N, nH=cls.nH,
+                             dm=cls.dm, dff=cls.dff,
+                             Pdrop=cls.Pdrop)
+        cls.params = cls.e.init(key[2], cls.x, cls.mask)
+
+    def test_encoder(self):
+        f = self.e.apply
+        f_jit = jax.jit(f, static_argnames="with_dropout")
+
+        E = f(self.params, self.x, self.mask)
+        self.assertEqual(E.shape, (self.B, self.L, self.dm))
+        self.assertFalse(jnp.any(jnp.isnan(E)))
+
+        E_jit = f_jit(self.params, self.x, self.mask)
+        self.assertEqual(E_jit.shape, (self.B, self.L, self.dm))
+        self.assertFalse(jnp.any(jnp.isnan(E_jit)))
+
+        self.assertTrue(jnp.allclose(E, E_jit, atol=1e-6))
+
+        E_drop = f(self.params, self.x, self.mask, with_dropout=True,
+                   rngs={"dropout": self.key})
+        self.assertEqual(E_drop.shape, (self.B, self.L, self.dm))
+        self.assertFalse(jnp.any(jnp.isnan(E_drop)))
+        self.assertFalse(jnp.allclose(E, E_drop, atol=1e-5))
+
+        E_drop_jit = f_jit(self.params, self.x, self.mask, with_dropout=True,
+                           rngs={"dropout": self.key})
+        self.assertEqual(E_drop_jit.shape, (self.B, self.L, self.dm))
+        self.assertFalse(jnp.any(jnp.isnan(E_drop_jit)))
+        self.assertFalse(jnp.allclose(E_jit, E_drop_jit, atol=1e-5))
+
+        self.assertTrue(jnp.allclose(E_drop, E_drop_jit, atol=1e-6))
+
 
 if __name__ == "__main__":
     unittest.main()
