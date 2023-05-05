@@ -447,12 +447,15 @@ class DecoderLayer(nn.Module):
             Decoded Outputs. [B, L, dm]
         """
         assert inputs.shape == outputs.shape, "BUG"
-        assert inputs.shape[:2] == mask.shape, "BUG"
+        assert (inputs.shape[:2] ==
+                (inputs_mask.shape[0], inputs_mask.shape[2]) ==
+                (outputs_mask.shape[0], outputs_mask.shape[2])), "BUG"
+        assert ((inputs_mask.shape[1] in [1, inputs.shape[1]]) and
+                (outputs_mask.shape[1] in [1, outputs.shape[1]])), "BUG"
 
-        d: int = self.dm // self.nH
-        mmha = MultiHeadAttention(nH=self.nH, dk=d, dv=d, Pdrop=self.Pdrop,
+        mmha = MultiHeadAttention(nH=self.nH, dm=self.dm, Pdrop=self.Pdrop,
                                   name="MaskedMultiHeadAttention")
-        mha  = MultiHeadAttention(nH=self.nH, dk=d, dv=d, Pdrop=self.Pdrop,
+        mha  = MultiHeadAttention(nH=self.nH, dm=self.dm, Pdrop=self.Pdrop,
                                   name="MultiHeadAttention")
         ff = FeedForward(dff=self.dff, Pdrop=self.Pdrop)
 
