@@ -399,39 +399,56 @@ class TestDecoderStack(unittest.TestCase):
 
         key = jax.random.split(jax.random.PRNGKey(0), 4)
         cls.key = key[0]
+
         cls.inputs = jax.random.normal(key[1], (cls.B, cls.L, cls.dm))
-        cls.outputs = jax.random.normal(key[2], (cls.B, cls.L, cls.dm))
         cls.inputs_mask = jnp.asarray([[1,1,1,1,1,0,0,0,0,0,0,0],
                                        [1,0,0,0,0,0,0,0,0,0,0,0],
                                        [1,1,1,1,1,1,1,1,1,0,0,0]], dtype=int)
+        cls.inputs.at[:].multiply(jnp.reshape(cls.inputs_mask, (cls.B, cls.L, 1)))
+
+        cls.outputs = jax.random.normal(key[2], (cls.B, cls.L, cls.dm))
+        cls.outputs_mask = jnp.asarray([[1,1,1,1,1,1,1,1,1,1,0,0],
+                                        [1,1,1,0,0,0,0,0,0,0,0,0],
+                                        [1,1,1,1,1,1,0,0,0,0,0,0]], dtype=int)
+        cls.outputs.at[:].multiply(jnp.reshape(cls.outputs_mask, (cls.B, cls.L, 1)))
 
         cls.d = DecoderStack(N=cls.N, nH=cls.nH,
                              dm=cls.dm, dff=cls.dff,
                              Pdrop=cls.Pdrop)
-        cls.params = cls.d.init(key[3], cls.inputs, cls.outputs, cls.mask)
+        cls.params = cls.d.init(key[3],
+                                cls.inputs, cls.inputs_mask,
+                                cls.outputs, cls.outputs_mask)
 
     def test_decoder(self):
         f = self.d.apply
         f_jit = jax.jit(f, static_argnames="with_dropout")
 
-        D = f(self.params, self.inputs, self.outputs, self.mask)
+        D = f(self.params,
+              self.inputs, self.inputs_mask,
+              self.outputs, self.outputs_mask)
         self.assertEqual(D.shape, (self.B, self.L, self.dm))
         self.assertFalse(jnp.any(jnp.isnan(D)))
 
-        D_jit = f_jit(self.params, self.inputs, self.outputs, self.mask)
+        D_jit = f_jit(self.params,
+                      self.inputs, self.inputs_mask,
+                      self.outputs, self.outputs_mask)
         self.assertEqual(D_jit.shape, (self.B, self.L, self.dm))
         self.assertFalse(jnp.any(jnp.isnan(D_jit)))
 
         self.assertTrue(jnp.allclose(D, D_jit, atol=1e-6))
 
-        D_drop = f(self.params, self.inputs, self.outputs, self.mask,
+        D_drop = f(self.params,
+                   self.inputs, self.inputs_mask,
+                   self.outputs, self.outputs_mask,
                    with_dropout=True,
                    rngs={"dropout": self.key})
         self.assertEqual(D_drop.shape, (self.B, self.L, self.dm))
         self.assertFalse(jnp.any(jnp.isnan(D_drop)))
         self.assertFalse(jnp.allclose(D, D_drop, atol=1e-5))
 
-        D_drop_jit = f_jit(self.params, self.inputs, self.outputs, self.mask,
+        D_drop_jit = f_jit(self.params,
+                           self.inputs, self.inputs_mask,
+                           self.outputs, self.outputs_mask,
                            with_dropout=True,
                            rngs={"dropout": self.key})
         self.assertEqual(D_drop_jit.shape, (self.B, self.L, self.dm))
