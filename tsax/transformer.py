@@ -460,9 +460,9 @@ class DecoderLayer(nn.Module):
         mha_f = lambda o: mha(o, inputs, inputs, inputs_mask, with_dropout=with_dropout)
         ff_f = lambda o: ff(o, with_dropout=with_dropout)
 
-        outputs = ResidualLayerNorm(mmha_f, eps)(outputs)
-        outputs = outputs.at[:].set(ResidualLayerNorm(mha_f, eps)(outputs))
-        outputs = outputs.at[:].set(ResidualLayerNorm(ff_f, eps)(outputs))
+        outputs = ResidualLayerNorm(mmha_f, self.eps)(outputs)
+        outputs = outputs.at[:].set(ResidualLayerNorm(mha_f, self.eps)(outputs))
+        outputs = outputs.at[:].set(ResidualLayerNorm(ff_f, self.eps)(outputs))
 
         assert inputs.shape == outputs.shape, "BUG"
         return outputs
