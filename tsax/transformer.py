@@ -103,7 +103,7 @@ class Embedding(nn.Module):
 
         self.drop = nn.Dropout(self.Pdrop, deterministic=False)
 
-    def __call__(self, text: ArrayLike, with_dropout: bool = False) -> Array:
+    def __call__(self, text: ArrayLike, *, with_dropout: bool = False) -> Array:
         """
         Call Embedding
 
