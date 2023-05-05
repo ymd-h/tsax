@@ -284,9 +284,8 @@ class TestDecoderLayer(unittest.TestCase):
                                        [[1,1,1,1,1,1,1,1,1,0,0,0]]], dtype=int)
 
         cls.outputs = jax.random.normal(key[2], (cls.B, cls.L, cls.dm))
-        cls.outputs_mask = jnp.asarray([[[1,1,1,1,1,0,0,0,0,0,0,0]],
-                                        [[1,0,0,0,0,0,0,0,0,0,0,0]],
-                                        [[1,1,1,1,1,1,1,1,1,0,0,0]]], dtype=int)
+        cls.outputs_mask = (cls.inputs_mask *
+                            jnp.tril(jnp.ones((cls.L, cls.L), dtype=int)))
 
         cls.d = DecoderLayer(nH=cls.nH, dm=cls.dm, dff=cls.dff, Pdrop=cls.Pdrop)
         cls.params = cls.d.init(key[3],
