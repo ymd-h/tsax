@@ -743,8 +743,9 @@ class Transformer(nn.Module):
 
     def __call__(self,
                  inputs: ArrayLike,
+                 inputs_mask: ArrayLike,
                  outputs: ArrayLike,
-                 mask: ArrayLike, *,
+                 outputs_mask: ArrayLike, *,
                  with_dropout: bool = False,
                  only_next: bool = False) -> Array:
         """
@@ -754,10 +755,12 @@ class Transformer(nn.Module):
         ----------
         inputs : ArrayLike
             Batched Tokenized Input Text. [B, L]
+        inputs_mask : ArrayLike
+            Batched Token Mask for Inputs. [B, L]
         outputs : ArrayLike
             Batched Tokenized Output Text. [B, L]
-        mask : ArrayLike
-            Batched Token Mask. [B, L]
+        outputs_mask : ArrayLike
+            Batched Token Mask for Outputs. [B, L]
         with_dropout : bool, optional
             Whether dropout or not.
         only_next : bool, optional
@@ -765,7 +768,7 @@ class Transformer(nn.Module):
 
         Returns
         -------
-        y : Array
+        p : Array
             Batched Token Probability. [B, L, V] / [B, V]
 
         Notes
@@ -776,8 +779,8 @@ class Transformer(nn.Module):
         assert inputs.shape[1] == self.L, "BUG"
         assert isinstance(with_dropout, bool), "BUG"
 
-        inputs = self.encode(inputs, mask, with_dropout)
+        inputs = self.encode(inputs, inputs_mask, with_dropout)
 
-        return self.decode(inputs, outputs, mask,
+        return self.decode(inputs, inputs_mask, outputs, outputs_mask,
                            with_dropout=with_dropout,
                            only_next=only_next)
