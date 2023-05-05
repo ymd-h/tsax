@@ -312,7 +312,7 @@ class MultiHeadAttention(nn.Module):
             Multi Head Attention. [B, L, dm]
         """
         assert Q.shape == K.shape == V.shape, "BUG"
-        assert Q.shape[:2] == mask.shape, "BUG"
+        assert (mask is None) or (Q.shape[:2] == mask.shape), "BUG"
 
         # x: [B, L, dm (= dm/nH * nH)]
         d: int = self.dm // self.nH
