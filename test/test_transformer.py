@@ -116,9 +116,10 @@ class TestAttention(unittest.TestCase):
         cls.K = jax.random.normal(key[2], (cls.B, cls.L, cls.dm))
         cls.V = jax.random.normal(key[3], (cls.B, cls.L, cls.dm))
 
-        cls.mask = jnp.asarray([[1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                                [1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0],
-                                [1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0]], dtype=int)
+        cls.mask = jnp.asarray([[[1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0]],
+                                [[1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0]],
+                                [[1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0]]], dtype=int)
+        assert cls.mask.shape == (cls.B, 1, cls.L), "BUG"
 
         cls.a = Attention(dk=cls.dk, dv=cls.dv)
         cls.params = cls.a.init(key[4], cls.Q, cls.K, cls.V, cls.mask)
@@ -126,12 +127,15 @@ class TestAttention(unittest.TestCase):
     def test_without_mask_without_jit(self):
         A = self.a.apply(self.params, self.Q, self.K, self.V)
         self.assertEqual(A.shape, (self.B, self.L, self.dv))
+        self.assertFalse(jnp.any(jnp.isnan(A)))
+
 
     def test_with_mask_without_jit(self):
         A = self.a.apply(self.params, self.Q, self.K, self.V, self.mask)
         self.assertEqual(A.shape, (self.B, self.L, self.dv))
         self.assertFalse(jnp.all(A == self.a.apply(self.params,
                                                    self.Q, self.K, self.V)))
+        self.assertFalse(jnp.any(jnp.isnan(A)))
 
     def test_empty_mask_without_jit(self):
         """
@@ -141,24 +145,72 @@ class TestAttention(unittest.TestCase):
         In usual usecase, we must pass at lease one token like ``[BOS]``.
         """
         A = self.a.apply(self.params, self.Q, self.K, self.V,
-                         jnp.zeros((self.B, self.L), dtype=int))
+                         jnp.zeros((self.B, 1, self.L), dtype=int))
         self.assertTrue(jnp.all(jnp.isnan(A)))
 
     def test_without_mask_with_jit(self):
         A = jax.jit(self.a.apply)(self.params, self.Q, self.K, self.V)
         self.assertEqual(A.shape, (self.B, self.L, self.dv))
+        self.assertFalse(jnp.any(jnp.isnan(A)))
 
     def test_with_mask_with_jit(self):
         f = jax.jit(self.a.apply)
         A = f(self.params, self.Q, self.K, self.V, self.mask)
         self.assertEqual(A.shape, (self.B, self.L, self.dv))
         self.assertFalse(jnp.all(A == f(self.params, self.Q, self.K, self.V)))
+        self.assertFalse(jnp.any(jnp.isnan(A)))
 
     def test_empty_mask_with_jit(self):
         A = jax.jit(self.a.apply)(self.params, self.Q, self.K, self.V,
-                                  jnp.zeros((self.B, self.L), dtype=int))
+                                  jnp.zeros((self.B, 1, self.L), dtype=int))
         self.assertTrue(jnp.all(jnp.isnan(A)))
 
+
+class TestMultiHeadAttention(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.B = 3
+        cls.L = 12
+        cls.dm = 10
+        cls.nH = 5
+        cls.Pdrop = 0.8
+
+        key = jax.random.split(jax.random.PRNGKey(0), 5)
+        cls.key = key[0]
+        cls.Q = jax.random.normal(key[1], (cls.B, cls.L, cls.dm))
+        cls.K = jax.random.normal(key[2], (cls.B, cls.L, cls.dm))
+        cls.V = jax.random.normal(key[3], (cls.B, cls.L, cls.dm))
+
+        cls.mask = jnp.asarray([[[1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0]],
+                                [[1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0]],
+                                [[1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0]]], dtype=int)
+        assert cls.mask.shape == (cls.B, 1, cls.L), "BUG"
+
+        cls.a = MultiHeadAttention(nH=cls.nH, dm=cls.dm, Pdrop=cls.Pdrop)
+        cls.params = cls.a.init(key[4], cls.Q, cls.K, cls.V, cls.mask)
+
+    def test_mha(self):
+        f = self.a.apply
+        f_jit = jax.jit(f)
+
+        A = f(self.params, self.Q, self.K, self.V)
+        self.assertEqual(A.shape, (self.B, self.L, self.dm))
+
+        A_jit = f_jit(self.params, self.Q, self.K, self.V)
+        self.assertEqual(A_jit.shape, (self.B, self.L, self.dm))
+
+        self.assertTrue(jnp.allclose(A, A_jit, atol=1e-6))
+
+        A_mask = f(self.params, self.Q, self.K, self.V, self.mask)
+        self.assertEqual(A_mask.shape, (self.B, self.L, self.dm))
+
+        self.assertFalse(jnp.allclose(A, A_mask, atol=1e-5))
+
+        A_mask_jit = f_jit(self.params, self.Q, self.K, self.V, self.mask)
+        self.assertEqual(A_mask_jit.shape, (self.B, self.L, self.dm))
+
+        self.assertTrue(jnp.allclose(A_mask, A_mask_jit, atol=1e-6, equal_nan=True))
+        self.assertFalse(jnp.allclose(A_jit, A_mask_jit, atol=1e-5, equal_nan=True))
 
 if __name__ == "__main__":
     unittest.main()
