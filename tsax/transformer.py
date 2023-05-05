@@ -101,6 +101,8 @@ class Embedding(nn.Module):
         # freq: [sin_dim]
         self.freq = 1.0 / (10000 ** (2 * jnp.arange(self.sin_dim) / self.dm))
 
+        self.drop = nn.Dropout(self.Pdrop, deterministic=False)
+
     def __call__(self, text: ArrayLike, with_dropout: bool = False) -> Array:
         """
         Call Embedding
@@ -130,9 +132,7 @@ class Embedding(nn.Module):
                     .at[:,:,1::2].add(jnp.cos(theta.at[:,:self.cos_dim].get())))
 
         if with_dropout:
-            embedded = embedded.at[:].set(
-                nn.Dropout(self.Pdrop, deterministic=False)(embedded)
-            )
+            embedded = embedded.at[:].set(self.drop(embedded))
 
         return embedded
 
