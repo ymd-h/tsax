@@ -594,17 +594,19 @@ class DecoderStack(nn.Module):
             Decoded Outputs. [B, L, dm]
         """
         assert inputs.shape == outputs.shape, "BUG"
-        assert inputs.shape[:2] == mask.shape, "BUG"
+        assert inputs.shape[:2] == inputs_mask.shape == outputs_mask.shape, "BUG"
 
+        B = inputs_mask.shape[0]
+        L = inputs_mask.shape[1]
 
         # inputs_mask: [B, 1, L]
         # 'Inputs Mask' is 'Padding Mask' (will be broadcasted)
-        inputs_mask = jnp.reshape(mask, (mask.shape[0], 1, mask.shape[1]))
+        inputs_mask = jnp.reshape(inputs_mask, (B, 1, L))
 
         # outputs_mask: [B, L, L]
         # 'Outputs Mask' is 'Padding Mask' & 'Subsequent Mask'
-        outputs_mask = (outputs_mask *
-                        jnp.tril(jnp.ones((mask.shape[1], mask.shape[1]), dtype=int)))
+        outputs_mask = (jnp.reshape(outputs_mask, (B, 1, L)) *
+                        jnp.tril(jnp.ones((L, L), dtype=int)))
 
 
         for i in range(self.N):
