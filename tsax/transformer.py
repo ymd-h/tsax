@@ -385,9 +385,10 @@ class EncoderLayer(nn.Module):
         # x: [B, L, m]
         inputs = ResidualLayerNorm(lambda i: mha(i, i, i, inputs_mask,
                                                  with_dropout=with_dropout),
-                                   eps)(inputs)
+                                   self.eps)(inputs)
         inputs = inputs.at[:].set(
-            ResidualLayerNorm(lambda i: ff(i, with_dropout=with_dropout), eps)(inputs)
+            ResidualLayerNorm(lambda i: ff(i, with_dropout=with_dropout),
+                              self.eps)(inputs)
         )
 
         assert inputs.shape == shape, "BUG"
