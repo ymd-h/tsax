@@ -91,6 +91,16 @@ class Embedding(nn.Module):
     def setup(self):
         self.embed = nn.Embed(self.V, self.dm)
 
+        self.scale = jnp.sqrt(self.dm)
+
+        half: int = self.dm // 2
+        self.sin_dim: int = half + (self.dm % 2)
+        self.cos_dim: int = half
+        # `sin_dim` is equal to `cos_dim` or `cos_dim + 1`
+
+        # freq: [sin_dim]
+        self.freq = 1.0 / (10000 ** (2 * jnp.arange(self.sin_dim) / self.dm))
+
     def __call__(self, text: ArrayLike, with_dropout: bool = False) -> Array:
         """
         Call Embedding
@@ -108,24 +118,16 @@ class Embedding(nn.Module):
             Embedded features with positional encoding. [B, L, dm]
         """
         # embedded: [B, L, dm]
-        embedded = self.embed(text) * jnp.sqrt(self.dm)
+        embedded = self.embed(text) * self.scale
         assert embedded.shape == (text.shape[0], self.L, self.dm), "BUG"
 
-        half: int = self.dm // 2
-        sin_dim: int = half + (self.dm % 2)
-        cos_dim: int = half
-        # `sin_dim` is equal to `cos_dim` or `cos_dim + 1`
-
-        # exponent: [sin_dim]
-        exponent = 2 * jnp.arange(sin_dim) / self.dm
-
         # theta: [L, sin_dim]
-        theta = jax.vmap(lambda pos: pos / (10000 ** exponent))(jnp.arange(self.L))
-        assert theta.shape == (self.L, sin_dim), "BUG"
+        theta = jax.vmap(lambda pos: pos * self.freq)(jnp.arange(self.L))
+        assert theta.shape == (self.L, self.sin_dim), "BUG"
 
         embedded = (embedded
-                    .at[:,:,0::2].add(jnp.sin(theta))                       # Even
-                    .at[:,:,1::2].add(jnp.cos(theta.at[:,:cos_dim].get()))) # Odd
+                    .at[:,:,0::2].add(jnp.sin(theta))
+                    .at[:,:,1::2].add(jnp.cos(theta.at[:,:self.cos_dim].get())))
 
         if with_dropout:
             embedded = embedded.at[:].set(
