@@ -237,7 +237,9 @@ class Attention(nn.Module):
             Attention. [B, L, dv]
         """
         assert Q.shape == K.shape == V.shape, "BUG"
-        assert (mask is None) or (Q.shape[:2] == mask.shape), "BUG"
+        assert ((mask is None) or
+                (mask.shape == (Q.shape[0], 1, Q.shape[1])) or
+                (mask.shape == (Q.shape[0], Q.shape[1], Q.shape[1]))), "BUG"
 
         # Q, K: [B, L, dm] -> [B, L, dk]
         Q = nn.Dense(features=self.dk, use_bias=False, name="WQ")(Q)
@@ -309,7 +311,9 @@ class MultiHeadAttention(nn.Module):
             Multi Head Attention. [B, L, dm]
         """
         assert Q.shape == K.shape == V.shape, "BUG"
-        assert (mask is None) or (Q.shape[:2] == mask.shape), "BUG"
+        assert ((mask is None) or
+                (mask.shape == (Q.shape[0], 1, Q.shape[1])) or
+                (mask.shape == (Q.shape[0], Q.shape[1], Q.shape[1]))), "BUG"
 
         # x: [B, L, dm (= dm/nH * nH)]
         d: int = self.dm // self.nH
