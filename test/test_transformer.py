@@ -130,14 +130,18 @@ class TestAttention(unittest.TestCase):
     def test_with_mask_without_jit(self):
         A = self.a.apply(self.params, self.Q, self.K, self.V, self.mask)
         self.assertEqual(A.shape, (self.B, self.L, self.dv))
+        self.assertFalse(jnp.all(A == self.a.apply(self.params,
+                                                   self.Q, self.K, self.V)))
 
     def test_without_mask_with_jit(self):
         A = jax.jit(self.a.apply)(self.params, self.Q, self.K, self.V)
         self.assertEqual(A.shape, (self.B, self.L, self.dv))
 
     def test_with_mask_with_jit(self):
-        A = jax.jit(self.a.apply)(self.params, self.Q, self.K, self.V, self.mask)
+        f = jax.jit(self.a.apply)
+        A = f(self.params, self.Q, self.K, self.V, self.mask)
         self.assertEqual(A.shape, (self.B, self.L, self.dv))
+        self.assertFalse(jnp.all(A == f(self.params, self.Q, self.K, self.V)))
 
 if __name__ == "__main__":
     unittest.main()
