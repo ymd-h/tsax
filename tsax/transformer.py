@@ -681,11 +681,11 @@ class Transformer(nn.Module):
         outputs = self.decoder(inputs, outputs, mask, with_dropout)
         assert outputs.shape == (x.shape[0], self.L, self.dm), "BUG"
 
-        # y: [B, L, V]
+        # p: [B, L, V]
         p = self.embed.attend(outputs)
         assert p.shape == (outputs.shape[0], self.L, self.V), "BUG"
 
-        # y: [B, L, V]
+        # p: [B, L, V]
         p = nn.activation.softmax(p)
         return p
 
