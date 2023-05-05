@@ -133,6 +133,17 @@ class TestAttention(unittest.TestCase):
         self.assertFalse(jnp.all(A == self.a.apply(self.params,
                                                    self.Q, self.K, self.V)))
 
+    def test_empty_mask_without_jit(self):
+        """
+        If ``mask`` is empty (aka. ``[0, 0, ..., 0]``),
+        attention returns ``[nan, nan, ..., nan]`` because of softmax.
+
+        In usual usecase, we must pass at lease one token like ``[BOS]``.
+        """
+        A = self.a.apply(self.params, self.Q, self.K, self.V,
+                         jnp.zeros((self.B, self.L), dtype=int))
+        self.assertTrue(jnp.all(jnp.isnan(A)))
+
     def test_without_mask_with_jit(self):
         A = jax.jit(self.a.apply)(self.params, self.Q, self.K, self.V)
         self.assertEqual(A.shape, (self.B, self.L, self.dv))
@@ -142,6 +153,12 @@ class TestAttention(unittest.TestCase):
         A = f(self.params, self.Q, self.K, self.V, self.mask)
         self.assertEqual(A.shape, (self.B, self.L, self.dv))
         self.assertFalse(jnp.all(A == f(self.params, self.Q, self.K, self.V)))
+
+    def test_empty_mask_with_jit(self):
+        A = jax.jit(self.a.apply)(self.params, self.Q, self.K, self.V,
+                                  jnp.zeros((self.B, self.L), dtype=int))
+        self.assertTrue(jnp.all(jnp.isnan(A)))
+
 
 if __name__ == "__main__":
     unittest.main()
