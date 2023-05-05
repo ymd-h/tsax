@@ -250,8 +250,9 @@ class Attention(nn.Module):
 
         # Note: Python control flow is statically decided during `jit`-compiling.
         if mask is not None:
-            # mask: [B, L] -> [B, 1, L]
-            mask = jnp.reshape(mask, mask.shape[0], 1, mask.shape[1])
+            # mask: [B, L] -> [B, L, L]
+            mask = jnp.tril(jnp.reshape(mask, (-1, 1, mask.shape[-1])) *
+                            jnp.reshape(mask, (-1, mask.shape[-1], 1)))
             QK = QK.at[:].set(jnp.where(mask==1, QK, -jnp.inf))
 
         QK = QK.at[:].div(jnp.sqrt(self.dk))
