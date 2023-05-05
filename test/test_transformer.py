@@ -282,9 +282,14 @@ class TestDecoderLayer(unittest.TestCase):
         cls.inputs_mask = jnp.asarray([[[1,1,1,1,1,0,0,0,0,0,0,0]],
                                        [[1,0,0,0,0,0,0,0,0,0,0,0]],
                                        [[1,1,1,1,1,1,1,1,1,0,0,0]]], dtype=int)
+        cls.inputs.at[:].multiply(jnp.reshape(cls.inputs_mask, (cls.B, cls.L, 1)))
 
         cls.outputs = jax.random.normal(key[2], (cls.B, cls.L, cls.dm))
-        cls.outputs_mask = (cls.inputs_mask *
+        cls.outputs_mask = jnp.asarray([[[1,1,1,1,1,0,0,0,0,0,0,0]],
+                                        [[1,1,1,1,0,0,0,0,0,0,0,0]],
+                                        [[1,1,1,1,1,1,1,1,1,1,1,0]]], dtype=int)
+        cls.outputs.at[:].multiply(jnp.reshape(cls.outputs_mask, (cls.B, cls.L, 1)))
+        cls.outputs_mask = (cls.outputs_mask *
                             jnp.tril(jnp.ones((cls.L, cls.L), dtype=int)))
 
         cls.d = DecoderLayer(nH=cls.nH, dm=cls.dm, dff=cls.dff, Pdrop=cls.Pdrop)
@@ -396,9 +401,9 @@ class TestDecoderStack(unittest.TestCase):
         cls.key = key[0]
         cls.inputs = jax.random.normal(key[1], (cls.B, cls.L, cls.dm))
         cls.outputs = jax.random.normal(key[2], (cls.B, cls.L, cls.dm))
-        cls.mask = jnp.asarray([[1,1,1,1,1,0,0,0,0,0,0,0],
-                                [1,0,0,0,0,0,0,0,0,0,0,0],
-                                [1,1,1,1,1,1,1,1,1,0,0,0]], dtype=int)
+        cls.inputs_mask = jnp.asarray([[1,1,1,1,1,0,0,0,0,0,0,0],
+                                       [1,0,0,0,0,0,0,0,0,0,0,0],
+                                       [1,1,1,1,1,1,1,1,1,0,0,0]], dtype=int)
 
         cls.d = DecoderStack(N=cls.N, nH=cls.nH,
                              dm=cls.dm, dff=cls.dff,
