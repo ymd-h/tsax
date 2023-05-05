@@ -457,5 +457,103 @@ class TestDecoderStack(unittest.TestCase):
 
         self.assertTrue(jnp.allclose(D_drop, D_drop_jit, atol=1e-6))
 
+
+class TestTransformer(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.B = 3
+        cls.L = 12
+        cls.V = 20
+        cls.N = 2
+        cls.dm = 10
+        cls.nH = 5
+        cls.dff = 32
+        cls.Pdrop = 0.8
+
+        key = jax.random.split(jax.random.PRNGKey(0), 4)
+        cls.key = key[0]
+
+        cls.inputs = jax.random.randint(key[1], (cls.B, cls.L), 0, cls.V)
+        cls.inputs_mask = jnp.asarray([[1,1,1,1,1,1,0,0,0,0,0,0],
+                                       [1,1,1,1,1,1,1,1,1,1,1,0],
+                                       [1,1,1,0,0,0,0,0,0,0,0,0]], dtype=int)
+        cls.inputs.at[:].multiply(cls.inputs_mask)
+
+        cls.outputs = jax.random.randint(key[2], (cls.B, cls.L), 0, cls.V)
+        cls.outputs_mask = jnp.asarray([[1,1,1,1,1,1,0,0,0,0,0,0],
+                                        [1,1,0,0,0,0,0,0,0,0,0,0],
+                                        [1,1,1,1,1,1,1,1,1,1,0,0]], dtype=int)
+        cls.outputs.at[:].multiply(cls.outputs_mask)
+
+        cls.T = Transformer(V=cls.V, L=cls.L,
+                            N=cls.N, nH=cls.nH,
+                            dm=cls.dm, dff=cls.dff, Pdrop=cls.Pdrop)
+        cls.params = cls.T.init(key[3],
+                                cls.inputs, cls.inputs_mask,
+                                cls.outputs, cls.outputs_mask)
+
+    def test_transformer(self):
+        f = self.T.apply
+        f_jit = jax.jit(f, static_argnames=["with_dropout", "only_next", "method"])
+
+        p = f(self.params,
+              self.inputs, self.inputs_mask,
+              self.outputs, self.outputs_mask)
+        self.assertEqual(p.shape, (self.B, self.L, self.V))
+
+        p_jit = f_jit(self.params,
+                      self.inputs, self.inputs_mask,
+                      self.outputs, self.outputs_mask)
+        self.assertEqual(p_jit.shape, (self.B, self.L, self.V))
+
+        self.assertTrue(jnp.allclose(p, p_jit, atol=1e-6))
+
+        p_drop = f(self.params,
+                   self.inputs, self.inputs_mask,
+                   self.outputs, self.outputs_mask,
+                   with_dropout=True, rngs={"dropout": self.key})
+        self.assertEqual(p_drop.shape, (self.B, self.L, self.V))
+        self.assertFalse(jnp.allclose(p, p_drop, atol=1e-5))
+
+        p_drop_jit = f_jit(self.params,
+                           self.inputs, self.inputs_mask,
+                           self.outputs, self.outputs_mask,
+                           with_dropout=True, rngs={"dropout": self.key})
+        self.assertEqual(p_drop_jit.shape, (self.B, self.L, self.V))
+        self.assertFalse(jnp.allclose(p_jit, p_drop_jit, atol=1e-5))
+
+        self.assertTrue(jnp.allclose(p_drop, p_drop_jit, atol=1e-6))
+
+        p_ed = f(self.params,
+                 f(self.params, self.inputs, self.inputs_mask, method="encode"),
+                 self.inputs_mask,
+                 self.outputs, self.outputs_mask,
+                 method="decode")
+        self.assertTrue(jnp.allclose(p, p_ed, atol=1e-6))
+
+        p_ed_jit = f_jit(self.params,
+                         f_jit(self.params, self.inputs, self.inputs_mask,
+                               method="encode"),
+                         self.inputs_mask,
+                         self.outputs, self.outputs_mask,
+                         method="decode")
+        self.assertTrue(jnp.allclose(p, p_ed, atol=1e-6))
+
+        p_next = f(self.params,
+                   self.inputs, self.inputs_mask,
+                   self.outputs, self.outputs_mask,
+                   only_next=True)
+        self.assertEqual(p_next.shape, (self.B, self.V))
+
+        p_next_jit = f_jit(self.params,
+                           self.inputs, self.inputs_mask,
+                           self.outputs, self.outputs_mask,
+                           only_next=True)
+        self.assertEqual(p_next_jit.shape, (self.B, self.V))
+
+        self.assertTrue(jnp.allclose(p_next, p_next_jit, atol=1e-6))
+
+
+
 if __name__ == "__main__":
     unittest.main()
