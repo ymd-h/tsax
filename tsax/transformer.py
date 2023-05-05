@@ -166,7 +166,7 @@ class FeedForward(nn.Module):
     Pdrop: float = PDROP
 
     @nn.compact
-    def __call__(self, x: ArrayLike, with_dropout: bool = False) -> Array:
+    def __call__(self, x: ArrayLike, *, with_dropout: bool = False) -> Array:
         """
         Call Position-wise Feed Forward Network
 
@@ -286,7 +286,7 @@ class MultiHeadAttention(nn.Module):
                  Q: ArrayLike,
                  K: ArrayLike,
                  V: ArrayLike,
-                 mask: Optional[ArrayLike] = None,
+                 mask: Optional[ArrayLike] = None, *,
                  with_dropout: bool = False) -> Array:
         """
         Multi Head Attention
@@ -353,7 +353,7 @@ class EncoderLayer(nn.Module):
     Pdrop: float = PDROP
 
     @nn.compact
-    def __call__(self, inputs: ArrayLike, with_dropout: bool = False) -> Array:
+    def __call__(self, inputs: ArrayLike, *, with_dropout: bool = False) -> Array:
         """
         Call Encoder Layer
 
@@ -375,9 +375,10 @@ class EncoderLayer(nn.Module):
         ff = FeedForward(dff=self.dff, Pdrop=self.Pdrop)
 
         # x: [B, L, m]
-        inputs = ResidualLayerNorm(lambda i: mha(i, i, i, with_dropout), eps)(inputs)
+        inputs = ResidualLayerNorm(lambda i: mha(i, i, i, with_dropout=with_dropout),
+                                   eps)(inputs)
         inputs = inputs.at[:].set(
-            ResidualLayerNorm(lambda i: ff(i, with_dropout), eps)(inputs)
+            ResidualLayerNorm(lambda i: ff(i, with_dropout=with_dropout), eps)(inputs)
         )
 
         assert inputs.shape == shape, "BUG"
@@ -411,7 +412,7 @@ class DecoderLayer(nn.Module):
     def __call__(self,
                  inputs: ArrayLike,
                  outputs: ArrayLike,
-                 mask: ArrayLike,
+                 mask: ArrayLike, *,
                  with_dropout: bool = False) -> Array:
         """
         Call Decoder Layer
@@ -442,9 +443,9 @@ class DecoderLayer(nn.Module):
                                   name="MultiHeadAttention")
         ff = FeedForward(dff=self.dff, Pdrop=self.Pdrop)
 
-        mmha_f = lambda o: mmha(o, o, o, mask, with_dropout)
-        mha_f = lambda o: mha(o, inputs, inputs, with_dropout)
-        ff_f = lambda o: ff(o, with_dropout)
+        mmha_f = lambda o: mmha(o, o, o, mask, with_dropout=with_dropout)
+        mha_f = lambda o: mha(o, inputs, inputs, with_dropout=with_dropout)
+        ff_f = lambda o: ff(o, with_dropout=with_dropout)
 
         outputs = ResidualLayerNorm(mmha_f, eps)(outputs)
         outputs = outputs.at[:].set(ResidualLayerNorm(mha_f, eps)(outputs))
@@ -481,7 +482,7 @@ class EncoderStack(nn.Module):
     Pdrop: float = PDROP
 
     @nn.compact
-    def __call__(self, inputs: ArrayLike, with_dropout: bool = False) -> Array:
+    def __call__(self, inputs: ArrayLike, *, with_dropout: bool = False) -> Array:
         """
         Call Encoder Stack
 
@@ -505,7 +506,8 @@ class EncoderStack(nn.Module):
                                   dff=self.dff,
                                   eps=self.eps,
                                   Pdrop=self.Pdrop,
-                                  name=f"EncoderLayer_{i}")(inputs, with_dropout)
+                                  name=f"EncoderLayer_{i}")(inputs,
+                                                            with_dropout=with_dropout)
 
         assert inputs.shape == shape, "BUG"
         return inputs
@@ -541,7 +543,7 @@ class DecoderStack(nn.Module):
     def __call__(self,
                  inputs: ArrayLike,
                  outputs: ArrayLike,
-                 mask: ArrayLike,
+                 mask: ArrayLike, *,
                  with_dropout: bool = False) -> Array:
         """
         Call Decoder Stack
@@ -574,7 +576,7 @@ class DecoderStack(nn.Module):
                                    name=f"DecoderLayer_{i}")(inputs,
                                                              outputs,
                                                              mask,
-                                                             with_dropout)
+                                                             with_dropout=with_dropout)
 
         assert inputs.shape == outputs.shape, "BUG"
         return outputs
@@ -627,7 +629,7 @@ class Transformer(nn.Module):
                                     eps=self.eps,
                                     Pdrop=self.Pdrop)
 
-    def encode(self, inputs: ArrayLike, with_dropout: bool = False) -> Array:
+    def encode(self, inputs: ArrayLike, *, with_dropout: bool = False) -> Array:
         """
         Encode with Transformer
 
@@ -643,10 +645,10 @@ class Transformer(nn.Module):
         inputs : Array
             Encoded Inputs
         """
-        inputs = self.embed(inputs, with_dropout)
+        inputs = self.embed(inputs, with_dropout=with_dropout)
 
         # inputs: [B, L, dm]
-        inputs = self.encoder(inputs, with_dropout)
+        inputs = self.encoder(inputs, with_dropout=with_dropout)
         assert inputs.shape == (x.shape[0], self.L, self.dm), "BUG"
 
         return inputs
@@ -654,8 +656,9 @@ class Transformer(nn.Module):
     def decode(self,
                inputs: ArrayLike,
                outputs: ArrayLike,
-               mask: ArrayLike,
-               with_dropout: bool = False) -> Array:
+               mask: ArrayLike, *,
+               with_dropout: bool = False,
+               only_next: bool = False) -> Array:
         """
         Decode with Transformer
 
