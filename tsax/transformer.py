@@ -731,18 +731,20 @@ class Transformer(nn.Module):
         p : Array
             Batched Token Probability. [B, L, V] / [B, V]
         """
+        B = inputs.shape[0]
+
         outputs = self.embed(outputs, with_dropout=with_dropout)
 
         # outputs: [B, L, dm]
         outputs = self.decoder(inputs, inputs_mask,
                                outputs, outputs_mask,
                                with_dropout=with_dropout)
-        assert outputs.shape == (inputs.shape[0], self.L, self.dm), "BUG"
+        assert outputs.shape == (B, self.L, self.dm), "BUG"
 
         if only_next:
             # outputs: [B, dm]
             outputs = jnp.take(outputs, jnp.argmin(outputs_mask, axis=1), axis=1)
-            assert outputs.shape == (x.shape[0], self.dm), "BUG"
+            assert outputs.shape == (B, self.dm), "BUG"
 
         # p: [B, L, V] / [B, V]
         p = self.embed.attend(outputs)
