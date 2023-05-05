@@ -195,22 +195,26 @@ class TestMultiHeadAttention(unittest.TestCase):
 
         A = f(self.params, self.Q, self.K, self.V)
         self.assertEqual(A.shape, (self.B, self.L, self.dm))
+        self.assertFalse(jnp.any(jnp.isnan(A)))
 
         A_jit = f_jit(self.params, self.Q, self.K, self.V)
         self.assertEqual(A_jit.shape, (self.B, self.L, self.dm))
+        self.assertFalse(jnp.any(jnp.isnan(A_jit)))
 
         self.assertTrue(jnp.allclose(A, A_jit, atol=1e-6))
 
         A_mask = f(self.params, self.Q, self.K, self.V, self.mask)
         self.assertEqual(A_mask.shape, (self.B, self.L, self.dm))
+        self.assertFalse(jnp.any(jnp.isnan(A_mask)))
 
         self.assertFalse(jnp.allclose(A, A_mask, atol=1e-5))
 
         A_mask_jit = f_jit(self.params, self.Q, self.K, self.V, self.mask)
         self.assertEqual(A_mask_jit.shape, (self.B, self.L, self.dm))
+        self.assertFalse(jnp.any(jnp.isnan(A_mask_jit)))
 
-        self.assertTrue(jnp.allclose(A_mask, A_mask_jit, atol=1e-6, equal_nan=True))
-        self.assertFalse(jnp.allclose(A_jit, A_mask_jit, atol=1e-5, equal_nan=True))
+        self.assertTrue(jnp.allclose(A_mask, A_mask_jit, atol=1e-6))
+        self.assertFalse(jnp.allclose(A_jit, A_mask_jit, atol=1e-5))
 
 if __name__ == "__main__":
     unittest.main()
