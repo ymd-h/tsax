@@ -421,8 +421,8 @@ class DecoderLayer(nn.Module):
     @nn.compact
     def __call__(self,
                  inputs: ArrayLike,
-                 outputs: ArrayLike,
                  inputs_mask: ArrayLike,
+                 outputs: ArrayLike,
                  outputs_mask: ArrayLike, *,
                  with_dropout: bool = False) -> Array:
         """
@@ -432,10 +432,10 @@ class DecoderLayer(nn.Module):
         ----------
         inputs : ArrayLike
             Encoded Inputs. [B, L, dm]
-        outputs : ArrayLike
-            Outputs. [B, L, dm]
         inputs_mask : ArrayLike
             Padding Mask. [B, 1, L]
+        outputs : ArrayLike
+            Outputs. [B, L, dm]
         outputs_mask : ArrayLike
             Paddding & Subsequent Mask. [B, L, L]
         with_dropout : bool, optional
@@ -608,8 +608,8 @@ class DecoderStack(nn.Module):
                                    eps=self.eps,
                                    Pdrop=self.Pdrop,
                                    name=f"DecoderLayer_{i}")(inputs,
-                                                             outputs,
                                                              inputs_mask,
+                                                             outputs,
                                                              outputs_mask,
                                                              with_dropout=with_dropout)
 
