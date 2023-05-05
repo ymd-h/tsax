@@ -568,8 +568,9 @@ class DecoderStack(nn.Module):
     @nn.compact
     def __call__(self,
                  inputs: ArrayLike,
+                 inputs_mask: ArrayLike,
                  outputs: ArrayLike,
-                 mask: ArrayLike, *,
+                 outputs_mask: ArrayLike, *,
                  with_dropout: bool = False) -> Array:
         """
         Call Decoder Stack
@@ -578,10 +579,12 @@ class DecoderStack(nn.Module):
         ----------
         inputs : ArrrayLike
             Encoded Inputs. [B, L, dm]
+        inputs_mask : ArrayLike
+            Batched Token Mask for Inputs. [B, L]
         outputs : ArrayLike
             Outputs. [B, L, dm]
-        mask : ArrayLike
-            Batched Token Mask. [B, L]
+        outputs_mask : ArrayLike
+            Batched Token Mask for Outputs. [B, L]
         with_dropout : bool, optional
             Whether dropout or not.
 
@@ -600,7 +603,7 @@ class DecoderStack(nn.Module):
 
         # outputs_mask: [B, L, L]
         # 'Outputs Mask' is 'Padding Mask' & 'Subsequent Mask'
-        outputs_mask = (inputs_mask *
+        outputs_mask = (outputs_mask *
                         jnp.tril(jnp.ones((mask.shape[1], mask.shape[1]), dtype=int)))
 
 
