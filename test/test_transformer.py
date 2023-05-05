@@ -101,5 +101,43 @@ class TestFeedForward(unittest.TestCase):
                                         rngs={"dropout": key2})))
 
 
+class TestAttention(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.B = 3
+        cls.L = 12
+        cls.dm = 10
+        cls.dk = 5
+        cls.dv = 5
+
+        key = jax.random.split(jax.random.PRNGKey(0), 5)
+        cls.key = key[0]
+        cls.Q = jax.random.normal(key[1], (cls.B, cls.L, cls.dm))
+        cls.K = jax.random.normal(key[2], (cls.B, cls.L, cls.dm))
+        cls.V = jax.random.normal(key[3], (cls.B, cls.L, cls.dm))
+
+        cls.mask = jnp.asarray([[1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                                [1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0],
+                                [1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0]], dtype=int)
+
+        cls.a = Attention(dk=cls.dk, dv=cls.dv)
+        cls.params = cls.a.init(key[4], cls.Q, cls.K, cls.V, cls.mask)
+
+    def test_without_mask_without_jit(self):
+        A = self.a.apply(self.params, self.Q, self.K, self.V)
+        self.assertEqual(A.shape, (self.B, self.L, self.dv))
+
+    def test_with_mask_without_jit(self):
+        A = self.a.apply(self.params, self.Q, self.K, self.V, self.mask)
+        self.assertEqual(A.shape, (self.B, self.L, self.dv))
+
+    def test_without_mask_with_jit(self):
+        A = jax.jit(self.a.apply)(self.params, self.Q, self.K, self.V)
+        self.assertEqual(A.shape, (self.B, self.L, self.dv))
+
+    def test_with_mask_with_jit(self):
+        A = jax.jit(self.a.apply)(self.params, self.Q, self.K, self.V, self.mask)
+        self.assertEqual(A.shape, (self.B, self.L, self.dv))
+
 if __name__ == "__main__":
     unittest.main()
