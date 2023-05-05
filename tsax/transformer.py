@@ -234,10 +234,10 @@ class Attention(nn.Module):
         Returns
         -------
         A : Array
-            Attention. [B, dv]
+            Attention. [B, L, dv]
         """
         assert Q.shape == K.shape == V.shape, "BUG"
-        assert Q.shape[:2] == mask.shape, "BUG"
+        assert (mask is None) or (Q.shape[:2] == mask.shape), "BUG"
 
         # Q, K: [B, L, dm] -> [B, L, dk]
         Q = nn.Dense(features=self.dk, use_bias=False, name="WQ")(Q)
@@ -257,7 +257,7 @@ class Attention(nn.Module):
                             jnp.reshape(mask, (-1, mask.shape[-1], 1)))
             QK = QK.at[:].set(jnp.where(mask==1, QK, -jnp.inf))
 
-        QK = QK.at[:].div(jnp.sqrt(self.dk))
+        QK = QK.at[:].divide(jnp.sqrt(self.dk))
 
         # A: [B, L, dv]
         A: Array = jnp.matmul(nn.activation.softmax(QK), V)
