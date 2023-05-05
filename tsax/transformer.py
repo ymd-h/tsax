@@ -229,7 +229,7 @@ class Attention(nn.Module):
         V : ArrayLike
             Value. [B, L, dm]
         mask : ArrayLike, optional
-            Mask. [B, L]
+            Mask. [B, 1, L]/[B, L, L]
 
         Returns
         -------
@@ -252,9 +252,6 @@ class Attention(nn.Module):
 
         # Note: Python control flow is statically decided during `jit`-compiling.
         if mask is not None:
-            # mask: [B, L] -> [B, L, L]
-            mask = jnp.tril(jnp.reshape(mask, (-1, 1, mask.shape[-1])) *
-                            jnp.reshape(mask, (-1, mask.shape[-1], 1)))
             QK = QK.at[:].set(jnp.where(mask==1, QK, -jnp.inf))
 
         QK = QK.at[:].divide(jnp.sqrt(self.dk))
@@ -302,7 +299,7 @@ class MultiHeadAttention(nn.Module):
         V : ArrayLike
             Value. [B, L, dm]
         mask : ArrayLike, optional
-            Batched Token Mask. [B, L]
+            Batched Token Mask. [B, 1, L]/[B, L, L]
         with_dropout : bool, optional
             Whether dropout or not.
 
@@ -355,7 +352,10 @@ class EncoderLayer(nn.Module):
     Pdrop: float = PDROP
 
     @nn.compact
-    def __call__(self, inputs: ArrayLike, *, with_dropout: bool = False) -> Array:
+    def __call__(self,
+                 inputs: ArrayLike,
+                 inputs_mask: ArrayLike, *,
+                 with_dropout: bool = False) -> Array:
         """
         Call Encoder Layer
 
@@ -363,6 +363,8 @@ class EncoderLayer(nn.Module):
         ----------
         inputs : ArrayLike
             Inputs. [B, L, dm]
+        inputs_mask : ArrayLike
+            Padding Mask. [B, 1, L]
         with_dropout : bool, optional
             Whether dropout or not.
 
@@ -377,7 +379,8 @@ class EncoderLayer(nn.Module):
         ff = FeedForward(dff=self.dff, Pdrop=self.Pdrop)
 
         # x: [B, L, m]
-        inputs = ResidualLayerNorm(lambda i: mha(i, i, i, with_dropout=with_dropout),
+        inputs = ResidualLayerNorm(lambda i: mha(i, i, i, inputs_mask,
+                                                 with_dropout=with_dropout),
                                    eps)(inputs)
         inputs = inputs.at[:].set(
             ResidualLayerNorm(lambda i: ff(i, with_dropout=with_dropout), eps)(inputs)
@@ -414,7 +417,8 @@ class DecoderLayer(nn.Module):
     def __call__(self,
                  inputs: ArrayLike,
                  outputs: ArrayLike,
-                 mask: ArrayLike, *,
+                 inputs_mask: ArrayLike,
+                 outputs_mask: ArrayLike, *,
                  with_dropout: bool = False) -> Array:
         """
         Call Decoder Layer
@@ -425,8 +429,10 @@ class DecoderLayer(nn.Module):
             Encoded Inputs. [B, L, dm]
         outputs : ArrayLike
             Outputs. [B, L, dm]
-        mask : ArrayLike
-            Batched Token Mask. [B, L]
+        inputs_mask : ArrayLike
+            Padding Mask. [B, 1, L]
+        outputs_mask : ArrayLike
+            Paddding & Subsequent Mask. [B, L, L]
         with_dropout : bool, optional
             Whether dropout or not.
 
@@ -445,8 +451,8 @@ class DecoderLayer(nn.Module):
                                   name="MultiHeadAttention")
         ff = FeedForward(dff=self.dff, Pdrop=self.Pdrop)
 
-        mmha_f = lambda o: mmha(o, o, o, mask, with_dropout=with_dropout)
-        mha_f = lambda o: mha(o, inputs, inputs, with_dropout=with_dropout)
+        mmha_f = lambda o: mmha(o, o, o, outputs_mask, with_dropout=with_dropout)
+        mha_f = lambda o: mha(o, inputs, inputs, inputs_mask, with_dropout=with_dropout)
         ff_f = lambda o: ff(o, with_dropout=with_dropout)
 
         outputs = ResidualLayerNorm(mmha_f, eps)(outputs)
@@ -484,7 +490,10 @@ class EncoderStack(nn.Module):
     Pdrop: float = PDROP
 
     @nn.compact
-    def __call__(self, inputs: ArrayLike, *, with_dropout: bool = False) -> Array:
+    def __call__(self,
+                 inputs: ArrayLike,
+                 mask: ArrayLike, *,
+                 with_dropout: bool = False) -> Array:
         """
         Call Encoder Stack
 
@@ -492,6 +501,8 @@ class EncoderStack(nn.Module):
         ----------
         inputs : ArrayLike
             Inputs. [B, L, dm]
+        mask : ArrayLike
+            Batched Token Mask. [B, L]
         with_dropout : bool, optional
             Whether dropout or not.
 
@@ -502,6 +513,10 @@ class EncoderStack(nn.Module):
         """
         shape = inputs.shape
 
+        # inputs_mask: [B, 1, L]
+        # 'Inputs Mask' is 'Padding Mask' (will be broadcasted)
+        inputs_mask = jnp.reshape(mask, (mask.shape[0], 1, mask.shape[1]))
+
         for i in range(self.N):
             inputs = EncoderLayer(nH=self.nH,
                                   dm=self.dm,
@@ -509,6 +524,7 @@ class EncoderStack(nn.Module):
                                   eps=self.eps,
                                   Pdrop=self.Pdrop,
                                   name=f"EncoderLayer_{i}")(inputs,
+                                                            inputs_mask,
                                                             with_dropout=with_dropout)
 
         assert inputs.shape == shape, "BUG"
@@ -569,6 +585,17 @@ class DecoderStack(nn.Module):
         assert inputs.shape == outputs.shape, "BUG"
         assert inputs.shape[:2] == mask.shape, "BUG"
 
+
+        # inputs_mask: [B, 1, L]
+        # 'Inputs Mask' is 'Padding Mask' (will be broadcasted)
+        inputs_mask = jnp.reshape(mask, (mask.shape[0], 1, mask.shape[1]))
+
+        # outputs_mask: [B, L, L]
+        # 'Outputs Mask' is 'Padding Mask' & 'Subsequent Mask'
+        outputs_mask = (inputs_mask *
+                        jnp.tril(jnp.ones((mask.shape[1], mask.shape[1]), dtype=int)))
+
+
         for i in range(self.N):
             outputs = DecoderLayer(nH=self.nH,
                                    dm=self.dm,
@@ -577,7 +604,8 @@ class DecoderStack(nn.Module):
                                    Pdrop=self.Pdrop,
                                    name=f"DecoderLayer_{i}")(inputs,
                                                              outputs,
-                                                             mask,
+                                                             inputs_mask,
+                                                             outputs_mask,
                                                              with_dropout=with_dropout)
 
         assert inputs.shape == outputs.shape, "BUG"
@@ -735,7 +763,7 @@ class Transformer(nn.Module):
         assert inputs.shape[1] == self.L, "BUG"
         assert isinstance(with_dropout, bool), "BUG"
 
-        inputs = self.encode(inputs, with_dropout)
+        inputs = self.encode(inputs, mask, with_dropout)
 
         return self.decode(inputs, outputs, mask,
                            with_dropout=with_dropout,
