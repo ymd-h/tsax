@@ -316,8 +316,8 @@ class MultiHeadAttention(nn.Module):
 
         # x: [B, L, dm (= dm/nH * nH)]
         d: int = self.dm // self.nH
-        x = jnp.concatenate((Attention(dk=d, dv=d, name=f"head_{i}")(Q, K, V, mask)
-                             for i in range(self.nH)),
+        x = jnp.concatenate([Attention(dk=d, dv=d, name=f"head_{i}")(Q, K, V, mask)
+                             for i in range(self.nH)],
                             axis=2)
         assert x.shape == (*Q.shape[:2], d * self.nH), "BUG"
 
