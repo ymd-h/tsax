@@ -672,31 +672,38 @@ class Transformer(nn.Module):
             Batched Token Mask. [B, L]
         with_dropout : bool, optional
             Whether dropout or not.
+        only_next : bool, optional
+            Whether return only the next token or not.
 
         Returns
         -------
         p : Array
-            Batched Token Probability. [B, L, V]
+            Batched Token Probability. [B, L, V] / [B, V]
         """
-        outputs = self.embed(outputs, with_dropout)
+        outputs = self.embed(outputs, with_dropout=with_dropout)
 
         # outputs: [B, L, dm]
-        outputs = self.decoder(inputs, outputs, mask, with_dropout)
+        outputs = self.decoder(inputs, outputs, mask, with_dropout=with_dropout)
         assert outputs.shape == (x.shape[0], self.L, self.dm), "BUG"
 
-        # p: [B, L, V]
-        p = self.embed.attend(outputs)
-        assert p.shape == (outputs.shape[0], self.L, self.V), "BUG"
+        if only_next:
+            # outputs: [B, dm]
+            outputs = jnp.take(outputs, jnp.argmin(mask, axis=1), axis=1)
+            assert outputs.shape == (x.shape[0], self.dm), "BUG"
 
-        # p: [B, L, V]
+        # p: [B, L, V] / [B, V]
+        p = self.embed.attend(outputs)
+        assert p.shape == (*outputs.shape[:-1], self.V), "BUG"
+
         p = nn.activation.softmax(p)
         return p
 
     def __call__(self,
                  inputs: ArrayLike,
                  outputs: ArrayLike,
-                 mask: ArrayLike,
-                 with_dropout: bool=False) -> Array:
+                 mask: ArrayLike, *,
+                 with_dropout: bool = False,
+                 only_next: bool = False) -> Array:
         """
         Call Transformer
 
@@ -710,11 +717,13 @@ class Transformer(nn.Module):
             Batched Token Mask. [B, L]
         with_dropout : bool, optional
             Whether dropout or not.
+        only_next : bool, optional
+            Whether return only the next token or not.
 
         Returns
         -------
         y : Array
-            Batched Token Probability. [B, L, V]
+            Batched Token Probability. [B, L, V] / [B, V]
 
         Notes
         -----
@@ -726,4 +735,6 @@ class Transformer(nn.Module):
 
         inputs = self.encode(inputs, with_dropout)
 
-        return self.decode(inputs, outputs, mask, with_dropout)
+        return self.decode(inputs, outputs, mask,
+                           with_dropout=with_dropout,
+                           only_next=only_next)
