@@ -27,7 +27,7 @@ class ResidualLayerNorm(nn.Module):
     eps: float
 
     @nn.compact
-    def __call__(x: ArrayLike) -> Array:
+    def __call__(self, x: ArrayLike) -> Array:
         """
         Residual Connection followed by Layer Normalization
 
