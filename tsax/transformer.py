@@ -672,7 +672,10 @@ class Transformer(nn.Module):
                                     eps=self.eps,
                                     Pdrop=self.Pdrop)
 
-    def encode(self, inputs: ArrayLike, *, with_dropout: bool = False) -> Array:
+    def encode(self,
+               inputs: ArrayLike,
+               inputs_mask, *,
+               with_dropout: bool = False) -> Array:
         """
         Encode with Transformer
 
@@ -680,6 +683,8 @@ class Transformer(nn.Module):
         ----------
         inputs : ArrayLike
             Batched Tokenized Input Text. [B, L]
+        inputs_mask : ArrayLike
+            Batched Token Mask for Inputs. [B, L]
         with_dropout : bool, optional
             Whether to use dropout or not.
 
@@ -691,15 +696,16 @@ class Transformer(nn.Module):
         inputs = self.embed(inputs, with_dropout=with_dropout)
 
         # inputs: [B, L, dm]
-        inputs = self.encoder(inputs, with_dropout=with_dropout)
-        assert inputs.shape == (x.shape[0], self.L, self.dm), "BUG"
+        inputs = self.encoder(inputs, inputs_mask, with_dropout=with_dropout)
+        assert inputs.shape == (inputs.shape[0], self.L, self.dm), "BUG"
 
         return inputs
 
     def decode(self,
                inputs: ArrayLike,
+               inputs_mask: ArrayLike,
                outputs: ArrayLike,
-               mask: ArrayLike, *,
+               outputs_mask: ArrayLike, *,
                with_dropout: bool = False,
                only_next: bool = False) -> Array:
         """
@@ -709,10 +715,12 @@ class Transformer(nn.Module):
         ----------
         inputs : ArrayLike
             Batched Encoded Input. [B, L]
+        inputs_mask : ArrayLike
+            Batched Token Mask for Inputs. [B, L]
         outputs : ArrayLike
             Batched Tokenized Output Text. [B, L]
-        mask : ArrayLike
-            Batched Token Mask. [B, L]
+        outputs_mask : ArrayLike
+            Batched Token Mask for Outputs. [B, L]
         with_dropout : bool, optional
             Whether dropout or not.
         only_next : bool, optional
@@ -726,12 +734,14 @@ class Transformer(nn.Module):
         outputs = self.embed(outputs, with_dropout=with_dropout)
 
         # outputs: [B, L, dm]
-        outputs = self.decoder(inputs, outputs, mask, with_dropout=with_dropout)
-        assert outputs.shape == (x.shape[0], self.L, self.dm), "BUG"
+        outputs = self.decoder(inputs, inputs_mask,
+                               outputs, outputs_mask,
+                               with_dropout=with_dropout)
+        assert outputs.shape == (inputs.shape[0], self.L, self.dm), "BUG"
 
         if only_next:
             # outputs: [B, dm]
-            outputs = jnp.take(outputs, jnp.argmin(mask, axis=1), axis=1)
+            outputs = jnp.take(outputs, jnp.argmin(outputs_mask, axis=1), axis=1)
             assert outputs.shape == (x.shape[0], self.dm), "BUG"
 
         # p: [B, L, V] / [B, V]
@@ -779,7 +789,7 @@ class Transformer(nn.Module):
         assert inputs.shape[1] == self.L, "BUG"
         assert isinstance(with_dropout, bool), "BUG"
 
-        inputs = self.encode(inputs, inputs_mask, with_dropout)
+        inputs = self.encode(inputs, inputs_mask, with_dropout=with_dropout)
 
         return self.decode(inputs, inputs_mask, outputs, outputs_mask,
                            with_dropout=with_dropout,
