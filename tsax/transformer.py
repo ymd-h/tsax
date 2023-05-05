@@ -742,9 +742,11 @@ class Transformer(nn.Module):
         assert outputs.shape == (B, self.L, self.dm), "BUG"
 
         if only_next:
+            f = jax.vmap(lambda o, idx: o.at[idx, :].get())
+
             # outputs: [B, dm]
-            outputs = jnp.take(outputs, jnp.argmin(outputs_mask, axis=1), axis=1)
-            assert outputs.shape == (B, self.dm), "BUG"
+            outputs =  f(outputs, jnp.argmin(outputs_mask, axis=1))
+            assert outputs.shape == (B, self.dm), f"BUG: {outputs.shape}"
 
         # p: [B, L, V] / [B, V]
         p = self.embed.attend(outputs)
