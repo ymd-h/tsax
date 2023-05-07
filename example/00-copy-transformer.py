@@ -111,6 +111,11 @@ def example00(V, L, N, dm, nH, dff, Pdrop,
     train_fn = jax.value_and_grad(functools.partial(loss_fn, with_dropout=True),
                                   has_aux=True)
 
+    @jax.jit
+    def acc_fn(prob, true):
+        assert prob.shape[0] == true.shape[0], "BUG"
+        return jnp.sum(jnp.argmax(prob, axis=1) == true) / prob.shape[0]
+
     idx = jnp.arange(train_size)
     nbatch = train_size // batch
     logger.info("Start Training")
@@ -145,15 +150,14 @@ def example00(V, L, N, dm, nH, dff, Pdrop,
                                                            valid_outputs_mask,
                                                            with_dropout=False)
             logger.info("Valid: Epoch: %d, Loss: %.6f, Acc: %.6f",
-                        ep, valid_loss / valid_size,
-                        jnp.sum(jnp.argmax(valid_prob, axis=1) == valid_true) /
-                        valid_size)
+                        ep, valid_loss / valid_size, acc_fn(valid_prob, valid_true))
 
-    final_loss = loss_fn(params, None,
-                         valid_inputs, valid_inputs_mask,
-                         valid_outputs, valid_outputs_mask,
-                         with_dropout=False)
-    logger.info("Final Valid: Total Epoch %d, Loss: %.6f", epoch, final_loss)
+    (final_loss, (final_prob, final_true)) = loss_fn(params, None,
+                                                     valid_inputs, valid_inputs_mask,
+                                                     valid_outputs, valid_outputs_mask,
+                                                     with_dropout=False)
+    logger.info("Final Valid: Total Epoch %d, Loss: %.6f, Acc: %.6f",
+                epoch, final_loss / valid_size, acc_fn(final_prob, final_true))
 
 
 if __name__ == "__main__":
