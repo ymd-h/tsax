@@ -22,9 +22,10 @@ The name comes from Time Series on
 - [ ] Informer
   - [H. Zhou et al., "Informer: Beyond Efficient Transformer for Long Sequence Time-Series Forecasting", AAAI 2021, Vol. 35, No. 12](https://ojs.aaai.org/index.php/AAAI/article/view/17325),
     [arXiv:2012.07436](https://arxiv.org/abs/2012.07436)
-- [ ] Autoformer
+- [ ] (WIP) Autoformer
   - [H. Wu et al., "Autoformer: Decomposition Transformers with Auto-Correlation for Long-Term Series Forecasting", NeurIPS 2021](https://proceedings.neurips.cc/paper_files/paper/2021/hash/bcc0d400288793e8bdcd7c19a8ac0c2b-Abstract.html),
     [arXiv:2106.13008](https://arxiv.org/abs/2106.13008)
+- ...
 
 ## Development
 
