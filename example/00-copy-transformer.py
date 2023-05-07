@@ -41,21 +41,19 @@ def example00(V, L, N, dm, nH, dff, Pdrop,
     # Inputs must include 2 steps
     key, key_use = jax.random.split(key, 2)
     inputs_mask = jax.random.bernoulli(key_use,
-                                       p=0.8, shape=(data_size, L)).at[:,:2].set(1)
+                                       p=0.8, shape=(data_size, L)).at[:,:2].set(True)
     inputs_mask = jnp.cumprod(inputs_mask, axis=1, dtype=int)
     inputs = data * inputs_mask
 
     # Outputs mus include 1 step and less than Inputs steps
     key, key_use = jax.random.split(key, 2)
     outputs_mask = jax.random.bernoulli(key_use,
-                                        p=0.7, shape=(data_size, L)).at[:,0].set(1)
-    outputs_mask = outputs_mask.at[:].set(
-        jax.vmap(lambda o, idx: o.at[idx].set(0))(
-            outputs_mask,
-            jnp.where(jnp.all(inputs_mask == 1, axis=1),
-                      L -1,
-                      jnp.argmin(inputs_mask, axis=1) - 1)
-        )
+                                        p=0.7, shape=(data_size, L)).at[:,0].set(True)
+    outputs_mask = jax.vmap(lambda o, idx: o.at[idx].set(False))(
+        outputs_mask,
+        jnp.where(jnp.all(inputs_mask == 1, axis=1),
+                  L -1,
+                  jnp.argmin(inputs_mask, axis=1) - 1)
     )
     outputs_mask = jnp.cumprod(outputs_mask, axis=1, dtype=int)
     outputs = data * outputs_mask
