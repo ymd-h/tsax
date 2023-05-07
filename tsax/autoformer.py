@@ -46,6 +46,22 @@ DFF: int = 2048
 Default Number of Units at Hidden Layer of Feed Forward
 """
 
+NH: int = 8
+"""
+Default Number of Multi Head Attention
+"""
+
+NE: int = 2
+"""
+Default Number of Encoder Stack
+"""
+
+ND: int = 1
+"""
+Default Number of Decoder Stack
+"""
+
+
 EPS: float = 1e-12
 """
 Default Value for Small Positive Value of Layer Normalization
