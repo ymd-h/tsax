@@ -215,3 +215,84 @@ class MultiHeadAttention(nn.Module):
             MHA = MHA.at[:].set(nn.Dropout(self.Pdrop, deterministic=False)(MHA))
 
         return MHA
+
+
+
+class Informer(nn.Module):
+    """
+    Informer
+
+    Attributes
+    ----------
+    """
+    I: int
+    O: int
+    Ltoken: int
+    nE: int
+    nD: int
+    dff: int = DFF
+    eps: float = EPS
+    Pdrop: float = PDROP
+
+    def setup(self):
+        self.encoder = EncoderStack(N=self.nE,
+                                    dm=self.dm,
+                                    nH=self.nH,
+                                    dff=self.dff,
+                                    eps=self.eps,
+                                    Pdrop=self.Pdrop)
+        self.decoder = DecoderStack(N=self.N,
+                                    dm=self.dm,
+                                    nH=self.nH,
+                                    dff=self.dff,
+                                    eps=self.eps,
+                                    Pdrop=self.Pdrop)
+
+    def encode(self,
+               inputs: ArrayLike, *,
+               with_dropout: bool = False) -> Array:
+        """
+        Encode with Informer
+        """
+        assert inputs.shape[1:] == (self.I, self.dm), "BUG"
+
+    def decode(self,
+               inputs: ArrayLike,
+               outputs: ArrayLike, *,
+               with_dropout: bool = False) -> Array:
+        """
+        Decode with Informer
+        """
+        assert inputs.shape[0] == outputs.shape[0], "BUG"
+        assert inputs.shape[1:] == (self.I, self.dm), "BUG"
+        assert outputs.shape[1:] == (self.Ltoken + self.O, self.dm), "BUG"
+
+    def __call__(self,
+                 inputs: ArrayLike, *,
+                 with_dropout: bool = False) -> Array:
+        """
+        Call Informer
+
+        Parameters
+        ----------
+        inputs : ArrayLike
+            Inputs Signal. [B, I, dm]
+        with_dropout : bool, optional
+            Whether dropout or not.
+
+        Returns
+        -------
+        pred : Array
+            Predicted Signal. [B, O, dm]
+        """
+        assert inputs.shape[1:] == (self.I, self.dm), "BUG"
+
+        outputs = jnp.zeros((inputs.shape[0], self.Ltoken + self.O),
+                            dtype=inputs.dtype)
+        outputs.at[:,:inputs.shape[1],:].set(inputs)
+
+        inputs = self.encode(inputs, with_dropout=with_dropout)
+
+        pred = self.decode(inputs, outputs, with_dropout=with_dropout)
+
+        return pred.at[:,pred.shape[1]-self.O:,:].get()
