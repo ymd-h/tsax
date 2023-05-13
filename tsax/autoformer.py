@@ -756,4 +756,4 @@ class Autoformer(nn.Module):
                                                       trend_outputs,
                                                       with_dropout=with_dropout)
 
-        return seasonal_outputs.at[L-O:].get() + trend_outputs.at[L-O:].get()
+        return seasonal_outputs.at[:,L-O:,:].get() + trend_outputs.at[:,L-O:,:].get()
