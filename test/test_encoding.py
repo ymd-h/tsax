@@ -111,5 +111,38 @@ class TestPositionalEncoding(TestCase):
             ])
         )
 
+    def test_even_lazy_shift(self):
+        L, dm, Lfreq = 2, 2, 2
+
+        PE = PositionalEncoding(dm=dm, L=L, Lfreq=Lfreq, lazy=True)
+        x = jnp.zeros((1, L, dm))
+
+        pe = PE(x, shift = 2)
+
+        self.assertAllclose(
+            pe,
+            jnp.asarray([
+                [jnp.sin(2), jnp.cos(2)],
+                [jnp.sin(3), jnp.cos(3)],
+            ])
+        )
+
+    def test_odd_lazy_shift(self):
+        L, dm, Lfreq = 2, 1, 2
+
+        PE = PositionalEncoding(dm=dm, L=L, Lfreq=Lfreq, lazy=True)
+        x = jnp.zeros((1, L, dm))
+
+        pe = PE(x, shift = 2)
+
+        self.assertAllclose(
+            pe,
+            jnp.asarray([
+                [jnp.sin(2)],
+                [jnp.sin(3)],
+            ])
+        )
+
+
 if __name__ == "__main__":
     unittest.main()

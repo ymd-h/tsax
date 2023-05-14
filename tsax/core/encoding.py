@@ -16,6 +16,7 @@ __all__ = [
 def positional_encoding(dm: int,
                         L: int,
                         Lfreq: int, *,
+                        shift: int = 0,
                         dtype: Optional[jnp.dtype] = None) -> Array:
     """
     Create Positional Encoding
@@ -28,6 +29,8 @@ def positional_encoding(dm: int,
         Input Sequence Length
     Lfreq : int
         Frequency Normalization Length.
+    shift : int
+        Position Offset Shift.
     dtype : jax.numpy.dtype, optional
         Data Type.
 
@@ -41,7 +44,7 @@ def positional_encoding(dm: int,
     cos_dim: int = half
 
     freq = 1.0 / (Lfreq ** (2 * jnp.arange(sin_dim) / dm))
-    theta = jax.vmap(lambda pos: pos * freq)(jnp.arange(L))
+    theta = jax.vmap(lambda pos: (pos + shift) * freq)(jnp.arange(L))
 
     PE = (jnp.zeros((L, dm), dtype=dtype)
           .at[:,0::2].set(jnp.sin(theta))
@@ -93,7 +96,7 @@ class PositionalEncoding:
                                           Lfreq=self.Lfreq,
                                           dtype=dtype)
 
-    def __call__(self, x: ArrayLike) -> Array:
+    def __call__(self, x: ArrayLike, shift: int = 0) -> Array:
         """
         Positional Encoding
 
@@ -101,6 +104,9 @@ class PositionalEncoding:
         ----------
         x : ArrayLike
             Inputs. [B, L, dm]
+        shift : int
+            Position Offset Shift.
+            Used only if ``lazy`` is ``True``.
 
         Returns
         -------
@@ -113,6 +119,7 @@ class PositionalEncoding:
             return positional_encoding(dm=self.dm,
                                        L=self.L,
                                        Lfreq=self.Lfreq,
+                                       shift=shift,
                                        dtype=x.dtype)
 
         return self.pe
