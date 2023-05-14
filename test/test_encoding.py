@@ -3,7 +3,7 @@ import unittest
 import jax
 import jax.numpy as jnp
 
-from tsax.core import PositionalEncoding
+from tsax.core import PositionalEncoding, CategoricalEncoding
 from tsax.testing import TestCase
 
 
@@ -142,6 +142,30 @@ class TestPositionalEncoding(TestCase):
                 [jnp.sin(3)],
             ])
         )
+
+
+class TestCategoricalEncoding(TestCase):
+    def test_simple(self):
+        V = 7
+        dm = 3
+        B = 1
+        L = 2
+
+        key = jax.random.PRNGKey(0)
+
+        key, key_use = jax.random.split(key, 2)
+        x = jax.random.randint(key_use, (B, L, 1), 0, V)
+
+        e = CategoricalEncoding(Vs=(V,), dm=dm)
+
+        key, key_use = jax.random.split(key, 2)
+        embedded, _ = e.init_with_output(key_use, x)
+        self.assertEqual(embedded.shape, (B, L, dm))
+
+        embedded_jit, _ = jax.jit(e.init_with_output)(key_use, x)
+        self.assertEqual(embedded_jit.shape, (B, L, dm))
+
+        self.assertAllclose(embedded, embedded_jit)
 
 
 if __name__ == "__main__":
