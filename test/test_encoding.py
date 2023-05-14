@@ -167,6 +167,27 @@ class TestCategoricalEncoding(TestCase):
 
         self.assertAllclose(embedded, embedded_jit)
 
+    def test_multiple(self):
+        Vs = (7, 31, 12)
+        dm = 3
+        B = 1
+        L = 2
+
+        key = jax.random.PRNGKey(0)
+
+        key, key_use = jax.random.split(key, 2)
+        x = jax.random.randint(key_use, (B, L, len(Vs)), 0, jnp.asarray(Vs))
+
+        e = CategoricalEncoding(Vs=Vs, dm=dm)
+
+        key, key_use = jax.random.split(key, 2)
+        embedded, _ = e.init_with_output(key_use, x)
+        self.assertEqual(embedded.shape, (B, L, dm))
+
+        embedded_jit, _ = jax.jit(e.init_with_output)(key_use, x)
+        self.assertEqual(embedded_jit.shape, (B, L, dm))
+
+        self.assertAllclose(embedded, embedded_jit)
 
 if __name__ == "__main__":
     unittest.main()
