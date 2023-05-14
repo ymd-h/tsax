@@ -23,7 +23,7 @@ from jax.random import KeyArray
 from jax.typing import ArrayLike
 from flax import linen as nn
 
-from .core import ResidualLayerNorm
+from .core import ConvSeq, ResidualLayerNorm
 
 __all__ = [
     "Informer",
@@ -87,14 +87,13 @@ class Embedding(nn.Module):
         embedded : Array
             Embedded. [B, L, dm]
         """
-        assert seq.shape[:2] == cat.shape[:2], "BUG"
+        assert (cat is None) or (seq.shape[:2] == cat.shape[:2]), "BUG"
         assert (cat is None) or (len(Vs) == cat.shape[2]), "BUG"
 
         L: int = seq.shape[1]
 
-        conv = nn.Conv(features=self.dm, kernel_size=kernel)
-        embedded = jnp.moveaxis(conv(jnp.moveaxis(seq, (1,), (-1,))), (-1,), (1,))
-        assert embedded.shape == (*seq.shape[:2], self.dm)
+        embedded = ConvSeq(dm=self.dm, kernel=self.kernel)(seq)
+        assert embedded.shape == (*seq.shape[:2], self.dm), f"BUG: {embedded.shape}"
 
         if cat is not None:
             embedded = (embedded
