@@ -50,6 +50,29 @@ Default Coefficient for Embedding Alpha.
 This is recommended value if input sequence has been normalized.
 """
 
+DFF: int = 2048
+"""
+Default Number of Units at Hidden Layer of Feed Forward
+"""
+
+NH: int = 8
+"""
+Default Number of Multi Head Attention
+"""
+
+EPS: float = 1e-12
+"""
+Default Value for Small Positive Value for Layer Normalization
+"""
+
+PDROP: float = 0.1
+"""
+Default Probability of Dropout Rate
+"""
+
+class FeedForward(nn.Module):
+    pass
+
 class Embedding(nn.Module):
     """
     Embedding Layer
@@ -223,8 +246,8 @@ class MultiHeadAttention(nn.Module):
         Model Dimension
     """
     c: int
+    dm: int
     nH: int = NH
-    dm: int = DM
     Pdrop: float = PDROP
 
     @nn.compact
@@ -277,6 +300,17 @@ class MultiHeadAttention(nn.Module):
         return MHA
 
 
+class EncoderLayer(nn.Module):
+    pass
+
+class DecoderLayer(nn.Module):
+    pass
+
+class EncoderStack(nn.Module):
+    pass
+
+class DecoderStack(nn.Module):
+    pass
 
 class Informer(nn.Module):
     """
