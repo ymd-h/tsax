@@ -31,7 +31,7 @@ __all__ = [
     "DecoderStack",
     "EncoderLayer",
     "DecoderLayer",
-    "Distlling",
+    "Distilling",
     "MultiHeadAttention",
     "ProbSparseAttention",
     "FeedForward",
