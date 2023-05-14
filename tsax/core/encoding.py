@@ -10,6 +10,7 @@ from flax import linen as nn
 
 __all__ = [
     "PositionalEncoding",
+    "CategoricalEncoding",
 ]
 
 
