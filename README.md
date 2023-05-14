@@ -19,7 +19,7 @@ The name comes from Time Series on
 - [ ] Reformer
   - [N. Kitaev et al., "Reformer: The Efficient Transformer", ICLR 2020](https://openreview.net/forum?id=rkgNKkHtvB),
     [arXiv:2001.04451](https://arxiv.org/abs/2001.04451)
-- [ ] Informer
+- [ ] (WIP) Informer
   - [H. Zhou et al., "Informer: Beyond Efficient Transformer for Long Sequence Time-Series Forecasting", AAAI 2021, Vol. 35, No. 12](https://ojs.aaai.org/index.php/AAAI/article/view/17325),
     [arXiv:2012.07436](https://arxiv.org/abs/2012.07436)
 - [ ] (WIP) Autoformer
