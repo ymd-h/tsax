@@ -177,9 +177,8 @@ class CategoricalEncoding(nn.Module):
         assert x.shape[-1] == len(self.Vs), "BUG"
 
         embedded = jnp.sum(
-            jax.vmap(
-                lambda v, _x: nn.Embed(v, self.dm)(_x)
-            )(self.Vs, jnp.moveaxis(x, (-1, 0))),
+            jnp.stack([nn.Embed(v, self.dm)(x.at[:,:,i].get())
+                       for i, v in enumerate(self.Vs)]),
             axis=0
         )
 
