@@ -13,6 +13,7 @@ References
    https://arxiv.org/abs/2012.07436
 """
 from __future__ import annotations
+from typing import Tuple
 import math
 
 import jax
@@ -42,6 +43,53 @@ KERNEL_SIZE: int = 3
 Default Kernel Size for Conv1d at Distilling Layer
 """
 
+EMBEDDING_ALPHA: float = 1.0
+"""
+Default Coefficient for Embedding Alpha.
+This is recommended value if input sequence has been normalized.
+"""
+
+class Embedding(nn.Module):
+    """
+    Embedding Layer
+    """
+    dm: int
+    Vs: Tuple[int, ...]
+    kernel: int = KERNEL_SIZE
+    alpha: float = EMBEDDING_ALPHA
+
+    @nn.compact
+    def __call__(self, seq: ArrayLike, cat: ArrayLike) -> Array:
+        """
+        Call Embedding Layer
+
+        Parameters
+        ----------
+        seq : ArrayLike
+            Numerical Sequence. [B, L, d_sequence]
+        cat : ArrayLike
+            Categorical Sequence for Temporal Information. [B, L, d_categorical]
+
+        Returns
+        -------
+        embedded : Array
+            Embedded. [B, L, dm]
+        """
+        assert seq.shape[:2] == cat.shape[:2], "BUG"
+        assert len(Vs) == cat.shape[2], "BUG"
+
+        L: int = seq.shape[1]
+
+        conv = nn.Conv(features=self.dm, kernel_size=kernel)
+        embedded = jnp.moveaxis(conv(jnp.moveaxis(seq, (1,), (-1,))), (-1,), (1,))
+        assert embedded.shape == (*seq.shape[:2], self.dm)
+
+        embedded = (embedded
+                    .at[:].multiply(self.alpha)
+                    .at[:].add(PositionalEncoding(dm=dm, L=L, Lfreq=2*L)(seq))
+                    .at[:].add(CategoricalEncoding(Vs=self.Vs, dm=self.dm)(cat)))
+
+        return embedded
 
 class Distilling(nn.Module):
     """
