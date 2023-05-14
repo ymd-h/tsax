@@ -35,6 +35,7 @@ __all__ = [
     "MultiHeadAttention",
     "ProbSparseAttention",
     "FeedForward",
+    "Embedding",
 ]
 
 
