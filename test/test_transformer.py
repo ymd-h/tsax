@@ -128,7 +128,7 @@ class TestAttention(TestCase):
     def test_without_mask_without_jit(self):
         A = self.a.apply(self.params, self.Q, self.K, self.V)
         self.assertEqual(A.shape, (self.B, self.L, self.dv))
-        self.assertFalse(jnp.any(jnp.isnan(A)))
+        self.assertNone(A, jnp.isnan)
 
 
     def test_with_mask_without_jit(self):
@@ -136,7 +136,7 @@ class TestAttention(TestCase):
         self.assertEqual(A.shape, (self.B, self.L, self.dv))
         self.assertNotAllclose(A, self.a.apply(self.params,
                                                self.Q, self.K, self.V))
-        self.assertFalse(jnp.any(jnp.isnan(A)))
+        self.assertNone(A, jnp.isnan)
 
     def test_empty_mask_without_jit(self):
         """
@@ -147,24 +147,24 @@ class TestAttention(TestCase):
         """
         A = self.a.apply(self.params, self.Q, self.K, self.V,
                          jnp.zeros((self.B, 1, self.L), dtype=int))
-        self.assertTrue(jnp.all(jnp.isnan(A)))
+        self.assertAll(A, jnp.isnan)
 
     def test_without_mask_with_jit(self):
         A = jax.jit(self.a.apply)(self.params, self.Q, self.K, self.V)
         self.assertEqual(A.shape, (self.B, self.L, self.dv))
-        self.assertFalse(jnp.any(jnp.isnan(A)))
+        self.assertNone(A, jnp.isnan)
 
     def test_with_mask_with_jit(self):
         f = jax.jit(self.a.apply)
         A = f(self.params, self.Q, self.K, self.V, self.mask)
         self.assertEqual(A.shape, (self.B, self.L, self.dv))
         self.assertNotAllclose(A, f(self.params, self.Q, self.K, self.V))
-        self.assertFalse(jnp.any(jnp.isnan(A)))
+        self.assertNone(A, jnp.isnan)
 
     def test_empty_mask_with_jit(self):
         A = jax.jit(self.a.apply)(self.params, self.Q, self.K, self.V,
                                   jnp.zeros((self.B, 1, self.L), dtype=int))
-        self.assertTrue(jnp.all(jnp.isnan(A)))
+        self.assertAll(A, jnp.isnan)
 
 
 class TestMultiHeadAttention(TestCase):
@@ -196,23 +196,23 @@ class TestMultiHeadAttention(TestCase):
 
         A = f(self.params, self.Q, self.K, self.V)
         self.assertEqual(A.shape, (self.B, self.L, self.dm))
-        self.assertFalse(jnp.any(jnp.isnan(A)))
+        self.assertNone(A, jnp.isnan)
 
         A_jit = f_jit(self.params, self.Q, self.K, self.V)
         self.assertEqual(A_jit.shape, (self.B, self.L, self.dm))
-        self.assertFalse(jnp.any(jnp.isnan(A_jit)))
+        self.assertNone(A_jit, jnp.isnan)
 
         self.assertAllclose(A, A_jit, atol=1e-6)
 
         A_mask = f(self.params, self.Q, self.K, self.V, self.mask)
         self.assertEqual(A_mask.shape, (self.B, self.L, self.dm))
-        self.assertFalse(jnp.any(jnp.isnan(A_mask)))
+        self.assertNone(A_mask, jnp.isnan)
 
         self.assertNotAllclose(A, A_mask, atol=1e-5)
 
         A_mask_jit = f_jit(self.params, self.Q, self.K, self.V, self.mask)
         self.assertEqual(A_mask_jit.shape, (self.B, self.L, self.dm))
-        self.assertFalse(jnp.any(jnp.isnan(A_mask_jit)))
+        self.assertNone(A_mask_jit, jnp.isnan)
 
         self.assertAllclose(A_mask, A_mask_jit, atol=1e-6)
         self.assertNotAllclose(A_jit, A_mask_jit, atol=1e-5)
@@ -244,24 +244,24 @@ class TestEncoderLayer(TestCase):
 
         E = f(self.params, self.x, self.mask)
         self.assertEqual(E.shape, (self.B, self.L, self.dm))
-        self.assertFalse(jnp.any(jnp.isnan(E)))
+        self.assertNone(E, jnp.isnan)
 
         E_jit = f_jit(self.params, self.x, self.mask)
         self.assertEqual(E_jit.shape, (self.B, self.L, self.dm))
-        self.assertFalse(jnp.any(jnp.isnan(E_jit)))
+        self.assertNone(E_jit, jnp.isnan)
 
         self.assertAllclose(E, E_jit, atol=1e-6)
 
         E_drop = f(self.params, self.x, self.mask, with_dropout=True,
                    rngs={"dropout": self.key})
         self.assertEqual(E_drop.shape, (self.B, self.L, self.dm))
-        self.assertFalse(jnp.any(jnp.isnan(E_drop)))
+        self.assertNone(E_drop, jnp.isnan)
         self.assertNotAllclose(E, E_drop, atol=1e-5)
 
         E_drop_jit = f_jit(self.params, self.x, self.mask, with_dropout=True,
                            rngs={"dropout": self.key})
         self.assertEqual(E_drop_jit.shape, (self.B, self.L, self.dm))
-        self.assertFalse(jnp.any(jnp.isnan(E_drop_jit)))
+        self.assertNone(E_drop_jit, jnp.isnan)
         self.assertNotAllclose(E_jit, E_drop_jit, atol=1e-5)
 
         self.assertAllclose(E_drop, E_drop_jit, atol=1e-6)
@@ -306,13 +306,13 @@ class TestDecoderLayer(TestCase):
               self.inputs, self.inputs_mask,
               self.outputs, self.outputs_mask)
         self.assertEqual(D.shape, (self.B, self.L, self.dm))
-        self.assertFalse(jnp.any(jnp.isnan(D)))
+        self.assertNone(D, jnp.isnan)
 
         D_jit = f_jit(self.params,
                       self.inputs, self.inputs_mask,
                       self.outputs, self.outputs_mask)
         self.assertEqual(D_jit.shape, (self.B, self.L, self.dm))
-        self.assertFalse(jnp.any(jnp.isnan(D_jit)))
+        self.assertNone(D_jit, jnp.isnan)
 
         self.assertAllclose(D, D_jit, atol=1e-6)
 
@@ -322,7 +322,7 @@ class TestDecoderLayer(TestCase):
                    with_dropout=True,
                    rngs={"dropout": self.key})
         self.assertEqual(D_drop.shape, (self.B, self.L, self.dm))
-        self.assertFalse(jnp.any(jnp.isnan(D_drop)))
+        self.assertNone(D_drop, jnp.isnan)
         self.assertNotAllclose(D, D_drop, atol=1e-5)
 
         D_drop_jit = f_jit(self.params,
@@ -331,7 +331,7 @@ class TestDecoderLayer(TestCase):
                            with_dropout=True,
                            rngs={"dropout": self.key})
         self.assertEqual(D_drop_jit.shape, (self.B, self.L, self.dm))
-        self.assertFalse(jnp.any(jnp.isnan(D_drop_jit)))
+        self.assertNone(D_drop_jit, jnp.isnan)
         self.assertNotAllclose(D_jit, D_drop_jit, atol=1e-5)
 
         self.assertAllclose(D_drop, D_drop_jit, atol=1e-6)
@@ -365,24 +365,24 @@ class TestEncoderStack(TestCase):
 
         E = f(self.params, self.x, self.mask)
         self.assertEqual(E.shape, (self.B, self.L, self.dm))
-        self.assertFalse(jnp.any(jnp.isnan(E)))
+        self.assertNone(E, jnp.isnan)
 
         E_jit = f_jit(self.params, self.x, self.mask)
         self.assertEqual(E_jit.shape, (self.B, self.L, self.dm))
-        self.assertFalse(jnp.any(jnp.isnan(E_jit)))
+        self.assertNone(E_jit, jnp.isnan)
 
         self.assertAllclose(E, E_jit, atol=1e-6)
 
         E_drop = f(self.params, self.x, self.mask, with_dropout=True,
                    rngs={"dropout": self.key})
         self.assertEqual(E_drop.shape, (self.B, self.L, self.dm))
-        self.assertFalse(jnp.any(jnp.isnan(E_drop)))
+        self.assertNone(E_drop, jnp.isnan)
         self.assertNotAllclose(E, E_drop, atol=1e-5)
 
         E_drop_jit = f_jit(self.params, self.x, self.mask, with_dropout=True,
                            rngs={"dropout": self.key})
         self.assertEqual(E_drop_jit.shape, (self.B, self.L, self.dm))
-        self.assertFalse(jnp.any(jnp.isnan(E_drop_jit)))
+        self.assertNone(E_drop_jit, jnp.isnan)
         self.assertNotAllclose(E_jit, E_drop_jit, atol=1e-5)
 
         self.assertAllclose(E_drop, E_drop_jit, atol=1e-6)
@@ -428,13 +428,13 @@ class TestDecoderStack(TestCase):
               self.inputs, self.inputs_mask,
               self.outputs, self.outputs_mask)
         self.assertEqual(D.shape, (self.B, self.L, self.dm))
-        self.assertFalse(jnp.any(jnp.isnan(D)))
+        self.assertNone(D, jnp.isnan)
 
         D_jit = f_jit(self.params,
                       self.inputs, self.inputs_mask,
                       self.outputs, self.outputs_mask)
         self.assertEqual(D_jit.shape, (self.B, self.L, self.dm))
-        self.assertFalse(jnp.any(jnp.isnan(D_jit)))
+        self.assertNone(D_jit, jnp.isnan)
 
         self.assertAllclose(D, D_jit, atol=1e-6)
 
@@ -444,7 +444,7 @@ class TestDecoderStack(TestCase):
                    with_dropout=True,
                    rngs={"dropout": self.key})
         self.assertEqual(D_drop.shape, (self.B, self.L, self.dm))
-        self.assertFalse(jnp.any(jnp.isnan(D_drop)))
+        self.assertNone(D_drop, jnp.isnan)
         self.assertNotAllclose(D, D_drop, atol=1e-5)
 
         D_drop_jit = f_jit(self.params,
@@ -453,7 +453,7 @@ class TestDecoderStack(TestCase):
                            with_dropout=True,
                            rngs={"dropout": self.key})
         self.assertEqual(D_drop_jit.shape, (self.B, self.L, self.dm))
-        self.assertFalse(jnp.any(jnp.isnan(D_drop_jit)))
+        self.assertNone(D_drop_jit, jnp.isnan)
         self.assertNotAllclose(D_jit, D_drop_jit, atol=1e-5)
 
         self.assertAllclose(D_drop, D_drop_jit, atol=1e-6)
