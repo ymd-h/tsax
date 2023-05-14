@@ -84,10 +84,10 @@ class TestFeedForward(TestCase):
         y = self.ff.apply(self.params, self.x, with_dropout=True, rngs={"dropout": key})
         self.assertEqual(y.shape, self.x.shape)
 
-        self.assertFalse(jnp.all(y == self.ff.apply(self.params,
-                                                    self.x,
-                                                    with_dropout=True,
-                                                    rngs={"dropout": key2})))
+        self.assertNotAllclose(y, self.ff.apply(self.params,
+                                                self.x,
+                                                with_dropout=True,
+                                                rngs={"dropout": key2}))
 
     def test_dropout_with_jit(self):
         key, key2 = jax.random.split(self.key)
@@ -96,10 +96,10 @@ class TestFeedForward(TestCase):
         y = f(self.params, self.x, with_dropout=True, rngs={"dropout": key})
         self.assertEqual(y.shape, self.x.shape)
 
-        self.assertFalse(jnp.all(y == f(self.params,
-                                        self.x,
-                                        with_dropout=True,
-                                        rngs={"dropout": key2})))
+        self.assertNotAllclose(y, f(self.params,
+                                    self.x,
+                                    with_dropout=True,
+                                    rngs={"dropout": key2}))
 
 
 class TestAttention(TestCase):
@@ -134,8 +134,8 @@ class TestAttention(TestCase):
     def test_with_mask_without_jit(self):
         A = self.a.apply(self.params, self.Q, self.K, self.V, self.mask)
         self.assertEqual(A.shape, (self.B, self.L, self.dv))
-        self.assertFalse(jnp.all(A == self.a.apply(self.params,
-                                                   self.Q, self.K, self.V)))
+        self.assertNotAllclose(A, self.a.apply(self.params,
+                                               self.Q, self.K, self.V))
         self.assertFalse(jnp.any(jnp.isnan(A)))
 
     def test_empty_mask_without_jit(self):
@@ -158,7 +158,7 @@ class TestAttention(TestCase):
         f = jax.jit(self.a.apply)
         A = f(self.params, self.Q, self.K, self.V, self.mask)
         self.assertEqual(A.shape, (self.B, self.L, self.dv))
-        self.assertFalse(jnp.all(A == f(self.params, self.Q, self.K, self.V)))
+        self.assertNotAllclose(A, f(self.params, self.Q, self.K, self.V))
         self.assertFalse(jnp.any(jnp.isnan(A)))
 
     def test_empty_mask_with_jit(self):
