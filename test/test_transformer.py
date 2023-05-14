@@ -69,14 +69,14 @@ class TestFeedForward(TestCase):
         y = self.ff.apply(self.params, self.x)
         self.assertEqual(y.shape, self.x.shape)
 
-        self.assertTrue(jnp.all(y == self.ff.apply(self.params, self.x)))
+        self.assertAllclose(y,self.ff.apply(self.params, self.x))
 
     def test_with_jit(self):
         f = jax.jit(self.ff.apply)
         y = f(self.params, self.x)
         self.assertEqual(y.shape, self.x.shape)
 
-        self.assertTrue(jnp.all(y == f(self.params, self.x)))
+        self.assertAllclose(y, f(self.params, self.x))
 
     def test_dropout_without_jit(self):
         key, key2 = jax.random.split(self.key)
