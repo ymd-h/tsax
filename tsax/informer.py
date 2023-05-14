@@ -23,7 +23,12 @@ from jax.random import KeyArray
 from jax.typing import ArrayLike
 from flax import linen as nn
 
-from .core import ConvSeq, ResidualLayerNorm
+from .core import (
+    ConvSeq,
+    PositionalEncoding,
+    CategoricalEncoding,
+    ResidualLayerNorm,
+)
 
 __all__ = [
     "Informer",
