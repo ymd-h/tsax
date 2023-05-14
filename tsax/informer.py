@@ -13,7 +13,7 @@ References
    https://arxiv.org/abs/2012.07436
 """
 from __future__ import annotations
-from typing import Tuple
+from typing import Optional, Tuple
 import math
 
 import jax
@@ -52,14 +52,25 @@ This is recommended value if input sequence has been normalized.
 class Embedding(nn.Module):
     """
     Embedding Layer
+
+    Attributes
+    ----------
+    dm : int
+        Model Dimension
+    Vs : tuple of ints
+        Vocabulary Size for each Categorical Dimension
+    kernel : int
+        Kernel Size for 1d Convolution
+    alpha : float
+        Coefficient for Input Sequence
     """
     dm: int
-    Vs: Tuple[int, ...]
+    Vs: Tuple[int, ...] = tuple()
     kernel: int = KERNEL_SIZE
     alpha: float = EMBEDDING_ALPHA
 
     @nn.compact
-    def __call__(self, seq: ArrayLike, cat: ArrayLike) -> Array:
+    def __call__(self, seq: ArrayLike, cat: Optional[ArrayLike] = None) -> Array:
         """
         Call Embedding Layer
 
@@ -67,7 +78,7 @@ class Embedding(nn.Module):
         ----------
         seq : ArrayLike
             Numerical Sequence. [B, L, d_sequence]
-        cat : ArrayLike
+        cat : ArrayLike, optional
             Categorical Sequence for Temporal Information. [B, L, d_categorical]
 
         Returns
@@ -76,7 +87,7 @@ class Embedding(nn.Module):
             Embedded. [B, L, dm]
         """
         assert seq.shape[:2] == cat.shape[:2], "BUG"
-        assert len(Vs) == cat.shape[2], "BUG"
+        assert (cat is None) or (len(Vs) == cat.shape[2]), "BUG"
 
         L: int = seq.shape[1]
 
@@ -84,10 +95,11 @@ class Embedding(nn.Module):
         embedded = jnp.moveaxis(conv(jnp.moveaxis(seq, (1,), (-1,))), (-1,), (1,))
         assert embedded.shape == (*seq.shape[:2], self.dm)
 
-        embedded = (embedded
-                    .at[:].multiply(self.alpha)
-                    .at[:].add(PositionalEncoding(dm=dm, L=L, Lfreq=2*L)(seq))
-                    .at[:].add(CategoricalEncoding(Vs=self.Vs, dm=self.dm)(cat)))
+        if cat is not None:
+            embedded = (embedded
+                        .at[:].multiply(self.alpha)
+                        .at[:].add(PositionalEncoding(dm=dm, L=L, Lfreq=2*L)(seq))
+                        .at[:].add(CategoricalEncoding(Vs=self.Vs, dm=self.dm)(cat)))
 
         return embedded
 
