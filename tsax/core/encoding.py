@@ -146,10 +146,18 @@ class CategoricalEncoding(nn.Module):
     .. [1] H. Zhou et al., "Informer: Beyond Efficient Transformer for Long Sequence Time-Series Forecasting", AAAI 2021, Vol. 35, No. 12
        https://ojs.aaai.org/index.php/AAAI/article/view/17325,
        https://arxiv.org/abs/2012.07436
+
+    Examples
+    --------
+    >>> from tsax.core import CategoricalEncoding
+
+    If ``x`` has "month" (``0`` to ``11``) and "date" (``0`` to ``30``)
+    and model dimension is ``5``, then encoding becomes;
+
+    >>> enc = CategoricalEncoding(Vs=(12, 31), dm=5)
     """
     Vs: Tuple[int, ...]
     dm: int
-
 
     @nn.compact
     def __call__(self, x: ArrayLike) -> Array:
