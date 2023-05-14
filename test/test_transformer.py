@@ -14,8 +14,9 @@ from tsax.transformer import (
     Attention,
     FeedForward,
 )
+from tsax.testing import TestCase
 
-class TestEmbedding(unittest.TestCase):
+class TestEmbedding(TestCase):
     @classmethod
     def setUpClass(cls):
         cls.B = 4
@@ -47,7 +48,7 @@ class TestEmbedding(unittest.TestCase):
         self.assertEqual(v.shape, (self.B, self.L, self.V))
 
 
-class TestFeedForward(unittest.TestCase):
+class TestFeedForward(TestCase):
     @classmethod
     def setUpClass(cls):
         cls.B = 4
@@ -101,7 +102,7 @@ class TestFeedForward(unittest.TestCase):
                                         rngs={"dropout": key2})))
 
 
-class TestAttention(unittest.TestCase):
+class TestAttention(TestCase):
     @classmethod
     def setUpClass(cls):
         cls.B = 3
@@ -166,7 +167,7 @@ class TestAttention(unittest.TestCase):
         self.assertTrue(jnp.all(jnp.isnan(A)))
 
 
-class TestMultiHeadAttention(unittest.TestCase):
+class TestMultiHeadAttention(TestCase):
     @classmethod
     def setUpClass(cls):
         cls.B = 3
@@ -201,7 +202,7 @@ class TestMultiHeadAttention(unittest.TestCase):
         self.assertEqual(A_jit.shape, (self.B, self.L, self.dm))
         self.assertFalse(jnp.any(jnp.isnan(A_jit)))
 
-        self.assertTrue(jnp.allclose(A, A_jit, atol=1e-6))
+        self.assertAllclose(A, A_jit, atol=1e-6)
 
         A_mask = f(self.params, self.Q, self.K, self.V, self.mask)
         self.assertEqual(A_mask.shape, (self.B, self.L, self.dm))
@@ -213,11 +214,11 @@ class TestMultiHeadAttention(unittest.TestCase):
         self.assertEqual(A_mask_jit.shape, (self.B, self.L, self.dm))
         self.assertFalse(jnp.any(jnp.isnan(A_mask_jit)))
 
-        self.assertTrue(jnp.allclose(A_mask, A_mask_jit, atol=1e-6))
+        self.assertAllclose(A_mask, A_mask_jit, atol=1e-6)
         self.assertFalse(jnp.allclose(A_jit, A_mask_jit, atol=1e-5))
 
 
-class TestEncoderLayer(unittest.TestCase):
+class TestEncoderLayer(TestCase):
     @classmethod
     def setUpClass(cls):
         cls.B = 3
@@ -249,7 +250,7 @@ class TestEncoderLayer(unittest.TestCase):
         self.assertEqual(E_jit.shape, (self.B, self.L, self.dm))
         self.assertFalse(jnp.any(jnp.isnan(E_jit)))
 
-        self.assertTrue(jnp.allclose(E, E_jit, atol=1e-6))
+        self.assertAllclose(E, E_jit, atol=1e-6)
 
         E_drop = f(self.params, self.x, self.mask, with_dropout=True,
                    rngs={"dropout": self.key})
@@ -263,10 +264,10 @@ class TestEncoderLayer(unittest.TestCase):
         self.assertFalse(jnp.any(jnp.isnan(E_drop_jit)))
         self.assertFalse(jnp.allclose(E_jit, E_drop_jit, atol=1e-5))
 
-        self.assertTrue(jnp.allclose(E_drop, E_drop_jit, atol=1e-6))
+        self.assertAllclose(E_drop, E_drop_jit, atol=1e-6)
 
 
-class TestDecoderLayer(unittest.TestCase):
+class TestDecoderLayer(TestCase):
     @classmethod
     def setUpClass(cls):
         cls.B = 3
@@ -313,7 +314,7 @@ class TestDecoderLayer(unittest.TestCase):
         self.assertEqual(D_jit.shape, (self.B, self.L, self.dm))
         self.assertFalse(jnp.any(jnp.isnan(D_jit)))
 
-        self.assertTrue(jnp.allclose(D, D_jit, atol=1e-6))
+        self.assertAllclose(D, D_jit, atol=1e-6)
 
         D_drop = f(self.params,
                    self.inputs, self.inputs_mask,
@@ -333,9 +334,9 @@ class TestDecoderLayer(unittest.TestCase):
         self.assertFalse(jnp.any(jnp.isnan(D_drop_jit)))
         self.assertFalse(jnp.allclose(D_jit, D_drop_jit, atol=1e-5))
 
-        self.assertTrue(jnp.allclose(D_drop, D_drop_jit, atol=1e-6))
+        self.assertAllclose(D_drop, D_drop_jit, atol=1e-6)
 
-class TestEncoderStack(unittest.TestCase):
+class TestEncoderStack(TestCase):
     @classmethod
     def setUpClass(cls):
         cls.B = 3
@@ -370,7 +371,7 @@ class TestEncoderStack(unittest.TestCase):
         self.assertEqual(E_jit.shape, (self.B, self.L, self.dm))
         self.assertFalse(jnp.any(jnp.isnan(E_jit)))
 
-        self.assertTrue(jnp.allclose(E, E_jit, atol=1e-6))
+        self.assertAllclose(E, E_jit, atol=1e-6)
 
         E_drop = f(self.params, self.x, self.mask, with_dropout=True,
                    rngs={"dropout": self.key})
@@ -384,9 +385,9 @@ class TestEncoderStack(unittest.TestCase):
         self.assertFalse(jnp.any(jnp.isnan(E_drop_jit)))
         self.assertFalse(jnp.allclose(E_jit, E_drop_jit, atol=1e-5))
 
-        self.assertTrue(jnp.allclose(E_drop, E_drop_jit, atol=1e-6))
+        self.assertAllclose(E_drop, E_drop_jit, atol=1e-6)
 
-class TestDecoderStack(unittest.TestCase):
+class TestDecoderStack(TestCase):
     @classmethod
     def setUpClass(cls):
         cls.B = 3
@@ -435,7 +436,7 @@ class TestDecoderStack(unittest.TestCase):
         self.assertEqual(D_jit.shape, (self.B, self.L, self.dm))
         self.assertFalse(jnp.any(jnp.isnan(D_jit)))
 
-        self.assertTrue(jnp.allclose(D, D_jit, atol=1e-6))
+        self.assertAllclose(D, D_jit, atol=1e-6)
 
         D_drop = f(self.params,
                    self.inputs, self.inputs_mask,
@@ -455,10 +456,10 @@ class TestDecoderStack(unittest.TestCase):
         self.assertFalse(jnp.any(jnp.isnan(D_drop_jit)))
         self.assertFalse(jnp.allclose(D_jit, D_drop_jit, atol=1e-5))
 
-        self.assertTrue(jnp.allclose(D_drop, D_drop_jit, atol=1e-6))
+        self.assertAllclose(D_drop, D_drop_jit, atol=1e-6)
 
 
-class TestTransformer(unittest.TestCase):
+class TestTransformer(TestCase):
     @classmethod
     def setUpClass(cls):
         cls.B = 3
@@ -506,7 +507,7 @@ class TestTransformer(unittest.TestCase):
                       self.outputs, self.outputs_mask)
         self.assertEqual(p_jit.shape, (self.B, self.L, self.V))
 
-        self.assertTrue(jnp.allclose(p, p_jit, atol=1e-6))
+        self.assertAllclose(p, p_jit, atol=1e-6)
 
         p_drop = f(self.params,
                    self.inputs, self.inputs_mask,
@@ -522,14 +523,14 @@ class TestTransformer(unittest.TestCase):
         self.assertEqual(p_drop_jit.shape, (self.B, self.L, self.V))
         self.assertFalse(jnp.allclose(p_jit, p_drop_jit, atol=1e-5))
 
-        self.assertTrue(jnp.allclose(p_drop, p_drop_jit, atol=1e-6))
+        self.assertAllclose(p_drop, p_drop_jit, atol=1e-6)
 
         p_ed = f(self.params,
                  f(self.params, self.inputs, self.inputs_mask, method="encode"),
                  self.inputs_mask,
                  self.outputs, self.outputs_mask,
                  method="decode")
-        self.assertTrue(jnp.allclose(p, p_ed, atol=1e-6))
+        self.assertAllclose(p, p_ed, atol=1e-6)
 
         p_ed_jit = f_jit(self.params,
                          f_jit(self.params, self.inputs, self.inputs_mask,
@@ -537,7 +538,7 @@ class TestTransformer(unittest.TestCase):
                          self.inputs_mask,
                          self.outputs, self.outputs_mask,
                          method="decode")
-        self.assertTrue(jnp.allclose(p, p_ed, atol=1e-6))
+        self.assertAllclose(p, p_ed, atol=1e-6)
 
         p_next = f(self.params,
                    self.inputs, self.inputs_mask,
@@ -551,7 +552,7 @@ class TestTransformer(unittest.TestCase):
                            only_next=True)
         self.assertEqual(p_next_jit.shape, (self.B, self.V))
 
-        self.assertTrue(jnp.allclose(p_next, p_next_jit, atol=1e-6))
+        self.assertAllclose(p_next, p_next_jit, atol=1e-6)
 
 
 

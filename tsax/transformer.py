@@ -23,7 +23,7 @@ from jax import Array
 from jax.typing import ArrayLike
 from flax import linen as nn
 
-from .core import ResidualLayerNorm
+from .core import ResidualLayerNorm, PositionalEncoding
 
 __all__ = [
     "Transformer",
@@ -82,24 +82,22 @@ class Embedding(nn.Module):
         Model Dimension
     Pdrop : float
         Dropout Rate
+    lazy_PE : bool
+        Lazy Positional Encoding
     """
     V: int
     L: int
     dm: int = DM
     Pdrop: float = PDROP
+    lazy_PE: bool = False
 
     def setup(self):
         self.embed = nn.Embed(self.V, self.dm)
 
         self.scale = jnp.sqrt(self.dm)
 
-        half: int = self.dm // 2
-        self.sin_dim: int = half + (self.dm % 2)
-        self.cos_dim: int = half
-        # `sin_dim` is equal to `cos_dim` or `cos_dim + 1`
-
-        # freq: [sin_dim]
-        self.freq = 1.0 / (10000 ** (2 * jnp.arange(self.sin_dim) / self.dm))
+        self.pe = PositionalEncoding(dm=self.dm, L=self.L,
+                                     Lfreq=10000, lazy=self.lazy_PE)
 
         self.drop = nn.Dropout(self.Pdrop, deterministic=False)
 
@@ -123,13 +121,7 @@ class Embedding(nn.Module):
         embedded = self.embed(text) * self.scale
         assert embedded.shape == (text.shape[0], self.L, self.dm), "BUG"
 
-        # theta: [L, sin_dim]
-        theta = jax.vmap(lambda pos: pos * self.freq)(jnp.arange(self.L))
-        assert theta.shape == (self.L, self.sin_dim), "BUG"
-
-        embedded = (embedded
-                    .at[:,:,0::2].add(jnp.sin(theta))
-                    .at[:,:,1::2].add(jnp.cos(theta.at[:,:self.cos_dim].get())))
+        embedded = embedded.at[:,:,:].add(self.pe(embedded))
 
         if with_dropout:
             embedded = embedded.at[:].set(self.drop(embedded))
