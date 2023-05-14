@@ -116,7 +116,7 @@ class Embedding(nn.Module):
             Embedded. [B, L, dm]
         """
         assert (cat is None) or (seq.shape[:2] == cat.shape[:2]), "BUG"
-        assert (cat is None) or (len(Vs) == cat.shape[2]), "BUG"
+        assert (cat is None) or (len(self.Vs) == cat.shape[2]), "BUG"
 
         L: int = seq.shape[1]
 
@@ -126,8 +126,11 @@ class Embedding(nn.Module):
         if cat is not None:
             embedded = (embedded
                         .at[:].multiply(self.alpha)
-                        .at[:].add(PositionalEncoding(dm=dm, L=L, Lfreq=2*L)(seq))
-                        .at[:].add(CategoricalEncoding(Vs=self.Vs, dm=self.dm)(cat)))
+                        .at[:].add(PositionalEncoding(dm=self.dm,
+                                                      L=L,
+                                                      Lfreq=2*L)(embedded))
+                        .at[:].add(CategoricalEncoding(Vs=self.Vs,
+                                                       dm=self.dm)(cat)))
 
         return embedded
 
