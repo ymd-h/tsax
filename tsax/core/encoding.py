@@ -114,7 +114,7 @@ class PositionalEncoding:
         PE : Array
             Positional Encoding. [L, dm]
         """
-        assert x.shape[1:] == (self.L, self.dm), "BUG"
+        assert x.shape[1:] == (self.L, self.dm), f"BUG: {x.shape}"
 
         if self.lazy:
             return positional_encoding(dm=self.dm,
