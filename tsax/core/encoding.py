@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Optional
+from typing import Optional, Tuple
 
 import jax
 import jax.numpy as jnp
@@ -123,3 +123,57 @@ class PositionalEncoding:
                                        dtype=x.dtype)
 
         return self.pe
+
+
+class CategoricalEncoding(nn.Module):
+    """
+    Categorical Encoding
+
+    Attributes
+    ----------
+    Vs : tuple of ints
+        Vocabulary Sizes
+    dm : int
+        Model Dimension
+
+    Notes
+    -----
+    This encoding is designed for Temporal Embedding at Informer [1]_.
+
+    References
+    ----------
+    .. [1] H. Zhou et al., "Informer: Beyond Efficient Transformer for Long Sequence Time-Series Forecasting", AAAI 2021, Vol. 35, No. 12
+       https://ojs.aaai.org/index.php/AAAI/article/view/17325,
+       https://arxiv.org/abs/2012.07436
+    """
+    Vs: Tuple[int, ...]
+    dm: int
+
+
+    @nn.compact
+    def __call__(self, x: ArrayLike) -> Array:
+        """
+        Call Categorical Encoding
+
+        Parameters
+        ----------
+        x : ArrayLike
+            Input Categorical Sequence. [B, L, C]
+
+        Returns
+        -------
+        embedded : Array
+            Embedded. [B, L, dm]
+        """
+        assert x.shape[-1] == len(self.Vs), "BUG"
+
+        embedded = jnp.sum(
+            jax.vmap(
+                lambda v, _x: nn.Embed(v, self.dm)(_x)
+            )(self.Vs, jnp.moveaxis(x, (-1, 0))),
+            axis=0
+        )
+
+        assert embedded.shape == (*x.shape[:-1], self.dm), "BUG"
+
+        return embedded
