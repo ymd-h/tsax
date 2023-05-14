@@ -208,14 +208,14 @@ class TestMultiHeadAttention(TestCase):
         self.assertEqual(A_mask.shape, (self.B, self.L, self.dm))
         self.assertFalse(jnp.any(jnp.isnan(A_mask)))
 
-        self.assertFalse(jnp.allclose(A, A_mask, atol=1e-5))
+        self.assertNotAllclose(A, A_mask, atol=1e-5)
 
         A_mask_jit = f_jit(self.params, self.Q, self.K, self.V, self.mask)
         self.assertEqual(A_mask_jit.shape, (self.B, self.L, self.dm))
         self.assertFalse(jnp.any(jnp.isnan(A_mask_jit)))
 
         self.assertAllclose(A_mask, A_mask_jit, atol=1e-6)
-        self.assertFalse(jnp.allclose(A_jit, A_mask_jit, atol=1e-5))
+        self.assertNotAllclose(A_jit, A_mask_jit, atol=1e-5)
 
 
 class TestEncoderLayer(TestCase):
@@ -256,13 +256,13 @@ class TestEncoderLayer(TestCase):
                    rngs={"dropout": self.key})
         self.assertEqual(E_drop.shape, (self.B, self.L, self.dm))
         self.assertFalse(jnp.any(jnp.isnan(E_drop)))
-        self.assertFalse(jnp.allclose(E, E_drop, atol=1e-5))
+        self.assertNotAllclose(E, E_drop, atol=1e-5)
 
         E_drop_jit = f_jit(self.params, self.x, self.mask, with_dropout=True,
                            rngs={"dropout": self.key})
         self.assertEqual(E_drop_jit.shape, (self.B, self.L, self.dm))
         self.assertFalse(jnp.any(jnp.isnan(E_drop_jit)))
-        self.assertFalse(jnp.allclose(E_jit, E_drop_jit, atol=1e-5))
+        self.assertNotAllclose(E_jit, E_drop_jit, atol=1e-5)
 
         self.assertAllclose(E_drop, E_drop_jit, atol=1e-6)
 
@@ -323,7 +323,7 @@ class TestDecoderLayer(TestCase):
                    rngs={"dropout": self.key})
         self.assertEqual(D_drop.shape, (self.B, self.L, self.dm))
         self.assertFalse(jnp.any(jnp.isnan(D_drop)))
-        self.assertFalse(jnp.allclose(D, D_drop, atol=1e-5))
+        self.assertNotAllclose(D, D_drop, atol=1e-5)
 
         D_drop_jit = f_jit(self.params,
                            self.inputs, self.inputs_mask,
@@ -332,7 +332,7 @@ class TestDecoderLayer(TestCase):
                            rngs={"dropout": self.key})
         self.assertEqual(D_drop_jit.shape, (self.B, self.L, self.dm))
         self.assertFalse(jnp.any(jnp.isnan(D_drop_jit)))
-        self.assertFalse(jnp.allclose(D_jit, D_drop_jit, atol=1e-5))
+        self.assertNotAllclose(D_jit, D_drop_jit, atol=1e-5)
 
         self.assertAllclose(D_drop, D_drop_jit, atol=1e-6)
 
@@ -377,13 +377,13 @@ class TestEncoderStack(TestCase):
                    rngs={"dropout": self.key})
         self.assertEqual(E_drop.shape, (self.B, self.L, self.dm))
         self.assertFalse(jnp.any(jnp.isnan(E_drop)))
-        self.assertFalse(jnp.allclose(E, E_drop, atol=1e-5))
+        self.assertNotAllclose(E, E_drop, atol=1e-5)
 
         E_drop_jit = f_jit(self.params, self.x, self.mask, with_dropout=True,
                            rngs={"dropout": self.key})
         self.assertEqual(E_drop_jit.shape, (self.B, self.L, self.dm))
         self.assertFalse(jnp.any(jnp.isnan(E_drop_jit)))
-        self.assertFalse(jnp.allclose(E_jit, E_drop_jit, atol=1e-5))
+        self.assertNotAllclose(E_jit, E_drop_jit, atol=1e-5)
 
         self.assertAllclose(E_drop, E_drop_jit, atol=1e-6)
 
@@ -445,7 +445,7 @@ class TestDecoderStack(TestCase):
                    rngs={"dropout": self.key})
         self.assertEqual(D_drop.shape, (self.B, self.L, self.dm))
         self.assertFalse(jnp.any(jnp.isnan(D_drop)))
-        self.assertFalse(jnp.allclose(D, D_drop, atol=1e-5))
+        self.assertNotAllclose(D, D_drop, atol=1e-5)
 
         D_drop_jit = f_jit(self.params,
                            self.inputs, self.inputs_mask,
@@ -454,7 +454,7 @@ class TestDecoderStack(TestCase):
                            rngs={"dropout": self.key})
         self.assertEqual(D_drop_jit.shape, (self.B, self.L, self.dm))
         self.assertFalse(jnp.any(jnp.isnan(D_drop_jit)))
-        self.assertFalse(jnp.allclose(D_jit, D_drop_jit, atol=1e-5))
+        self.assertNotAllclose(D_jit, D_drop_jit, atol=1e-5)
 
         self.assertAllclose(D_drop, D_drop_jit, atol=1e-6)
 
@@ -514,14 +514,14 @@ class TestTransformer(TestCase):
                    self.outputs, self.outputs_mask,
                    with_dropout=True, rngs={"dropout": self.key})
         self.assertEqual(p_drop.shape, (self.B, self.L, self.V))
-        self.assertFalse(jnp.allclose(p, p_drop, atol=1e-5))
+        self.assertNotAllclose(p, p_drop, atol=1e-5)
 
         p_drop_jit = f_jit(self.params,
                            self.inputs, self.inputs_mask,
                            self.outputs, self.outputs_mask,
                            with_dropout=True, rngs={"dropout": self.key})
         self.assertEqual(p_drop_jit.shape, (self.B, self.L, self.V))
-        self.assertFalse(jnp.allclose(p_jit, p_drop_jit, atol=1e-5))
+        self.assertNotAllclose(p_jit, p_drop_jit, atol=1e-5)
 
         self.assertAllclose(p_drop, p_drop_jit, atol=1e-6)
 
