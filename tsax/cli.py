@@ -52,13 +52,16 @@ def inference_cli(args: CLIArgs) -> int:
 
 def cli(args: Optional[CLIArgs] = None) -> int:
     if args is None:
-        parser = argparse.ArgumentParser("tsax.cli")
+        parser = argparse.ArgumentParser("python -m tsax",
+                                         description="TSax Command Line Interface")
         parser.add_argument("--action",
                             choices=["train", "inference"],
-                            default="train")
+                            default="train",
+                            help="Default is `train`")
         parser.add_argument("--model",
                             choices=["informer", "autoformer"],
-                            default="informer")
+                            default="informer",
+                            help="Default is `informer`")
 
         m = parser.add_argument_group("model")
         m.add_argument("--nE", type=int, default=3,
