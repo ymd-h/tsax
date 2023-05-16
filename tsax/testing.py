@@ -3,7 +3,8 @@ from typing import Callable, Optional
 import unittest
 
 import jax.numpy as jnp
-from jax.typing import ArrayLike
+
+from tsax.typing import Array, ArrayLike
 
 class TestCase(unittest.TestCase):
     def assertAllclose(self, x: ArrayLike, y: ArrayLike, **kwargs):
