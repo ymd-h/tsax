@@ -152,12 +152,19 @@ class Distilling(nn.Module):
             Convoluted Sequence. [B, L/2, d]
         """
         B, L, d = x.shape
-        x = ConvSeq(dm=x.shape[2], kernel=self.kernel)(x)
-        assert x.shape == (B, L, d)
+        x = ConvSeq(dm=d, kernel=self.kernel)(x)
+        assert x.shape == (B, L, d), "BUG"
 
         x = nn.activation.elu(x)
-        x = nn.max_pool(x, window_shape=(2,), strides=(2,))
-        assert x.shape == (B, L // 2, d), "BUG"
+
+        is_odd: int = L % 2
+        x_pad = jnp.pad(x, ((0, 0), (1, is_odd), (0, 0)), constant_values=-jnp.inf)
+        x = jax.vmap(
+            lambda i: jnp.max(jax.lax.dynamic_slice(x_pad, (0, i, 0), (B, 3, d)),
+                              axis=1),
+            out_axes=1
+        )(jnp.arange(0, L + is_odd, 2))
+        assert x.shape == (B, (L + 1) // 2, d), "BUG"
 
         return x
 
