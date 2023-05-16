@@ -7,12 +7,14 @@ import argparse
 from dataclasses import dataclass
 from logging import INFO, DEBUG, StreamHandler
 import sys
-from typing import Any, Dict, Literal, Optional, Union
+from typing import Any, Callable, Literal, Optional, Union
 
 import wblog
 
 from tsax.experiment import train, inference
 from tsax.logging import enable_logging
+from tsax.random import initPRNGKey
+from tsax.typing import KeyArray
 from tsax.version import get_version
 
 
@@ -35,18 +37,19 @@ class CLIArgs:
     nH: int
     dff: int
     dm: int
+    seed: Optional[int] = None
     version: bool = False
     verbose: bool = False
     debug: bool = False
 
 
 def train_cli(args: CLIArgs) -> int:
-    train(args.model)
+    train(model=args.model)
     return EXIT_SUCCESS
 
 
 def inference_cli(args: CLIArgs) -> int:
-    inference(args.model)
+    inference(model=args.model)
     return EXIT_SUCCESS
 
 
@@ -54,6 +57,7 @@ def cli(args: Optional[CLIArgs] = None) -> int:
     if args is None:
         parser = argparse.ArgumentParser("python -m tsax",
                                          description="TSax Command Line Interface")
+        parser.add_argument("--seed", type=int)
         parser.add_argument("--action",
                             choices=["train", "inference"],
                             default="train",
@@ -93,9 +97,11 @@ def cli(args: Optional[CLIArgs] = None) -> int:
         enable_logging(INFO)
         logger.info("Enable Verbose")
 
+    key: KeyArray = initPRNGKey(args.seed)
+
     try:
         logger.info("action: %s", args.action)
-        fn = {
+        fn: Optional[Callable[[CLIArgs], int]] = {
             "train": train_cli,
             "inference": inference_cli
         }.get(args.action)
