@@ -157,11 +157,11 @@ class Distilling(nn.Module):
         """
         B, L, d = x.shape
         x = ConvSeq(dm=x.shape[2], kernel=self.kernel)(x)
-        assert x.shape = (B, L, d)
+        assert x.shape == (B, L, d)
 
         x = nn.activation.elu(x)
         x = nn.max_pool(x, window_shape=(2,), strides=(2,))
-        assert x.shape = (B, L // 2, d), "BUG"
+        assert x.shape == (B, L // 2, d), "BUG"
 
         return x
 
