@@ -39,7 +39,6 @@ __all__ = [
     "Distilling",
     "MultiHeadAttention",
     "ProbSparseAttention",
-    "FeedForward",
     "Embedding",
 ]
 
@@ -74,9 +73,6 @@ PDROP: float = 0.1
 """
 Default Probability of Dropout Rate
 """
-
-class FeedForward(nn.Module):
-    pass
 
 class Embedding(nn.Module):
     """
