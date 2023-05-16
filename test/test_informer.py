@@ -63,6 +63,45 @@ class TestEmbedding(TestCase):
         self.assertAllclose(embedded, embedded_jit)
 
 
+class TestDistilling(TestCase):
+    def test_even(self):
+        B, L, dm = 1, 4, 3
+
+        key = jax.random.PRNGKey(0)
+
+        key, key_use = jax.random.split(key, 2)
+        x = jax.random.normal(key_use, (B, L, dm))
+
+        d = Distilling(kernel=3)
+
+        key, key_use = jax.random.split(key, 2)
+        distilled, _ = d.init_with_output(key_use, x)
+        self.assertEqual(distilled.shape, (B, (L+1)//2, dm))
+
+        distilled_jit, _ = jax.jit(d.init_with_output)(key_use, x)
+        self.assertEqual(distilled_jit.shape, (B, (L+1)//2, dm))
+
+        self.assertAllclose(distilled, distilled_jit)
+
+    def test_odd(self):
+        B, L, dm = 1, 5, 3
+
+        key = jax.random.PRNGKey(0)
+
+        key, key_use = jax.random.split(key, 2)
+        x = jax.random.normal(key_use, (B, L, dm))
+
+        d = Distilling(kernel=3)
+
+        key, key_use = jax.random.split(key, 2)
+        distilled, _ = d.init_with_output(key_use, x)
+        self.assertEqual(distilled.shape, (B, (L+1)//2, dm))
+
+        distilled_jit, _ = jax.jit(d.init_with_output)(key_use, x)
+        self.assertEqual(distilled_jit.shape, (B, (L+1)//2, dm))
+
+        self.assertAllclose(distilled, distilled_jit)
+
 
 if __name__ == "__main__":
     unittest.main()
