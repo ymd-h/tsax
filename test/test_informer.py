@@ -13,7 +13,6 @@ from tsax.model.informer import (
     Distilling,
     MultiHeadAttention,
     ProbSparseAttention,
-    FeedForward,
     Embedding,
 )
 from tsax.testing import TestCase
