@@ -23,7 +23,7 @@ from jax import Array
 from jax.typing import ArrayLike
 from flax import linen as nn
 
-from .core import ResidualLayerNorm, PositionalEncoding
+from tsax.core import ResidualLayerNorm, PositionalEncoding
 
 __all__ = [
     "Transformer",

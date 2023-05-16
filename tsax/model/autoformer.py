@@ -22,7 +22,7 @@ from jax import Array
 from jax.typing import ArrayLike
 from flax import linen as nn
 
-from .core import ResidualLayerNorm
+from tsax.core import ResidualLayerNorm
 
 __all__ = [
     "Autoformer",

@@ -23,7 +23,7 @@ from jax.random import KeyArray
 from jax.typing import ArrayLike
 from flax import linen as nn
 
-from .core import (
+from tsax.core import (
     ConvSeq,
     PositionalEncoding,
     CategoricalEncoding,
