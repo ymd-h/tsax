@@ -4,7 +4,7 @@ import jax
 import jax.numpy as jnp
 from flax import linen as nn
 
-from tsax.informer import (
+from tsax.model.informer import (
     Informer,
     EncoderStack,
     DecoderStack,

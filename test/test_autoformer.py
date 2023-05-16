@@ -3,7 +3,7 @@ import unittest
 import jax
 import jax.numpy as jnp
 
-from tsax.autoformer import (
+from tsax.model.autoformer import (
     Autoformer,
     EncoderStack,
     DecoderStack,

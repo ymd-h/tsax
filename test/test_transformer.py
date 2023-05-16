@@ -3,7 +3,7 @@ import unittest
 import jax
 import jax.numpy as jnp
 
-from tsax.transformer import (
+from tsax.model.transformer import (
     Transformer,
     Embedding,
     EncoderStack,
