@@ -43,12 +43,14 @@ class CLIArgs:
     debug: bool = False
 
 
-def train_cli(args: CLIArgs) -> int:
+def train_cli(args: CLIArgs,
+              key: KeyArray) -> int:
     train(model=args.model)
     return EXIT_SUCCESS
 
 
-def inference_cli(args: CLIArgs) -> int:
+def inference_cli(args: CLIArgs,
+                  key: KeyArray) -> int:
     inference(model=args.model)
     return EXIT_SUCCESS
 
@@ -101,10 +103,10 @@ def cli(args: Optional[CLIArgs] = None) -> int:
 
     try:
         logger.info("action: %s", args.action)
-        fn: Optional[Callable[[CLIArgs], int]] = {
+        fn: Optional[Callable[[CLIArgs, KeyArray], int]] = {
             "train": train_cli,
             "inference": inference_cli
-        }.get(args.action)
+        }.get(args.action, key)
 
         if fn is None:
             logger.critical(f"Unknown Action: {args.action}")
