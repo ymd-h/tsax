@@ -122,6 +122,9 @@ class TestProbSparseAttention(TestCase):
 
         key, key_use = jax.random.split(key, 2)
         a, _ = A.init_with_output(key_use, Q, K, V, key)
+        a_jit, _ = jax.jit(A.init_with_output)(key_use, Q, K, V, key)
+
+        self.assertAllclose(a, a_jit)
 
 if __name__ == "__main__":
     unittest.main()
