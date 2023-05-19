@@ -173,6 +173,11 @@ class Distilling(nn.Module):
 class ProbSparseAttention(nn.Module):
     """
     ProbSparse self-attention
+
+    Attributes
+    ----------
+    c : int
+        Hyper-Parameter for Sampling Factor
     """
     c: int
 
