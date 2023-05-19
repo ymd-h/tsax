@@ -214,17 +214,21 @@ class ProbSparseAttention(nn.Module):
         n: int = int(K.shape[1])
         d: int = int(Q.shape[2])
 
-        u: int = int(self.c * math.log(m))
-        U: int = int(     m * math.log(n))
+        # Notes: Official implementation is different from the paper.
+        u: int = min(int(self.c * math.ceil(math.log(m))), m)
+        U: int = min(int(self.c * math.ceil(math.log(n))), n)
 
 
         @jax.vmap
         def _each_sample(_Q, _K, _V, _rng):
-            _Kbar = _K.at[jax.random.choice(_rng, U, replace=False),:].get()
+            _Kbar = _K.at[jax.random.choice(_rng,
+                                            _K.shape[0],
+                                            shape=(U,),
+                                            replace=False),:].get()
 
             _Sbar = jnp.matmul(_Q, jnp.transpose(_Kbar, (1, 0)))
             _M = jnp.max(_Sbar, axis=1) - jnp.mean(_Sbar, axis=1)
-            assert _M.shape == (m, U), "BUG"
+            assert _M.shape == (m,), f"BUG: {_M.shape} != {(m,)}"
 
             _, _I = jax.lax.top_k(_M, u)
             assert _I.shape == (u,), "BUG"
