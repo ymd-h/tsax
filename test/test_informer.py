@@ -122,7 +122,10 @@ class TestProbSparseAttention(TestCase):
 
         key, key_use = jax.random.split(key, 2)
         a, _ = A.init_with_output(key_use, Q, K, V, key)
+        self.assertEqual(a.shape, Q.shape)
+
         a_jit, _ = jax.jit(A.init_with_output)(key_use, Q, K, V, key)
+        self.assertEqual(a_jit.shape, Q.shape)
 
         self.assertAllclose(a, a_jit)
 
