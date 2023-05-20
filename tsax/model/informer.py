@@ -277,7 +277,7 @@ class MultiHeadAttention(nn.Module):
     Attributes
     ----------
     c : int
-        Hyper Parameter
+        Hyper Parameter of Sampling Factor
     nH : int
         Number of Multi Head
     dm : int
@@ -287,6 +287,7 @@ class MultiHeadAttention(nn.Module):
     dm: int
     nH: int = NH
     Pdrop: float = PDROP
+    mask: bool = False
 
     @nn.compact
     def __call__(self,
@@ -324,7 +325,9 @@ class MultiHeadAttention(nn.Module):
 
         # x: [B, L, dm (= dm/nH * nH)]
         d: int = self.dm // self.nH
-        x = jnp.concatenate([ProbSparseAttention(name=f"head_{i}")(Q, K, V, rngs[i])
+        x = jnp.concatenate([ProbSparseAttention(c=self.c,
+                                                 mask=self.mask,
+                                                 name=f"head_{i}")(Q, K, V, rngs[i])
                              for i in range(self.nH)],
                             axis=2)
         assert x.shape == (*Q.shape[:2], d * self.nH), "BUG"
