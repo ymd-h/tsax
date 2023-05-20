@@ -28,6 +28,7 @@ from tsax.core import (
     PositionalEncoding,
     CategoricalEncoding,
     ResidualLayerNorm,
+    SubsequentMask,
 )
 
 __all__ = [
@@ -180,6 +181,7 @@ class ProbSparseAttention(nn.Module):
         Hyper-Parameter for Sampling Factor
     """
     c: int
+    mask: bool = False
 
     @nn.compact
     def __call__(self,
@@ -219,6 +221,9 @@ class ProbSparseAttention(nn.Module):
         u: int = min(int(self.c * math.ceil(math.log(m))), m)
         U: int = min(int(self.c * math.ceil(math.log(n))), n)
 
+        if self.mask:
+            mask = SubsequentMask(n)
+
 
         @jax.vmap
         def _each_sample(_Q, _K, _V, _rng):
@@ -240,11 +245,19 @@ class ProbSparseAttention(nn.Module):
             _QbarK = jnp.matmul(_Qbar, jnp.transpose(_K, (1, 0)))
             assert _QbarK.shape == (u, n), "BUG"
 
+            if self.mask:
+                _QbarK = _QbarK.at[:].set(
+                    jnp.where(mask.at[_I,:].get()==1, _QbarK, -jnp.inf)
+                )
+
             _S1 = jnp.matmul(nn.activation.softmax(_QbarK / math.sqrt(d)), _V)
             assert _S1.shape == (u, d), "BUG"
 
             _S = jnp.zeros((m, d), dtype=Q.dtype)
-            _S = _S.at[:, :].set(jnp.mean(_V, axis=1, keepdims=True))
+            _S = _S.at[:, :].set(
+                jnp.cumsum(_V, axis=1) if self.mask
+                else jnp.mean(_V, axis=1, keepdims=True)
+            )
             _S = _S.at[_I, :].set(_S1)
 
             return _S
