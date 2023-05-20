@@ -129,5 +129,30 @@ class TestProbSparseAttention(TestCase):
 
         self.assertAllclose(a, a_jit)
 
+    def test_attention_with_mask(self):
+        B, L, d = 1, 5, 3
+
+        key = jax.random.PRNGKey(0)
+
+        key, key_use = jax.random.split(key, 2)
+        Q = jax.random.normal(key_use, (B, L, d))
+
+        key, key_use = jax.random.split(key, 2)
+        K = jax.random.normal(key_use, (B, L, d))
+
+        key, key_use = jax.random.split(key, 2)
+        V = jax.random.normal(key_use, (B, L, d))
+
+        A = ProbSparseAttention(c=1, mask=True)
+
+        key, key_use = jax.random.split(key, 2)
+        a, _ = A.init_with_output(key_use, Q, K, V, key)
+        self.assertEqual(a.shape, Q.shape)
+
+        a_jit, _ = jax.jit(A.init_with_output)(key_use, Q, K, V, key)
+        self.assertEqual(a_jit.shape, Q.shape)
+
+        self.assertAllclose(a, a_jit)
+
 if __name__ == "__main__":
     unittest.main()
