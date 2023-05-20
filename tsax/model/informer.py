@@ -207,6 +207,7 @@ class ProbSparseAttention(nn.Module):
             ProbSparse self-attention
         """
         assert Q.shape[0] == K.shape[0] == V.shape[0], "BUG"
+        assert K.shape[1] == V.shape[1], "BUG"
         assert Q.shape[2] == K.shape[2] == V.shape[2], "BUG"
 
         B: int = int(Q.shape[0])
