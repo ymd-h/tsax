@@ -332,7 +332,7 @@ class MultiHeadAttention(nn.Module):
                             axis=2)
         assert x.shape == (*Q.shape[:2], d * self.nH), "BUG"
 
-        MHA = nn.Dense(features=self.dm, use_bias=Fase, name="WO")(x)
+        MHA = nn.Dense(features=self.dm, use_bias=False, name="WO")(x)
         assert Q.shape == MHA.shape, "BUG"
 
         if with_dropout:
