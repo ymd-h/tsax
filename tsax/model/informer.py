@@ -568,11 +568,13 @@ class EncoderStack(nn.Module):
         for i in range(self.nE):
             B, L, dm = inputs.shape
             inputs = EncoderLayer(c=self.c,
+                                  dm=self.dm,
                                   nH=self.nH,
                                   dff=self.dff,
                                   eps=self.eps,
                                   Pdrop=self.Pdrop,
-                                  name=f"EncoderLayer_{i}")(inputs, with_dropout)
+                                  name=f"EncoderLayer_{i}")(inputs,
+                                                            with_dropout=with_dropout)
             assert inputs.shape == (B, L, dm), "BUG"
 
             inputs = Distilling(kernel=self.kernel,
