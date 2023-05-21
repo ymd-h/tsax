@@ -41,6 +41,7 @@ __all__ = [
     "MultiHeadAttention",
     "ProbSparseAttention",
     "Embedding",
+    "FeedForward",
 ]
 
 
@@ -74,6 +75,55 @@ PDROP: float = 0.1
 """
 Default Probability of Dropout Rate
 """
+
+
+class FeedForward(nn.Module):
+    """
+    Feed Forward Layer
+
+    Attributes
+    ----------
+    dff : int
+        Hidden Layer Units
+    Pdrop : float
+        Probability of Dropout
+    """
+    dff: int = DFF
+    Pdrop: float = PDROP
+
+    @nn.compact
+    def __call__(self, x: ArrayLike, *, with_dropout = False) -> Array:
+        """
+        Call Feed Foward Network
+
+        Parameters
+        ----------
+        x : ArrayLike
+            Inputs. [B, L, dm]
+        with_dropout : bool, optional
+            Whether dropout or not
+
+        Returns
+        -------
+        y : Array
+            Outputs. [B, L, dm]
+        """
+        B, L, dm = x.shape
+
+        # h: [B, L, dff]
+        h = nn.activation.relu(ConvSeq(dm=self.dff, kernel=1)(x))
+        assert h.shape == (B, L, self.dff), "BUG"
+
+        if with_dropout:
+            h = h.at[:].set(nn.Dropout(self.Pdrop, deterministic=False)(h))
+
+        y = ConvSeq(dm=dm, kernel=1)(h)
+        assert y.shape == (B, L, dm), "BUG"
+
+        if with_dropout:
+            y = y.at[:].set(nn.Dropout(self.Pdrop, deterministic=False)(y))
+
+        return y
 
 class Embedding(nn.Module):
     """
