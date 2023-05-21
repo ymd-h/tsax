@@ -291,8 +291,7 @@ class MultiHeadAttention(nn.Module):
     def __call__(self,
                  Q: ArrayLike,
                  K: ArrayLike,
-                 V: ArrayLike,
-                 rng: KeyArray, *,
+                 V: ArrayLike, *,
                  with_dropout: bool = False) -> Array:
         """
         Call Multi Head Attention
@@ -305,8 +304,6 @@ class MultiHeadAttention(nn.Module):
             Key. [B, L, dm]
         V : ArrayLike
             Value. [B, L, dm]
-        rng : KeyArray
-            Random Number Generator Key will be consumed.
         with_dropout : bool, optional
             Whether dropout or not
 
@@ -319,13 +316,11 @@ class MultiHeadAttention(nn.Module):
         assert Q.shape[0] == K.shape[0], "BUG"
         assert Q.shape[2] == K.shape[2], "BUG"
 
-        rngs = jax.random.split(rng, self.nH)
-
         # x: [B, L, dm (= dm/nH * nH)]
         d: int = self.dm // self.nH
         x = jnp.concatenate([ProbSparseAttention(c=self.c,
                                                  mask=self.mask,
-                                                 name=f"head_{i}")(Q, K, V, rngs[i])
+                                                 name=f"head_{i}")(Q, K, V)
                              for i in range(self.nH)],
                             axis=2)
         assert x.shape == (*Q.shape[:2], d * self.nH), "BUG"
