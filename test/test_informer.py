@@ -184,17 +184,34 @@ class TestMultiHeadAttention(TestCase):
                                  Pdrop=Pdrop,
                                  mask=False)
 
-        key, key_use = jax.random.split(key, 2)
-        mha, _ = MHA.init_with_output({"params": key_use, "attention": key},
+        key_p, key_a, key_d = jax.random.split(key, 3)
+        mha, _ = MHA.init_with_output({"params": key_p, "attention": key_a},
                                       Q, K, V)
         self.assertEqual(mha.shape, Q.shape)
 
-        mha_jit, _ = jax.jit(MHA.init_with_output)({"params": key_use,
-                                                    "attention": key},
+        mha_jit, _ = jax.jit(MHA.init_with_output)({"params": key_p,
+                                                    "attention": key_a},
                                                    Q, K, V)
         self.assertEqual(mha_jit.shape, Q.shape)
 
         self.assertAllclose(mha, mha_jit)
+
+        mha_drop, _ = MHA.init_with_output({"params": key_p,
+                                            "attention": key_a,
+                                            "dropout": key_d},
+                                           Q, K, V, with_dropout=True)
+        self.assertEqual(mha_drop.shape, Q.shape)
+        self.assertNotAllclose(mha, mha_drop)
+
+        mha_drop_jit, _ = jax.jit(
+            MHA.init_with_output,
+            static_argnames=["with_dropout"]
+        )({"params": key_p, "attention": key_a, "dropout": key_d},
+          Q, K, V, with_dropout=True)
+        self.assertEqual(mha_drop_jit.shape, Q.shape)
+        self.assertNotAllclose(mha_jit, mha_drop_jit)
+
+        self.assertAllclose(mha_drop, mha_drop_jit)
 
     def test_mha_mask(self):
         B, L, dm = 1, 12, 6
