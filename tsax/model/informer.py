@@ -66,6 +66,17 @@ NH: int = 8
 Default Number of Multi Head Attention
 """
 
+NE: int = 3
+"""
+Default Number of Encoder Layers
+"""
+
+ND: int = 2
+"""
+Default Number of Decoder Layers
+"""
+
+
 EPS: float = 1e-12
 """
 Default Value for Small Positive Value for Layer Normalization
