@@ -449,7 +449,78 @@ class EncoderLayer(nn.Module):
 
 
 class DecoderLayer(nn.Module):
-    pass
+    """
+    Decoder Layer
+    """
+    c: int
+    dm: int
+    nH: int = NH
+    dff: int = DFF
+    eps: float = EPS
+    Pdrop: float = PDROP
+
+    @nn.compact
+    def __call__(self,
+                 inputs: ArrayLike,
+                 outputs, *,
+                 with_dropout: bool = False) -> Array:
+        """
+        Call Decoder Layer
+
+        Parameters
+        ----------
+        inputs : ArrayLike
+            Inputs. [B, Lenc, dm]
+        outputs : ArrayLike
+            Outputs. [B, Ldec, dm]
+        with_dropout : bool, optional
+            Whether dropout or not
+
+        Returns
+        -------
+        outputs : Array
+           Decoded Outputs. [B, L, dm]
+        """
+        B, Ldec, dm = outputs.shape
+
+        mmha = MultiHeadAttention(
+            c=self.c,
+            nH=self.nH,
+            dm=self.dm,
+            Pdrop=self.Pdrop,
+            mask=True,
+            name="MaskedMultiHeadAttention",
+        )
+        mha = MultiHeadAttention(
+            c=self.c,
+            nH=self.nH,
+            dm=self.dm,
+            Pdrop=self.Pdrop,
+            mask=False,
+            name="MultiHeadAttention",
+        )
+        ff = FeedForward(dff=self.dff, Pdrop=self.Pdrop)
+
+        outputs = ResidualLayerNorm(
+            lambda o: mmha(o, o, o, with_dropout=with_dropout),
+            self.eps
+        )(outputs)
+
+        outputs = outputs.at[:].set(ResidualLayerNorm(
+            lambda o: mha(o, inputs, inputs, with_dropout=with_dropout),
+            self.eps
+        )(outputs))
+
+        outputs = outputs.at[:].set(
+            ResidualLayerNorm(
+                lambda o: ff(o, with_dropout=with_dropout),
+                self.eps
+            )(outputs)
+        )
+
+        assert outputs.shape == (B, Ldec, dm), "BUG"
+        return outputs
+
 
 class EncoderStack(nn.Module):
     pass
