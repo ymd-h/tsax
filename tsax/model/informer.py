@@ -182,13 +182,13 @@ class ProbSparseAttention(nn.Module):
     """
     c: int
     mask: bool = False
+    rng_collection: str = "attention"
 
     @nn.compact
     def __call__(self,
                  Q: ArrayLike,
                  K: ArrayLike,
-                 V: ArrayLike,
-                 rng: KeyArray) -> Array:
+                 V: ArrayLike) -> Array:
         """
         Call ProbSparse self-attention
 
@@ -200,8 +200,6 @@ class ProbSparseAttention(nn.Module):
             Key. [B, L, d]
         V : ArrayLike
             Value. [B, L, d]
-        rng : KeyArray
-            Random Number Generator Key will be consumed.
 
         Returns
         -------
@@ -262,9 +260,9 @@ class ProbSparseAttention(nn.Module):
 
             return _S
 
-        rng_batch = jax.random.split(rng, B)
+        rng = jax.random.split(self.make_rng(self.rng_collection), B)
 
-        S = _each_sample(Q, K, V, rng_batch)
+        S = _each_sample(Q, K, V, rng)
         assert S.shape == (B, m, d), "BUG"
 
         return S

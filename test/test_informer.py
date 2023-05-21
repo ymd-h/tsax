@@ -121,10 +121,12 @@ class TestProbSparseAttention(TestCase):
         A = ProbSparseAttention(c=1)
 
         key, key_use = jax.random.split(key, 2)
-        a, _ = A.init_with_output(key_use, Q, K, V, key)
+        a, _ = A.init_with_output({"params": key_use, "attention": key},
+                                  Q, K, V)
         self.assertEqual(a.shape, Q.shape)
 
-        a_jit, _ = jax.jit(A.init_with_output)(key_use, Q, K, V, key)
+        a_jit, _ = jax.jit(A.init_with_output)({"params": key_use,
+                                                "attention": key}, Q, K, V)
         self.assertEqual(a_jit.shape, Q.shape)
 
         self.assertAllclose(a, a_jit)
@@ -146,10 +148,13 @@ class TestProbSparseAttention(TestCase):
         A = ProbSparseAttention(c=1, mask=True)
 
         key, key_use = jax.random.split(key, 2)
-        a, _ = A.init_with_output(key_use, Q, K, V, key)
+        a, _ = A.init_with_output({"params": key_use, "attention": key},
+                                  Q, K, V)
         self.assertEqual(a.shape, Q.shape)
 
-        a_jit, _ = jax.jit(A.init_with_output)(key_use, Q, K, V, key)
+        a_jit, _ = jax.jit(A.init_with_output)({"params": key_use,
+                                                "attention": key},
+                                               Q, K, V)
         self.assertEqual(a_jit.shape, Q.shape)
 
         self.assertAllclose(a, a_jit)
