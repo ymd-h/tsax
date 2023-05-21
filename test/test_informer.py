@@ -336,6 +336,56 @@ class TestEncoderLayer(TestCase):
         self.assertAllclose(e_drop, e_drop_jit)
 
 
+class TestDecoderLayer(TestCase):
+    def test_decoder(self):
+        B, L, dm = 2, 12, 4
+        c = 2
+        nH = 2
+        dff = 32
+        eps = 0.1
+        Pdrop = 0.8
+
+        key = jax.random.PRNGKey(0)
+
+        key, key_use = jax.random.split(key, 2)
+        inputs = jax.random.normal(key_use, (B, L, dm))
+
+        key, key_use = jax.random.split(key, 2)
+        outputs = jax.random.normal(key_use, (B, L, dm))
+
+        D = DecoderLayer(c=c, nH=nH, dm=dm, dff=dff, eps=eps, Pdrop=Pdrop)
+
+        key_p, key_a, key_d = jax.random.split(key, 3)
+        d, _ = D.init_with_output({"params": key_p,
+                                   "attention": key_a,
+                                   "dropout": key_d},
+                                  inputs, outputs)
+        self.assertEqual(d.shape, outputs.shape)
+
+        d_jit, _ = jax.jit(D.init_with_output)({"params": key_p,
+                                                "attention": key_a,
+                                                "dropout": key_d},
+                                               inputs, outputs)
+        self.assertEqual(d_jit.shape, outputs.shape)
+
+        self.assertAllclose(d, d_jit, atol=1e-6)
+
+        d_drop, _ = D.init_with_output({"params": key_p,
+                                        "attention": key_a,
+                                        "dropout": key_d},
+                                       inputs, outputs, with_dropout=True)
+        self.assertEqual(d_drop.shape, outputs.shape)
+        self.assertNotAllclose(d, d_drop)
+
+        d_drop_jit, _ = jax.jit(
+            D.init_with_output,
+            static_argnames=["with_dropout"],
+        )({"params": key_p, "attention": key_a, "dropout": key_d},
+          inputs, outputs, with_dropout=True)
+        self.assertEqual(d_drop_jit.shape, outputs.shape)
+        self.assertNotAllclose(d_jit, d_drop_jit)
+
+        self.assertAllclose(d_drop, d_drop_jit, atol=1e-6)
 
 
 if __name__ == "__main__":
