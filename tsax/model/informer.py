@@ -325,6 +325,8 @@ class MultiHeadAttention(nn.Module):
         # x: [B, L, dm (= dm/nH * nH)]
         d: int = self.dm // self.nH
         x = jnp.concatenate([ProbSparseAttention(c=self.c,
+                                                 dk=d,
+                                                 dv=d,
                                                  mask=self.mask,
                                                  name=f"head_{i}")(Q, K, V)
                              for i in range(self.nH)],

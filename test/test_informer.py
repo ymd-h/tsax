@@ -162,9 +162,9 @@ class TestProbSparseAttention(TestCase):
 
 class TestMultiHeadAttention(TestCase):
     def test_mha(self):
-        B, L, dm = 1, 12, 3
+        B, L, dm = 1, 12, 6
         c = 2
-        nH = 8
+        nH = 2
         Pdrop = 0.8
 
         key = jax.random.PRNGKey(0)
@@ -178,11 +178,23 @@ class TestMultiHeadAttention(TestCase):
         key, key_use = jax.random.split(key)
         V = jax.random.normal(key_use, (B, L, dm))
 
-        mha = MultiHeadAttention(c=c,
+        MHA = MultiHeadAttention(c=c,
                                  dm=dm,
                                  nH=nH,
                                  Pdrop=Pdrop,
                                  mask=False)
+
+        key, key_use = jax.random.split(key, 2)
+        mha, _ = MHA.init_with_output({"params": key_use, "attention": key},
+                                      Q, K, V)
+        self.assertEqual(mha.shape, Q.shape)
+
+        mha_jit, _ = jax.jit(MHA.init_with_output)({"params": key_use,
+                                                    "attention": key},
+                                                   Q, K, V)
+        self.assertEqual(mha_jit.shape, Q.shape)
+
+        self.assertAllclose(mha, mha_jit)
 
 if __name__ == "__main__":
     unittest.main()
