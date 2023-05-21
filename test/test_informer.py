@@ -14,9 +14,47 @@ from tsax.model.informer import (
     MultiHeadAttention,
     ProbSparseAttention,
     Embedding,
+    FeedForward,
 )
 from tsax.testing import TestCase
 
+
+class TestFeedForward(TestCase):
+    def test_ff(self):
+        B, L, dm = 2, 12, 5
+        dff = 32
+        Pdrop = 0.8
+
+        key = jax.random.PRNGKey(0)
+
+        key, key_use = jax.random.split(key, 2)
+        x = jax.random.normal(key_use, (B, L, dm))
+
+        FF = FeedForward(dff=dff, Pdrop=Pdrop)
+
+        key_p, key_d = jax.random.split(key, 2)
+
+        ff, _ = FF.init_with_output(key_p, x)
+        self.assertEqual(ff.shape, x.shape)
+
+        ff_jit, _ = jax.jit(FF.init_with_output)(key_p, x)
+        self.assertEqual(ff_jit.shape, x.shape)
+
+        self.assertAllclose(ff, ff_jit)
+
+        ff_drop, _ = FF.init_with_output({"params": key_p, "dropout": key_d},
+                                         x, with_dropout=True)
+        self.assertEqual(ff_drop.shape, x.shape)
+        self.assertNotAllclose(ff, ff_drop)
+
+        ff_drop_jit, _ = jax.jit(
+            FF.init_with_output,
+            static_argnames=["with_dropout"],
+        )({"params": key_p, "dropout": key_d}, x, with_dropout=True)
+        self.assertEqual(ff_drop_jit.shape, x.shape)
+        self.assertNotAllclose(ff_jit, ff_drop_jit)
+
+        self.assertAllclose(ff_drop, ff_drop_jit)
 
 class TestEmbedding(TestCase):
     def test_without_categorical(self):
