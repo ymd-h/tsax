@@ -388,5 +388,58 @@ class TestDecoderLayer(TestCase):
         self.assertAllclose(d_drop, d_drop_jit, atol=1e-6)
 
 
+class TestEncoderStack(TestCase):
+    def test_encoder(self):
+        B, L, dm = 2, 12, 6
+        c = 3
+        nE = 2
+        nH = 3
+        dff = 12
+        kernel = 3
+        eps = 1e-8
+        Pdrop = 0.8
+
+        key = jax.random.PRNGKey(0)
+
+        key, key_use = jax.random.split(key, 2)
+        inputs = jax.random.normal(key_use, (B, L, dm))
+
+        E = EncoderStack(c=c,
+                         dm=dm,
+                         nE=nE,
+                         nH=nH,
+                         dff=dff,
+                         kernel=kernel,
+                         eps=eps,
+                         Pdrop=Pdrop)
+
+        key_p, key_a, key_d = jax.random.split(key, 3)
+        rngs = {
+            "params": key_p,
+            "attention": key_a,
+            "dropout": key_d,
+        }
+
+        e, _ = E.init_with_output(rngs, inputs)
+        self.assertEqual(e.shape, (B, ((L+1)//2 + 1)//2, dm))
+
+        e_jit, _ = jax.jit(E.init_with_output)(rngs, inputs)
+        self.assertEqual(e_jit.shape, (B, ((L+1)//2 + 1)//2, dm))
+
+        self.assertAllclose(e, e_jit)
+
+        e_drop, _ = E.init_with_output(rngs, inputs, with_dropout=True)
+        self.assertEqual(e_drop.shape, (B, ((L+1)//2 + 1)//2, dm))
+        self.assertNotAllclose(e, e_drop)
+
+        e_drop_jit, _ = jax.jit(
+            E.init_with_output,
+            static_argnames=["with_dropout"],
+        )(rngs, inputs, with_dropout=True)
+        self.assertEqual(e_drop_jit.shape, (B, ((L+1)//2 + 1)//2, dm))
+        self.assertNotAllclose(e_jit, e_drop_jit)
+
+        self.assertAllclose(e_drop, e_drop_jit)
+
 if __name__ == "__main__":
     unittest.main()
