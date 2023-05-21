@@ -393,7 +393,60 @@ class MultiHeadAttention(nn.Module):
 
 
 class EncoderLayer(nn.Module):
-    pass
+    """
+    Encoder Layer
+    """
+    c: int
+    dm: int
+    nH: int = NH
+    dff: int = DFF
+    eps: float = EPS
+    Pdrop: float = PDROP
+
+    @nn.compact
+    def __call__(self,
+                 inputs: ArrayLike, *,
+                 with_dropout: bool = False) -> Array:
+        """
+        Call Encoder Layer
+
+        Parameters
+        ----------
+        inputs : ArrayLike
+            Inputs. [B, L, dm]
+        with_dropout : bool, optional
+            Whether dropout or not
+
+        Returns
+        -------
+        inputs : Array
+           Encoded Inputs. [B, L, dm]
+        """
+        B, L, dm = inputs.shape
+
+        mha = MultiHeadAttention(
+            c=self.c,
+            nH=self.nH,
+            dm=self.dm,
+            Pdrop=self.Pdrop,
+            mask=False
+        )
+        ff = FeedForward(dff=self.dff, Pdrop=self.Pdrop)
+
+        inputs = ResidualLayerNorm(
+            lambda i: mha(i, i, i, with_dropout=with_dropout),
+            self.eps
+        )(inputs)
+        inputs = inputs.at[:].set(
+            ResidualLayerNorm(
+                lambda i: ff(i, with_dropout=with_dropout),
+                self.eps
+            )(inputs)
+        )
+
+        assert inputs.shape == (B, L, dm), "BUG"
+        return inputs
+
 
 class DecoderLayer(nn.Module):
     pass
