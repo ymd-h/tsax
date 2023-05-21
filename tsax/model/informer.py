@@ -644,59 +644,164 @@ class Informer(nn.Module):
 
     Attributes
     ----------
+    d : int
+        Dimension of Sequence Data
+    I : int
+        Input Length (aka. Lookback Horizon)
+    O : int
+        Output Length (aka. Prediction Horizon)
+    Ltoken : int
+        Length of Start Token for Decoder
+    c : int
+        Hyper Parameter of Sampling Factor
+    dm : int
+        Model Dimension
+    Vs : tuple of ints, optional
+        Dimensions of Categorical Features
+    nE : int, optional
+        Number of Encoder Layers
+    nD : int, optional
+        Number of Decoder Layers
+    nH : int
+        Number of Multi Head
+    dff : int, optional
+        Hidden Layer Units at Feed Forward Layer
+    kernel : int, optional
+        Kernel Size for Distilling Layer
+    eps : float, optional
+        Small Positive Value for Layer Normalization
+    Pdrop : foat, optional
+        Dropout Probability
     """
+    d: int
     I: int
     O: int
     Ltoken: int
-    nE: int
-    nD: int
+    c: int
+    dm: int
+    Vs: Tuple[int, ...] = tuple()
+    nE: int = NE
+    nD: int = ND
+    nH: int = NH
     dff: int = DFF
+    kernel: int = KERNEL_SIZE
     eps: float = EPS
     Pdrop: float = PDROP
 
     def setup(self):
-        self.encoder = EncoderStack(N=self.nE,
+        assert self.I >= self.Ltoken, "BUG"
+
+        self.encoder = EncoderStack(c=self.c,
+                                    nE=self.nE,
                                     dm=self.dm,
                                     nH=self.nH,
                                     dff=self.dff,
                                     eps=self.eps,
                                     Pdrop=self.Pdrop)
-        self.decoder = DecoderStack(N=self.N,
+        self.encoder_embed = Embedding(dm=self.dm, Vs=self.Vs)
+
+        self.decoder = DecoderStack(c=self.c,
+                                    nD=self.nD,
                                     dm=self.dm,
                                     nH=self.nH,
                                     dff=self.dff,
                                     eps=self.eps,
                                     Pdrop=self.Pdrop)
+        self.decoder_embed = Embedding(dm=self.dm, Vs=self.Vs)
+        self.ff = nn.Dense(features=self.d)
 
     def encode(self,
-               inputs: ArrayLike, *,
+               seq: ArrayLike,
+               cat: Optional[ArrayLike] = None, *,
                with_dropout: bool = False) -> Array:
         """
         Encode with Informer
+
+        Paremeters
+        ----------
+        seq : ArrayLike
+            Inputs. [B, I, d]
+        cat : ArrayLike, optional
+            Categorical Features. [B, I, C]
+        with_dropout : bool
+            Whether dropout or not
+
+        Returns
+        -------
+        inputs : Array
+            Encoded Inputs. [B, L, dm]
         """
-        assert inputs.shape[1:] == (self.I, self.dm), "BUG"
+        assert (cat is None) or seq.shape[:1] == cat.shape[:1], "BUG"
+        assert seq.shape[1] == self.I, "BUG"
+
+        B = seq.shape[0]
+
+        inputs = self.encoder_embed(seq, cat, with_dropout=with_dropout)
+        assert inputs.shape == (B, self.I, self.dm), "BUG"
+
+        inputs = self.encoder(inputs, with_dropout=with_dropout)
+        assert inputs.shape[0] == B, "BUG"
+        assert inputs.shape[2] == self.dm, "BUG"
+
+        return inputs
 
     def decode(self,
                inputs: ArrayLike,
-               outputs: ArrayLike, *,
+               seq: ArrayLike,
+               cat: Optional[ArrayLike] = None, *,
                with_dropout: bool = False) -> Array:
         """
         Decode with Informer
+
+        Parameters
+        ----------
+        inputs : ArrayLike
+            Encoded Inputs. [B, L, dm]
+        seq : ArrayLike
+            Outputs Signal. [B, L, d]
+        cat : AllayLike, optional
+            Categorical Features. [B, L, d]
         """
-        assert inputs.shape[0] == outputs.shape[0], "BUG"
-        assert inputs.shape[1:] == (self.I, self.dm), "BUG"
-        assert outputs.shape[1:] == (self.Ltoken + self.O, self.dm), "BUG"
+        assert inputs.shape[0] == seq.shape[0], "BUG"
+        assert inputs.shape[2] == self.dm, "BUG"
+        assert seq.shape[1] >= self.Ltoken, "BUG"
+        assert ((cat is None) or seq.shape[:2] == cat.shape[:2]), "BUG"
+        assert ((cat is None) or cat.shape[2] == len(self.Vs))
+
+        B = inputs.shape[0]
+
+        seq = seq.at[:,-self.Ltoken:,:].get()
+        if cat is not None:
+            cat = cat.at[:,-self.Ltoken:,:].get()
+
+        outputs = (jnp.zeros((B, self.Ltoken+self.O, self.dm), dtype=seq.dtype)
+                   .at[:,:self.Ltoken,:]
+                   .set(self.decoder_embed(seq, cat, with_dropout=with_dropout)))
+        assert outputs.shape == (B, self.Ltoken+self.O, self.dm), "BUG"
+
+        outputs = outputs.at[:].set(
+            self.decoder(inputs, outputs, with_dropout=with_dropout)
+        )
+
+        outputs = self.ff(outputs)
+        assert outputs.shape == (B, self.Ltoken+self.O, self.d), "BUG"
+
+        pred = outputs.at[:,-self.O:,:].get()
+        return pred
 
     def __call__(self,
-                 inputs: ArrayLike, *,
+                 seq: ArrayLike,
+                 cat: Optional[ArrayLike] = None, *,
                  with_dropout: bool = False) -> Array:
         """
         Call Informer
 
         Parameters
         ----------
-        inputs : ArrayLike
-            Inputs Signal. [B, I, dm]
+        seq : ArrayLike
+            Inputs Signal. [B, I, d]
+        cat : ArrayLike, optional
+            Categorical Features. [B, I, C]
         with_dropout : bool, optional
             Whether dropout or not.
 
@@ -705,14 +810,18 @@ class Informer(nn.Module):
         pred : Array
             Predicted Signal. [B, O, dm]
         """
-        assert inputs.shape[1:] == (self.I, self.dm), "BUG"
+        assert (cat is None) or seq.shape[:2] == cat.shape[:2], "BUG"
+        assert seq.shape[1:] == (self.I, self.d), "BUG"
+        assert (cat is None) or cat.shape[2] == len(self.Vs), "BUG"
 
-        outputs = jnp.zeros((inputs.shape[0], self.Ltoken + self.O),
-                            dtype=inputs.dtype)
-        outputs.at[:,:inputs.shape[1],:].set(inputs)
+        B: int = seq.shape[0]
 
-        inputs = self.encode(inputs, with_dropout=with_dropout)
+        inputs = self.encode(seq, cat, with_dropout=with_dropout)
+        assert inputs.shape[0] == B, "BUG"
+        assert inputs.shape[1] <= self.I
+        assert inputs.shape[2] == self.dm, "BUG"
 
-        pred = self.decode(inputs, outputs, with_dropout=with_dropout)
+        pred = self.decode(inputs, seq, cat, with_dropout=with_dropout)
+        assert pred.shape == (B, self.O, self.d), "BUG"
 
-        return pred.at[:,pred.shape[1]-self.O:,:].get()
+        return pred
