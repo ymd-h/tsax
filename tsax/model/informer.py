@@ -523,7 +523,53 @@ class DecoderLayer(nn.Module):
 
 
 class EncoderStack(nn.Module):
-    pass
+    """
+    Encoder Stack
+    """
+    c: int
+    dm: int
+    nE: int = NE
+    nH: int = NH
+    dff: int = DFF
+    kernel: int = KERNEL_SIZE
+    eps: float = EPS
+    Pdrop: float = PDROP
+
+    @nn.compact
+    def __call__(self,
+                 inputs: ArrayLike, *,
+                 with_dropout: bool = False) -> Array:
+        """
+        Call Encoder Stack
+
+        Parameters
+        ----------
+        inputs : ArrayLike
+            Inputs. [B, L, dm]
+        with_dropout : bool, optional
+            Whether dropout or not.
+
+        Returns
+        -------
+        inputs : Array
+            Encoded Inputs. [B, L, dm]
+        """
+        for i in range(self.nE):
+            B, L, dm = inputs.shape
+            inputs = EncoderLayer(c=self.c,
+                                  nH=self.nH,
+                                  dff=self.dff,
+                                  eps=self.eps,
+                                  Pdrop=self.Pdrop,
+                                  name=f"EncoderLayer_{i}")(inputs, with_dropout)
+            assert inputs.shape == (B, L, dm), "BUG"
+
+            inputs = Distilling(kernel=self.kernel,
+                                name=f"DistillingLayer_{i}")(inputs)
+            assert inputs.shape == (B, (L+1)//2, dm), "BUG"
+
+        return nn.LayerNorm(epsilon=self.eps)(inputs)
+
 
 class DecoderStack(nn.Module):
     pass
