@@ -286,5 +286,57 @@ class TestMultiHeadAttention(TestCase):
 
         self.assertAllclose(mha, mha_jit)
 
+
+class TestEncoderLayer(TestCase):
+    def test_encoder(self):
+        B, L, dm = 2, 12, 4
+        c = 2
+        nH = 2
+        dff = 32
+        eps = 0.1
+        Pdrop = 0.8
+
+        key = jax.random.PRNGKey(0)
+
+        key, key_use = jax.random.split(key, 2)
+        inputs = jax.random.normal(key_use, (B, L, dm))
+
+        E = EncoderLayer(c=c, nH=nH, dm=dm, dff=dff, eps=eps, Pdrop=Pdrop)
+
+        key_p, key_a, key_d = jax.random.split(key, 3)
+        e, _ = E.init_with_output({"params": key_p,
+                                   "attention": key_a,
+                                   "dropout": key_d},
+                                  inputs)
+        self.assertEqual(e.shape, inputs.shape)
+
+        e_jit, _ = jax.jit(E.init_with_output)({"params": key_p,
+                                                "attention": key_a,
+                                                "dropout": key_d},
+                                               inputs)
+        self.assertEqual(e_jit.shape, inputs.shape)
+
+        self.assertAllclose(e, e_jit)
+
+        e_drop, _ = E.init_with_output({"params": key_p,
+                                        "attention": key_a,
+                                        "dropout": key_d},
+                                       inputs, with_dropout=True)
+        self.assertEqual(e_drop.shape, inputs.shape)
+        self.assertNotAllclose(e, e_drop)
+
+        e_drop_jit, _ = jax.jit(
+            E.init_with_output,
+            static_argnames=["with_dropout"],
+        )({"params": key_p, "attention": key_a, "dropout": key_d},
+          inputs, with_dropout=True)
+        self.assertEqual(e_drop_jit.shape, inputs.shape)
+        self.assertNotAllclose(e_jit, e_drop_jit)
+
+        self.assertAllclose(e_drop, e_drop_jit)
+
+
+
+
 if __name__ == "__main__":
     unittest.main()
