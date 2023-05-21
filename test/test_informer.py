@@ -196,5 +196,40 @@ class TestMultiHeadAttention(TestCase):
 
         self.assertAllclose(mha, mha_jit)
 
+    def test_mha_mask(self):
+        B, L, dm = 1, 12, 6
+        c = 2
+        nH = 2
+        Pdrop = 0.8
+
+        key = jax.random.PRNGKey(0)
+
+        key, key_use = jax.random.split(key)
+        Q = jax.random.normal(key_use, (B, L, dm))
+
+        key, key_use = jax.random.split(key)
+        K = jax.random.normal(key_use, (B, L, dm))
+
+        key, key_use = jax.random.split(key)
+        V = jax.random.normal(key_use, (B, L, dm))
+
+        MHA = MultiHeadAttention(c=c,
+                                 dm=dm,
+                                 nH=nH,
+                                 Pdrop=Pdrop,
+                                 mask=True)
+
+        key, key_use = jax.random.split(key, 2)
+        mha, _ = MHA.init_with_output({"params": key_use, "attention": key},
+                                      Q, K, V)
+        self.assertEqual(mha.shape, Q.shape)
+
+        mha_jit, _ = jax.jit(MHA.init_with_output)({"params": key_use,
+                                                    "attention": key},
+                                                   Q, K, V)
+        self.assertEqual(mha_jit.shape, Q.shape)
+
+        self.assertAllclose(mha, mha_jit)
+
 if __name__ == "__main__":
     unittest.main()
