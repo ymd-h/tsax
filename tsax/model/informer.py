@@ -181,6 +181,8 @@ class ProbSparseAttention(nn.Module):
         Hyper-Parameter for Sampling Factor
     """
     c: int
+    dk: int
+    dv: int
     mask: bool = False
     rng_collection: str = "attention"
 
@@ -195,16 +197,16 @@ class ProbSparseAttention(nn.Module):
         Parameters
         ----------
         Q : ArrayLike
-            Query. [B, L, d]
+            Query. [B, LQ, dm]
         K : ArrayLike
-            Key. [B, L, d]
+            Key. [B, LK, dm]
         V : ArrayLike
-            Value. [B, L, d]
+            Value. [B, LK, dm]
 
         Returns
         -------
         A : Array
-            ProbSparse self-attention
+            ProbSparse self-attention. [B, L, dv]
         """
         assert Q.shape[0] == K.shape[0] == V.shape[0], "BUG"
         assert K.shape[1] == V.shape[1], "BUG"
@@ -215,13 +217,17 @@ class ProbSparseAttention(nn.Module):
         n: int = int(K.shape[1])
         d: int = int(Q.shape[2])
 
-        # Notes: Official implementation is different from the paper.
+        # Note: Official implementation is different from the paper.
+        #       We obey the implementation.
         u: int = min(int(self.c * math.ceil(math.log(m))), m)
         U: int = min(int(self.c * math.ceil(math.log(n))), n)
 
+        Q = nn.Dense(features=self.dk, name="WQ")(Q)
+        K = nn.Dense(features=self.dk, name="WK")(K)
+        V = nn.Dense(features=self.dv, name="WV")(V)
+
         if self.mask:
             mask = SubsequentMask(n)
-
 
         @jax.vmap
         def _each_sample(_Q, _K, _V, _rng):
@@ -238,7 +244,7 @@ class ProbSparseAttention(nn.Module):
             assert _I.shape == (u,), "BUG"
 
             _Qbar = _Q.at[_I, :].get()
-            assert _Qbar.shape == (u, d), "BUG"
+            assert _Qbar.shape == (u, self.dk), "BUG"
 
             _QbarK = jnp.matmul(_Qbar, jnp.transpose(_K, (1, 0)))
             assert _QbarK.shape == (u, n), "BUG"
@@ -249,9 +255,9 @@ class ProbSparseAttention(nn.Module):
                 )
 
             _S1 = jnp.matmul(nn.activation.softmax(_QbarK / math.sqrt(d)), _V)
-            assert _S1.shape == (u, d), "BUG"
+            assert _S1.shape == (u, self.dv), "BUG"
 
-            _S = jnp.zeros((m, d), dtype=Q.dtype)
+            _S = jnp.zeros((m, self.dv), dtype=Q.dtype)
             _S = _S.at[:, :].set(
                 jnp.cumsum(_V, axis=1) if self.mask
                 else jnp.mean(_V, axis=1, keepdims=True)
@@ -263,7 +269,7 @@ class ProbSparseAttention(nn.Module):
         rng = jax.random.split(self.make_rng(self.rng_collection), B)
 
         S = _each_sample(Q, K, V, rng)
-        assert S.shape == (B, m, d), "BUG"
+        assert S.shape == (B, m, self.dv), "BUG"
 
         return S
 
