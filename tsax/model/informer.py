@@ -244,7 +244,7 @@ class ProbSparseAttention(nn.Module):
     c: int
     dk: int
     dv: int
-    mask: bool = False
+    mask: int = 0
     rng_collection: str = "attention"
 
     @nn.compact
@@ -288,7 +288,7 @@ class ProbSparseAttention(nn.Module):
         V = nn.Dense(features=self.dv, name="WV")(V)
 
         if self.mask:
-            mask = SubsequentMask(n)
+            mask = SubsequentMask(n).at[self.mask:].set(0)
 
         @jax.vmap
         def _each_sample(_Q, _K, _V, _rng):
@@ -352,7 +352,7 @@ class MultiHeadAttention(nn.Module):
     dm: int
     nH: int = NH
     Pdrop: float = PDROP
-    mask: bool = False
+    mask: int = 0
 
     @nn.compact
     def __call__(self,
@@ -465,10 +465,12 @@ class DecoderLayer(nn.Module):
     """
     c: int
     dm: int
+    Ltoken: int
     nH: int = NH
     dff: int = DFF
     eps: float = EPS
     Pdrop: float = PDROP
+
 
     @nn.compact
     def __call__(self,
@@ -499,7 +501,7 @@ class DecoderLayer(nn.Module):
             nH=self.nH,
             dm=self.dm,
             Pdrop=self.Pdrop,
-            mask=True,
+            mask=self.Ltoken,
             name="MaskedMultiHeadAttention",
         )
         mha = MultiHeadAttention(
@@ -507,7 +509,7 @@ class DecoderLayer(nn.Module):
             nH=self.nH,
             dm=self.dm,
             Pdrop=self.Pdrop,
-            mask=False,
+            mask=0,
             name="MultiHeadAttention",
         )
         ff = FeedForward(dff=self.dff, Pdrop=self.Pdrop)
@@ -590,6 +592,7 @@ class DecoderStack(nn.Module):
     """
     c: int
     dm: int
+    Ltoken: int
     nD: int = ND
     nH: int = NH
     dff: int = DFF
@@ -623,6 +626,7 @@ class DecoderStack(nn.Module):
         for i in range(self.nD):
             outputs = DecoderLayer(c=self.c,
                                    dm=self.dm,
+                                   Ltoken=self.Ltoken,
                                    nH=self.nH,
                                    dff=self.dff,
                                    eps=self.eps,
@@ -710,6 +714,7 @@ class Informer(nn.Module):
         self.decoder = DecoderStack(c=self.c,
                                     nD=self.nD,
                                     dm=self.dm,
+                                    Ltoken=self.Ltoken,
                                     nH=self.nH,
                                     dff=self.dff,
                                     eps=self.eps,
