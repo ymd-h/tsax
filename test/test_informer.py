@@ -189,11 +189,13 @@ class TestProbSparseAttention(TestCase):
         a, _ = A.init_with_output({"params": key_use, "attention": key},
                                   Q, K, V)
         self.assertEqual(a.shape, Q.shape)
+        self.assertNone(a, jnp.isnan)
 
         a_jit, _ = jax.jit(A.init_with_output)({"params": key_use,
                                                 "attention": key},
                                                Q, K, V)
         self.assertEqual(a_jit.shape, Q.shape)
+        self.assertNone(a_jit, jnp.isnan)
 
         self.assertAllclose(a, a_jit)
 
