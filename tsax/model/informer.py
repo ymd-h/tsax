@@ -473,7 +473,7 @@ class DecoderLayer(nn.Module):
     @nn.compact
     def __call__(self,
                  inputs: ArrayLike,
-                 outputs, *,
+                 outputs: ArrayLike, *,
                  with_dropout: bool = False) -> Array:
         """
         Call Decoder Layer
