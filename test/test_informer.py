@@ -183,7 +183,7 @@ class TestProbSparseAttention(TestCase):
         key, key_use = jax.random.split(key, 2)
         V = jax.random.normal(key_use, (B, L, d))
 
-        A = ProbSparseAttention(c=1, dk=d, dv=d, mask=True)
+        A = ProbSparseAttention(c=1, dk=d, dv=d, mask=3)
 
         key, key_use = jax.random.split(key, 2)
         a, _ = A.init_with_output({"params": key_use, "attention": key},
@@ -220,7 +220,7 @@ class TestMultiHeadAttention(TestCase):
                                  dm=dm,
                                  nH=nH,
                                  Pdrop=Pdrop,
-                                 mask=False)
+                                 mask=0)
 
         key_p, key_a, key_d = jax.random.split(key, 3)
         mha, _ = MHA.init_with_output({"params": key_p, "attention": key_a},
@@ -272,7 +272,7 @@ class TestMultiHeadAttention(TestCase):
                                  dm=dm,
                                  nH=nH,
                                  Pdrop=Pdrop,
-                                 mask=True)
+                                 mask=6)
 
         key, key_use = jax.random.split(key, 2)
         mha, _ = MHA.init_with_output({"params": key_use, "attention": key},
@@ -353,7 +353,7 @@ class TestDecoderLayer(TestCase):
         key, key_use = jax.random.split(key, 2)
         outputs = jax.random.normal(key_use, (B, L, dm))
 
-        D = DecoderLayer(c=c, nH=nH, dm=dm, dff=dff, eps=eps, Pdrop=Pdrop)
+        D = DecoderLayer(c=c, nH=nH, dm=dm, dff=dff, eps=eps, Pdrop=Pdrop, Ltoken=6)
 
         key_p, key_a, key_d = jax.random.split(key, 3)
         d, _ = D.init_with_output({"params": key_p,
@@ -464,6 +464,7 @@ class TestDecoderStack(TestCase):
                          nD=nD,
                          nH=nH,
                          dff=dff,
+                         Ltoken=6,
                          eps=eps,
                          Pdrop=Pdrop)
 
