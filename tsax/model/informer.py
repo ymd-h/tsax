@@ -288,7 +288,7 @@ class ProbSparseAttention(nn.Module):
         V = nn.Dense(features=self.dv, name="WV")(V)
 
         if self.mask:
-            mask = SubsequentMask(n).at[self.mask:].set(0)
+            mask = SubsequentMask(n).at[:,self.mask:].set(0)
 
         @jax.vmap
         def _each_sample(_Q, _K, _V, _rng):
