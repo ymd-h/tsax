@@ -8,10 +8,15 @@ from tsax.typing import Array, ArrayLike
 
 class TestCase(unittest.TestCase):
     def assertAllclose(self, x: ArrayLike, y: ArrayLike, **kwargs):
-        self.assertTrue(jnp.allclose(x, y, **kwargs), msg=f"\nx: {x}\ny: {y}")
+        self.longMessage = False
+        self.assertTrue(jnp.allclose(x, y, **kwargs), msg=f"Arrays are not all close:\nx: {x}\ny: {y}\nmax|x-y|: {jnp.max(jnp.abs(x-y))}")
+        self.longMessage = True
 
     def assertNotAllclose(self, x: ArrayLike, y: ArrayLike, **kwargs):
-        self.assertFalse(jnp.allclose(x, y, **kwargs), msg=f"\nx: {x}\ny: {y}")
+        self.longMessage = False
+        self.assertEqual(x.shape, y.shape, msg=f"Array Shape mismatch:\n{x.shape} != {y.shape}")
+        self.assertFalse(jnp.allclose(x, y, **kwargs), msg=f"Arrays are all close:\nx: {x}\ny: {y}")
+        self.longMessage = True
 
     def assertAll(self,
                   x: ArrayLike,
