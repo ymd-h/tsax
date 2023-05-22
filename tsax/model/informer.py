@@ -593,7 +593,6 @@ class DecoderStack(nn.Module):
     nD: int = ND
     nH: int = NH
     dff: int = DFF
-    kernel: int = KERNEL_SIZE
     eps: float = EPS
     Pdrop: float = PDROP
 
@@ -713,7 +712,6 @@ class Informer(nn.Module):
                                     dm=self.dm,
                                     nH=self.nH,
                                     dff=self.dff,
-                                    kernel=self.kernel,
                                     eps=self.eps,
                                     Pdrop=self.Pdrop)
         self.decoder_embed = Embedding(dm=self.dm,
