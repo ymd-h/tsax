@@ -658,6 +658,9 @@ class Informer(nn.Module):
         Model Dimension
     Vs : tuple of ints, optional
         Dimensions of Categorical Features
+    alpha : float
+        Rescale Facotor after Embedding. If input sequence is normalized,
+        ``alpha=1.0`` is enough.
     nE : int, optional
         Number of Encoder Layers
     nD : int, optional
@@ -680,6 +683,7 @@ class Informer(nn.Module):
     c: int
     dm: int
     Vs: Tuple[int, ...] = tuple()
+    alpha: float = EMBEDDING_ALPHA
     nE: int = NE
     nD: int = ND
     nH: int = NH
@@ -698,7 +702,7 @@ class Informer(nn.Module):
                                     dff=self.dff,
                                     eps=self.eps,
                                     Pdrop=self.Pdrop)
-        self.encoder_embed = Embedding(dm=self.dm, Vs=self.Vs)
+        self.encoder_embed = Embedding(dm=self.dm, Vs=self.Vs, alpha=self.alpha)
 
         self.decoder = DecoderStack(c=self.c,
                                     nD=self.nD,
@@ -707,7 +711,7 @@ class Informer(nn.Module):
                                     dff=self.dff,
                                     eps=self.eps,
                                     Pdrop=self.Pdrop)
-        self.decoder_embed = Embedding(dm=self.dm, Vs=self.Vs)
+        self.decoder_embed = Embedding(dm=self.dm, Vs=self.Vs, alpha=self.alpha)
         self.ff = nn.Dense(features=self.d)
 
     def encode(self,
