@@ -736,7 +736,7 @@ class Informer(nn.Module):
 
         B = seq.shape[0]
 
-        inputs = self.encoder_embed(seq, cat, with_dropout=with_dropout)
+        inputs = self.encoder_embed(seq, cat)
         assert inputs.shape == (B, self.I, self.dm), "BUG"
 
         inputs = self.encoder(inputs, with_dropout=with_dropout)
@@ -776,7 +776,7 @@ class Informer(nn.Module):
 
         outputs = (jnp.zeros((B, self.Ltoken+self.O, self.dm), dtype=seq.dtype)
                    .at[:,:self.Ltoken,:]
-                   .set(self.decoder_embed(seq, cat, with_dropout=with_dropout)))
+                   .set(self.decoder_embed(seq, cat)))
         assert outputs.shape == (B, self.Ltoken+self.O, self.dm), "BUG"
 
         outputs = outputs.at[:].set(
