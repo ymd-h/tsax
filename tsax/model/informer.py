@@ -700,6 +700,7 @@ class Informer(nn.Module):
                                     dm=self.dm,
                                     nH=self.nH,
                                     dff=self.dff,
+                                    kernel=self.kernel,
                                     eps=self.eps,
                                     Pdrop=self.Pdrop)
         self.encoder_embed = Embedding(dm=self.dm, Vs=self.Vs, alpha=self.alpha)
@@ -709,6 +710,7 @@ class Informer(nn.Module):
                                     dm=self.dm,
                                     nH=self.nH,
                                     dff=self.dff,
+                                    kernel=self.kernel,
                                     eps=self.eps,
                                     Pdrop=self.Pdrop)
         self.decoder_embed = Embedding(dm=self.dm, Vs=self.Vs, alpha=self.alpha)
