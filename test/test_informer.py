@@ -448,7 +448,6 @@ class TestDecoderStack(TestCase):
         nD = 2
         nH = 3
         dff = 12
-        kernel = 3
         eps = 1e-8
         Pdrop = 0.8
 
@@ -465,7 +464,6 @@ class TestDecoderStack(TestCase):
                          nD=nD,
                          nH=nH,
                          dff=dff,
-                         kernel=kernel,
                          eps=eps,
                          Pdrop=Pdrop)
 
