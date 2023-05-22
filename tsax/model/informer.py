@@ -703,7 +703,10 @@ class Informer(nn.Module):
                                     kernel=self.kernel,
                                     eps=self.eps,
                                     Pdrop=self.Pdrop)
-        self.encoder_embed = Embedding(dm=self.dm, Vs=self.Vs, alpha=self.alpha)
+        self.encoder_embed = Embedding(dm=self.dm,
+                                       Vs=self.Vs,
+                                       alpha=self.alpha,
+                                       kernel=self.kernel)
 
         self.decoder = DecoderStack(c=self.c,
                                     nD=self.nD,
@@ -713,7 +716,10 @@ class Informer(nn.Module):
                                     kernel=self.kernel,
                                     eps=self.eps,
                                     Pdrop=self.Pdrop)
-        self.decoder_embed = Embedding(dm=self.dm, Vs=self.Vs, alpha=self.alpha)
+        self.decoder_embed = Embedding(dm=self.dm,
+                                       Vs=self.Vs,
+                                       alpha=self.alpha,
+                                       kernel=self.kernel)
         self.ff = nn.Dense(features=self.d)
 
     def encode(self,
