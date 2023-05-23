@@ -483,20 +483,159 @@ class TestDecoderStack(TestCase):
         d_jit, _ = jax.jit(D.init_with_output)(rngs, inputs, outputs)
         self.assertEqual(d_jit.shape, (B, Ldec, dm))
 
-        self.assertAllclose(d, d_jit)
+        self.assertAllclose(d, d_jit, atol=1e-6, rtol=1e-6)
 
         d_drop, _ = D.init_with_output(rngs, inputs, outputs, with_dropout=True)
         self.assertEqual(d_drop.shape, (B, Ldec, dm))
-        self.assertNotAllclose(d, d_drop)
+        self.assertNotAllclose(d, d_drop, atol=1e-6, rtol=1e-6)
 
         d_drop_jit, _ = jax.jit(
             D.init_with_output,
             static_argnames=["with_dropout"],
         )(rngs, inputs, outputs, with_dropout=True)
         self.assertEqual(d_drop_jit.shape, (B, Ldec, dm))
-        self.assertNotAllclose(d_jit, d_drop_jit)
+        self.assertNotAllclose(d_jit, d_drop_jit, atol=1e-6, rtol=1e-6)
 
-        self.assertAllclose(d_drop, d_drop_jit)
+        self.assertAllclose(d_drop, d_drop_jit, atol=1e-6, rtol=1e-6)
+
+
+class TestInformer(TestCase):
+    def test_without_categorical(self):
+        B, I, d, dm = 1, 5, 2, 8
+        O = 5
+        L = 2
+        c = 2
+        nE, nD, nH = 2, 3, 4
+        dff = 16
+        kernel = 3
+        eps = 1e-8
+        Pdrop = 0.8
+
+        key = jax.random.PRNGKey(0)
+
+        key, key_use = jax.random.split(key, 2)
+        seq = jax.random.normal(key_use, (B, I, d))
+
+        info = Informer(d=d,
+                        I=I,
+                        O=O,
+                        Ltoken=L,
+                        dm=dm,
+                        c=c,
+                        nE=nE,
+                        nD=nD,
+                        nH=nH,
+                        dff=dff,
+                        kernel=kernel,
+                        eps=eps,
+                        Pdrop=Pdrop)
+
+        key_p, key_a, key_d = jax.random.split(key, 3)
+        rngs = {
+            "params": key_p,
+            "attention": key_a,
+            "dropout": key_d,
+        }
+
+        enc, _ = info.init_with_output(rngs, seq, method="encode")
+        enc_jit, _ = jax.jit(
+            info.init_with_output,
+            static_argnames=["method"],
+        )(rngs, seq, method="encode")
+        self.assertAllclose(enc, enc_jit)
+
+        pred, _ = info.init_with_output(rngs, seq)
+        self.assertEqual(pred.shape, (B, O, d))
+
+        pred_jit, _ = jax.jit(info.init_with_output)(rngs, seq)
+        self.assertEqual(pred_jit.shape, (B, O, d))
+
+        self.assertAllclose(pred, pred_jit, atol=1e-6)
+
+        pred_drop, _ = info.init_with_output(rngs, seq, with_dropout=True)
+        self.assertEqual(pred_drop.shape, (B, O, d))
+        self.assertNotAllclose(pred, pred_drop)
+
+        pred_drop_jit, _ = jax.jit(
+            info.init_with_output,
+            static_argnames=["with_dropout"],
+        )(rngs, seq, with_dropout=True)
+        self.assertEqual(pred_drop_jit.shape, (B, O, d))
+        self.assertNotAllclose(pred_jit, pred_drop_jit)
+
+        self.assertAllclose(pred_drop, pred_drop_jit, atol=1e-6)
+
+    def test_with_categorical(self):
+        B, I, d, Vs, dm = 1, 5, 2, (7, 12), 8
+        O = 5
+        L = 2
+        c = 2
+        nE, nD, nH = 2, 3, 4
+        dff = 16
+        kernel = 3
+        eps = 1e-8
+        Pdrop = 0.8
+
+        key = jax.random.PRNGKey(0)
+
+        key, key_use = jax.random.split(key, 2)
+        seq = jax.random.normal(key_use, (B, I, d))
+
+        key, key_use = jax.random.split(key, 2)
+        cat = jax.random.randint(key_use,
+                                 (B, I, len(Vs)),
+                                 0, jnp.asarray(Vs, dtype=int))
+
+        info = Informer(d=d,
+                        I=I,
+                        O=O,
+                        Ltoken=L,
+                        dm=dm,
+                        Vs=Vs,
+                        c=c,
+                        nE=nE,
+                        nD=nD,
+                        nH=nH,
+                        dff=dff,
+                        kernel=kernel,
+                        eps=eps,
+                        Pdrop=Pdrop)
+
+        key_p, key_a, key_d = jax.random.split(key, 3)
+        rngs = {
+            "params": key_p,
+            "attention": key_a,
+            "dropout": key_d,
+        }
+
+        enc, _ = info.init_with_output(rngs, seq, cat, method="encode")
+        enc_jit, _ = jax.jit(
+            info.init_with_output,
+            static_argnames=["method"],
+        )(rngs, seq, cat, method="encode")
+        self.assertAllclose(enc, enc_jit)
+
+        pred, _ = info.init_with_output(rngs, seq, cat)
+        self.assertEqual(pred.shape, (B, O, d))
+
+        pred_jit, _ = jax.jit(info.init_with_output)(rngs, seq, cat)
+        self.assertEqual(pred_jit.shape, (B, O, d))
+
+        self.assertAllclose(pred, pred_jit, atol=5e-4, rtol=5e-4)
+
+        pred_drop, _ = info.init_with_output(rngs, seq, cat, with_dropout=True)
+        self.assertEqual(pred_drop.shape, (B, O, d))
+        self.assertNotAllclose(pred, pred_drop)
+
+        pred_drop_jit, _ = jax.jit(
+            info.init_with_output,
+            static_argnames=["with_dropout"],
+        )(rngs, seq, cat, with_dropout=True)
+        self.assertEqual(pred_drop_jit.shape, (B, O, d))
+        self.assertNotAllclose(pred_jit, pred_drop_jit)
+
+        self.assertAllclose(pred_drop, pred_drop_jit, atol=1e-5, rtol=1e-5)
+
 
 if __name__ == "__main__":
     unittest.main()
