@@ -24,6 +24,7 @@ from jax.typing import ArrayLike
 from flax import linen as nn
 
 from tsax.core import (
+    Model,
     ConvSeq,
     PositionalEncoding,
     CategoricalEncoding,
@@ -641,7 +642,7 @@ class DecoderStack(nn.Module):
         return nn.LayerNorm(epsilon=self.eps)(outputs)
 
 
-class Informer(nn.Module):
+class Informer(Model):
     """
     Informer
 
@@ -807,7 +808,7 @@ class Informer(nn.Module):
     def __call__(self,
                  seq: ArrayLike,
                  cat: Optional[ArrayLike] = None, *,
-                 with_dropout: bool = False) -> Array:
+                 train: bool = False) -> Array:
         """
         Call Informer
 
@@ -817,7 +818,7 @@ class Informer(nn.Module):
             Inputs Signal. [B, I, d]
         cat : ArrayLike, optional
             Categorical Features. [B, I, C]
-        with_dropout : bool, optional
+        train : bool, optional
             Whether dropout or not.
 
         Returns
@@ -831,12 +832,39 @@ class Informer(nn.Module):
 
         B: int = seq.shape[0]
 
-        inputs = self.encode(seq, cat, with_dropout=with_dropout)
+        inputs = self.encode(seq, cat, with_dropout=train)
         assert inputs.shape[0] == B, "BUG"
         assert inputs.shape[1] <= self.I
         assert inputs.shape[2] == self.dm, "BUG"
 
-        pred = self.decode(inputs, seq, cat, with_dropout=with_dropout)
+        pred = self.decode(inputs, seq, cat, with_dropout=train)
         assert pred.shape == (B, self.O, self.d), "BUG"
 
         return pred
+
+    def split_key(self,
+                  key: KeyArray, *,
+                  train: bool = False) -> Tuple[KeyArray, Dict[str, KeyArray]]:
+        """
+        Split PRNG Key for Informer
+
+        Parameters
+        ----------
+        key : KeyArray
+            Key will be split
+        train : bool, optional
+            Whether train or not
+
+        Returns
+        -------
+        key : KeyArray
+            New Key
+        key_for_model : KeyArray
+            Keys can be consumed by Informer.
+        """
+        if train:
+            key, key_a, key_d = jax.random.split(key, 3)
+            return key, {"attention": key_a, "dropout": key_d}
+
+        key, key_a = jax.random.split(key, 2)
+        return key, {"attention": key_a}

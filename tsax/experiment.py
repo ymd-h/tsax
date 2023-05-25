@@ -1,28 +1,32 @@
 from __future__ import annotations
+from typing import Callable
 import time
 
 import jax
 import jax.numpy as jnp
+import flax
 import flax.linen as nn
 import optax
 from tqdm import tqdm
 import wblog
 
-from tsax.typing import Array, ArrayLike
+from tsax.typing import Array, ArrayLike, KeyArray
 
 
 logger = wblog.getLogger()
 
+class TrainState(flax.training.train_state.TrainState):
+    pass
 
-def train(model,
-          rngkey: KeyArray,
-          train_x,
-          train_y,
-          valid_x,
-          valid_y,
+
+
+def train(rngkey: KeyArray,
+          state: TrainState,
+          train_data,
+          valid_data,
           ephoch: int,
           batch_size: int,
-          optimizer: optax.GradientTransformation) -> None:
+          loss_fn: Callable[[ArrayLike, ArrayLike], Array]) -> TrainState:
     """
     Train Model
 

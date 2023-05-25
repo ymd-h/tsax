@@ -552,14 +552,14 @@ class TestInformer(TestCase):
 
         self.assertAllclose(pred, pred_jit, atol=1e-6)
 
-        pred_drop, _ = info.init_with_output(rngs, seq, with_dropout=True)
+        pred_drop, _ = info.init_with_output(rngs, seq, train=True)
         self.assertEqual(pred_drop.shape, (B, O, d))
         self.assertNotAllclose(pred, pred_drop)
 
         pred_drop_jit, _ = jax.jit(
             info.init_with_output,
-            static_argnames=["with_dropout"],
-        )(rngs, seq, with_dropout=True)
+            static_argnames=["train"],
+        )(rngs, seq, train=True)
         self.assertEqual(pred_drop_jit.shape, (B, O, d))
         self.assertNotAllclose(pred_jit, pred_drop_jit)
 
@@ -623,14 +623,14 @@ class TestInformer(TestCase):
 
         self.assertAllclose(pred, pred_jit, atol=5e-4, rtol=5e-4)
 
-        pred_drop, _ = info.init_with_output(rngs, seq, cat, with_dropout=True)
+        pred_drop, _ = info.init_with_output(rngs, seq, cat, train=True)
         self.assertEqual(pred_drop.shape, (B, O, d))
         self.assertNotAllclose(pred, pred_drop)
 
         pred_drop_jit, _ = jax.jit(
             info.init_with_output,
-            static_argnames=["with_dropout"],
-        )(rngs, seq, cat, with_dropout=True)
+            static_argnames=["train"],
+        )(rngs, seq, cat, train=True)
         self.assertEqual(pred_drop_jit.shape, (B, O, d))
         self.assertNotAllclose(pred_jit, pred_drop_jit)
 
