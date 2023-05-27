@@ -114,7 +114,7 @@ def train(key: KeyArray,
 
 
     if valid_data is not None:
-        final_loss = loss_fn(params, None, ...)
+        (_, key, final_loss), _ = valid_data.scan(valid_scan_fn, (state, key, 0))
         logger.info("Final Valid: Total Epoch %d, Loss: %.6f, Elapsed: %.3f sec",
                     epoch, final_loss / valid_size, time.perf_counter() - t0)
 
