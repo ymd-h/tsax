@@ -20,8 +20,11 @@ class TrainState(flax.training.train_state.TrainState):
     split_fn: Callable[[KeyArray], Dict[str, KeyArray]]
 
     @staticmethod
-    def create_for(key: KeyArray, model: Model, data: SeqData):
-        x, _ = data.ibatch(0)
+    def create_for(key: KeyArray, model: Model, data: Union[SeqData[DataT], DataT]):
+        if isinstance(data, SeqData):
+            x, _ = data.ibatch(0)
+        else:
+            x = data
 
         if isinstance(x, [tuple, list]):
             params = model.init(key, *x)
