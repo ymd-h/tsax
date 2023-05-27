@@ -17,6 +17,7 @@ import jax.numpy as jnp
 import flax
 import flax.linen as nn
 from flax.training import train_state
+from flax.struct import field
 import optax
 from orbax.checkpoint import (
     CheckpointManager,
@@ -42,7 +43,7 @@ logger = wblog.getLogger()
 
 
 class TrainState(train_state.TrainState):
-    split_fn: Callable[[KeyArray], Dict[str, KeyArray]]
+    split_fn: Callable[[KeyArray], Dict[str, KeyArray]] = field(pytree_node=False)
 
     @staticmethod
     def create_for(key: KeyArray,
