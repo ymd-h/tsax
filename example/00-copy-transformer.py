@@ -19,7 +19,7 @@ import flax.linen as nn
 import optax
 from tqdm import tqdm
 
-from tsax.transformer import Transformer
+from tsax import Transformer
 
 logger = getLogger("tsax.example.example00")
 logger.addHandler(StreamHandler())
