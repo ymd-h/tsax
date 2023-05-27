@@ -3,7 +3,7 @@ Train (:mode:`tsax.training`)
 ===============================
 """
 from __future__ import annotations
-from typing import Callable, Dict
+from typing import Callable, Dict, List, Tuple, Union
 
 from flax.training import train_state
 
@@ -44,7 +44,7 @@ class TrainState(train_state.TrainState):
         else:
             x = data
 
-        if isinstance(x, [tuple, list]):
+        if isinstance(x, Union[Tuple,List]):
             params = model.init(key, *x)
             def apply_fn(variables, _x, *args, **kwargs):
                 return model.apply(variables, *_x, *args, **kwargs)
