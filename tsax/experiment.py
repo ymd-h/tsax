@@ -193,7 +193,7 @@ def train(key: KeyArray,
         logger.info("Train: Epoch %d, Loss: %.6f, Elapssed: %.3f sec",
                     ep, epoch_loss / train_size, dt)
 
-        save_args = orbax_utils.save_args_from_target(s.params)
+        save_args = orbax_utils.save_args_from_target(state.params)
         ckpt.save(ep,
                   s.params,
                   save_kwargs={"save_args": save_args},
@@ -209,7 +209,7 @@ def train(key: KeyArray,
         logger.info("Final Valid: Total Epoch %d, Loss: %.6f, Elapsed: %.3f sec",
                     epoch, final_loss / valid_size, time.perf_counter() - t0)
 
-    save_args = orbax_utils.save_args_from_target(s.params)
+    save_args = orbax_utils.save_args_from_target(state.params)
     ckpt.save(epoch,
               s.params,
               save_kwargs={"save_args": save_args},
