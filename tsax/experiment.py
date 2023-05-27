@@ -8,7 +8,7 @@ This module requires additional dependencies,
 which can be installed by `pip install tsax[experiment]`
 """
 from __future__ import annotations
-from typing import Callable, Dict, Optional
+from typing import Callable, Dict, Literal, Optional
 import time
 
 import jax
@@ -31,6 +31,7 @@ from tsax.training import TrainState
 
 __all__ = [
     "train",
+    "load",
     "predict",
 ]
 
@@ -155,6 +156,42 @@ def train(key: KeyArray,
               force=True)
     return state
 
+
+def load(state: TrainState,
+         checkpoint_directory: str,
+         which: Union[int,
+                      Literal["latest"],
+                      Literal["best"]] = "latest") -> TrainState:
+    """
+    Load Checkpoint
+
+    Parameters
+    ----------
+    state : TrainState
+        State to be set
+    checkpoint_directory : str
+        Checkpoint Directory
+    which : int, "latest", "best", optional
+        Checkpoiint Step.
+
+    Returns
+    -------
+    state : TrainState
+        State with loaded Checkpoint
+    """
+    ckpt = CheckpointManager(checkpoint_directory,
+                             Checkpointer(PyTreeCheckpointHandler()))
+    if which == "latest":
+        which = ckpt.latest_step()
+    elif which == "best":
+        which = ckpt.best_step()
+
+    restore_args = jax.training.orbax_utils.restore_args_from_target(state.params)
+    state.params = ckpt.restore(which,
+                                items=state.params,
+                                restore_kwargs={"restore_args": restore_args})
+
+    return state
 
 def predict(key: KeyArray,
             state: TrainState,
