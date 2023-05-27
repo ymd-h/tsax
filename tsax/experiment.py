@@ -95,7 +95,7 @@ class TrainState(train_state.TrainState):
 def train(key: KeyArray,
           state: TrainState,
           train_data: SeqData[DataT],
-          ephoch: int,
+          epoch: int,
           loss_fn: Callable[[DataT, DataT], Array],
           valid_data: Optional[SeqData[DataT]] = None,
           valid_freq: int = 10,
