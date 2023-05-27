@@ -44,6 +44,8 @@ class TrainState(train_state.TrainState):
         else:
             x = data
 
+        key_p, key = model.split_key(key, train=False)
+        key["params"] = key_p
         if isinstance(x, Union[Tuple,List]):
             params = model.init(key, *x)
             def apply_fn(variables, _x, *args, **kwargs):
