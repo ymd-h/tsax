@@ -58,5 +58,5 @@ class TrainState(train_state.TrainState):
         return TrainState.create(
             apply_fn=apply_fn,
             params=params,
-            split_fn=model.split_fn,
+            split_fn=model.split_key,
         )
