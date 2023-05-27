@@ -44,7 +44,10 @@ class TrainState(train_state.TrainState):
     split_fn: Callable[[KeyArray], Dict[str, KeyArray]]
 
     @staticmethod
-    def create_for(key: KeyArray, model: Model, data: Union[SeqData[DataT], DataT]):
+    def create_for(key: KeyArray,
+                   model: Model,
+                   data: Union[SeqData[DataT], DataT],
+                   tx: optax.GradientTransformation) -> TrainState:
         """
         Create TrainState for Model & Data
 
@@ -56,6 +59,8 @@ class TrainState(train_state.TrainState):
             TSax model
         data : SeqData or DataT
             Input Data
+        tx : optax.GradientTransformation
+            Optax Optimizer
 
         Returns
         -------
@@ -81,6 +86,7 @@ class TrainState(train_state.TrainState):
         return TrainState.create(
             apply_fn=apply_fn,
             params=params,
+            tx=tx,
             split_fn=model.split_key,
         )
 
