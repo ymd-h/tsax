@@ -187,11 +187,12 @@ def train(key: KeyArray,
         key, key_use = jax.random.split(key, 2)
         train_data.shuffle(key_use)
 
-        (state, key, epoch_loss), _ = train_data.scan(train_scan_fn, (state, key, 0))
+        (state, key, epoch_loss), _ = train_data.scan(train_scan_fn,
+                                                      (state, key, jnp.zeros((1,))))
 
         dt = (time.perf_counter() - t)
         logger.info("Train: Epoch %d, Loss: %.6f, Elapssed: %.3f sec",
-                    ep, epoch_loss / train_size, dt)
+                    ep, float(epoch_loss) / train_size, dt)
 
         save_args = orbax_utils.save_args_from_target(state.params)
         ckpt.save(ep,
@@ -200,14 +201,17 @@ def train(key: KeyArray,
                   metrics={"train_loss": epoch_loss / train_size})
 
         if (valid_data is not None) and (ep % valid_freq == 0):
-            (_, key, valid_loss), _ = valid_data.scan(valid_scan_fn, (state, key, 0))
-            logger.info("Valid: Epoch: %d, Loss: %.6f", ep, valid_loss / valid_size)
+            (_, key, valid_loss), _ = valid_data.scan(valid_scan_fn,
+                                                      (state, key, jnp.zeros((1,))))
+            logger.info("Valid: Epoch: %d, Loss: %.6f",
+                        ep, float(valid_loss) / valid_size)
 
 
     if valid_data is not None:
-        (_, key, final_loss), _ = valid_data.scan(valid_scan_fn, (state, key, 0))
+        (_, key, final_loss), _ = valid_data.scan(valid_scan_fn,
+                                                  (state, key, jnp.zeros((1,))))
         logger.info("Final Valid: Total Epoch %d, Loss: %.6f, Elapsed: %.3f sec",
-                    epoch, final_loss / valid_size, time.perf_counter() - t0)
+                    epoch, float(final_loss) / valid_size, time.perf_counter() - t0)
 
     save_args = orbax_utils.save_args_from_target(state.params)
     ckpt.save(epoch,
