@@ -195,7 +195,7 @@ def train(key: KeyArray,
 
         save_args = orbax_utils.save_args_from_target(state.params)
         ckpt.save(ep,
-                  s.params,
+                  state.params,
                   save_kwargs={"save_args": save_args},
                   metrics={"train_loss": epoch_loss / train_size})
 
@@ -211,7 +211,7 @@ def train(key: KeyArray,
 
     save_args = orbax_utils.save_args_from_target(state.params)
     ckpt.save(epoch,
-              s.params,
+              state.params,
               save_kwargs={"save_args": save_args},
               metrics={"train_loss": epoch_loss / train_size},
               force=True)
