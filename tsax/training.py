@@ -26,8 +26,7 @@ class TrainState(flax.training.train_state.TrainState):
         if isinstance(x, [tuple, list]):
             params = model.init(key, *x)
             def apply_fn(variables, _x, *args, **kwargs):
-                _seq, _cat = _x
-                return model.apply(variables, _seq, _cat, *args, **kwargs)
+                return model.apply(variables, *_x, *args, **kwargs)
         else:
             params = model.init(key, x)
             def apply_fn(variables, *args, **kwargs):
