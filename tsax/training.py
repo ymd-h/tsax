@@ -7,9 +7,10 @@ from typing import Callable, Dict
 
 import flax
 
-from tsax.typing import KeyArray
+from tsax.typing import KeyArray, DataT
 from tsax.core import Model
 from tsax.data import SeqData
+
 
 __all__ = [
     "TrainState",
@@ -21,6 +22,23 @@ class TrainState(flax.training.train_state.TrainState):
 
     @staticmethod
     def create_for(key: KeyArray, model: Model, data: Union[SeqData[DataT], DataT]):
+        """
+        Create TrainState for Model & Data
+
+        Parameters
+        ----------
+        key : KeyArray
+            PRNG Key
+        model : Model
+            TSax model
+        data : SeqData or DataT
+            Input Data
+
+        Returns
+        -------
+        state : TrainState
+            Training State
+        """
         if isinstance(data, SeqData):
             x, _ = data.ibatch(0)
         else:
