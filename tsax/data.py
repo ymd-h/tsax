@@ -165,7 +165,7 @@ class SeqData(Generic[DataT]):
         key : KeyArray
             PRNG Key
         """
-        self.idx = jax.random.shuffle(key, self.idx)
+        self.idx = jax.random.permutation(key, self.idx, independent=True)
 
     def _bidx(self) -> Array:
         n = self.nbatch * self.batch_size
