@@ -8,6 +8,7 @@ This module requires additional dependencies,
 which can be installed by `pip install tsax[experiment]`
 """
 from __future__ import annotations
+import os
 from typing import Callable, Dict, List, Literal, Optional, Tuple, Union
 import time
 
@@ -135,6 +136,7 @@ def train(key: KeyArray,
     t0 = time.perf_counter()
 
     logger.info("Checkpoint Directory: %s", checkpoint_directory)
+    os.makedirs(checkpoint_directory, exist_ok=True)
     ckpt = CheckpointManager(
         checkpoint_directory,
         Checkpointer(PyTreeCheckpointHandler()),
