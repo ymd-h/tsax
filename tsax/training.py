@@ -5,7 +5,7 @@ Train (:mode:`tsax.training`)
 from __future__ import annotations
 from typing import Callable, Dict
 
-import flax
+from flax.training import train_state
 
 from tsax.typing import KeyArray, DataT
 from tsax.core import Model
@@ -17,7 +17,7 @@ __all__ = [
 ]
 
 
-class TrainState(flax.training.train_state.TrainState):
+class TrainState(train_state.TrainState):
     split_fn: Callable[[KeyArray], Dict[str, KeyArray]]
 
     @staticmethod
