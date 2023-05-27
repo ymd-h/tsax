@@ -7,8 +7,8 @@ from tsax.typing import KeyArray
 
 
 class Model(nn.Module):
-    def split_key(self,
-                  key: KeyArray, *,
+    @staticmethod
+    def split_key(key: KeyArray, *,
                   train: bool = False) -> Tuple[KeyArray, Dict[str, KeyArray]]:
         """
         Split PRNG Key for this model

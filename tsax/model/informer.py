@@ -842,8 +842,8 @@ class Informer(Model):
 
         return pred
 
-    def split_key(self,
-                  key: KeyArray, *,
+    @staticmethod
+    def split_key(key: KeyArray, *,
                   train: bool = False) -> Tuple[KeyArray, Dict[str, KeyArray]]:
         """
         Split PRNG Key for Informer
