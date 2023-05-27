@@ -7,6 +7,66 @@ from jax.tree_util import tree_flatten, tree_map
 
 from tsax.typing import ArrayLike, Array, KeyArray, CarryT, DataT
 
+__all__ = [
+    "SeqData",
+    "ensure_SeqShape",
+    "ensure_BatchSeqShape",
+]
+
+
+def ensure_SeqShape(data: DataT) -> DataT:
+    """
+    Ensure Sequence Shape [L, d]
+
+    Parameters
+    ----------
+    data : DataT
+
+    Returns
+    -------
+    data : DataT
+        Shape ensured Data. [L, d]
+
+    Notes
+    -----
+    [L] -> [L, 1]
+    """
+    def f(d):
+        if d.ndim == 1:
+            d = jnp.reshape(d, (d.shape[0], 1))
+        return d
+
+    return tree_map(f, data)
+
+
+def ensure_BatchSeqShape(data: DataT) -> DataT:
+    """
+    Ensure Batch Sequence Shape [B, L, d]
+
+    Parameters
+    ----------
+    data : DataT
+
+    Returns
+    -------
+    data : DataT
+        Shape ensured Data. [B, L, d]
+
+    Notes
+    -----
+    [L] -> [1, L, 1]
+    [L, d] -> [1, L, d]
+    """
+    def f(d):
+        if d.ndim == 1:
+            d = jnp.reshape(d, (1, d.shape[0], 1))
+        elif d.ndim == 2:
+            d = jnp.reshape(d, (1, *d.shape))
+
+        return d
+
+    return tree_map(f, data)
+
 
 class SeqData(Generic[DataT]):
     """
