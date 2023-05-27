@@ -191,7 +191,7 @@ def train(key: KeyArray,
                                                       (state, key, jnp.zeros((1,))))
 
         dt = (time.perf_counter() - t)
-        logger.info("Train: Epoch %d, Loss: %.6f, Elapssed: %.3f sec",
+        logger.info("Train: Epoch: %d, Loss: %.6f, Elapssed: %.3f sec",
                     ep, float(epoch_loss) / train_size, dt)
 
         save_args = orbax_utils.save_args_from_target(state.params)
