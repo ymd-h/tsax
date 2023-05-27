@@ -37,7 +37,6 @@ def train(
         state: TrainState,
         train_data: SeqData[DataT],
         ephoch: int,
-        batch_size: int,
         loss_fn: Callable[[DataT, DataT], Array],
         valid_data: Optional[SeqData[DataT]] = None,
         valid_freq: int = 10,
@@ -58,8 +57,6 @@ def train(
         Training Data
     epoch : int
         Training Epoch
-    batch_size : int
-        Batch Size
     loss_fn : callable
         Loss Function
     valid_data : SeqData, optional
