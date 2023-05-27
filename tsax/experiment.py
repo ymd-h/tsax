@@ -29,21 +29,25 @@ from tsax.data import SeqData
 from tsax.training import TrainState
 
 
+__all__ = [
+    "train",
+    "predict",
+]
+
+
 logger = wblog.getLogger()
 
 
-def train(
-        key: KeyArray,
-        state: TrainState,
-        train_data: SeqData[DataT],
-        ephoch: int,
-        loss_fn: Callable[[DataT, DataT], Array],
-        valid_data: Optional[SeqData[DataT]] = None,
-        valid_freq: int = 10,
-        checkpoint_directory: str = "./tsax-ckpt",
-        checkpoint_options: Optional[CheckpointManagerOptions] = None,
-        checkpoint_metadata: Optional[Dict[str, Any]] = None,
-) -> TrainState:
+def train(key: KeyArray,
+          state: TrainState,
+          train_data: SeqData[DataT],
+          ephoch: int,
+          loss_fn: Callable[[DataT, DataT], Array],
+          valid_data: Optional[SeqData[DataT]] = None,
+          valid_freq: int = 10,
+          checkpoint_directory: str = "./tsax-ckpt",
+          checkpoint_options: Optional[CheckpointManagerOptions] = None,
+          checkpoint_metadata: Optional[Dict[str, Any]] = None) -> TrainState:
     """
     Train Model
 
@@ -151,5 +155,40 @@ def train(
     return state
 
 
-def inference(model, rngkey: KeyArray) -> Array:
-    pass
+def predict(key: KeyArray,
+            state: TrainState,
+            data: Union[DataT, SeqData[DataT]]) -> Array:
+    """
+    Predict with Model
+
+    Parameters
+    ----------
+    key : KeyArray
+        PRNG Key
+    state : TrainState
+        Trained State
+    data : DataT
+        Predict Data. [L, d]
+
+    Returns
+    -------
+    pred : Array
+        Predicted
+    """
+    @jax.jit
+    def pred_fn(k, x):
+        _, k = state.split_fn(k, train=False)
+        return state.apply_fn(state.params, x, train=False, rngs=k)
+
+
+    if isinstance(data, SeqData):
+        idx = jnp.arange(data.nbatch)
+        key = jax.random.split(key, data.nbath)
+
+        return jax.vmap(lambda i, k: pred_fn(k, data._vxget(i)))(idx, key)
+
+
+    data = ensure_BatchSeqShape(data)
+    pred = pred_fn(state.params, key, data)
+
+    return pred
