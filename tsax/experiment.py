@@ -69,10 +69,14 @@ class TrainState(train_state.TrainState):
         state : TrainState
             Training State
         """
+        model.log_model()
+
         if isinstance(data, SeqData):
             x, _ = data.ibatch(0)
         else:
             x = data
+
+        logger.info("Create TrainState for Shape: %s", x.shape)
 
         key_p, key = model.split_key(key, train=False)
         key["params"] = key_p

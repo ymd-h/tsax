@@ -22,6 +22,7 @@ from jax import Array
 from jax.random import KeyArray
 from jax.typing import ArrayLike
 from flax import linen as nn
+import wblog
 
 from tsax.core import (
     Model,
@@ -44,6 +45,9 @@ __all__ = [
     "Embedding",
     "FeedForward",
 ]
+
+
+logger = wblog.getLogger()
 
 
 KERNEL_SIZE: int = 3
@@ -868,3 +872,14 @@ class Informer(Model):
 
         key, key_a = jax.random.split(key, 2)
         return key, {"attention": key_a}
+
+    def log_model(self) -> None:
+        """
+        Log Informer Spec
+        """
+        logger.info("Informer(d=%d, I=%d, O=%d, Ltoken=%d, c=%d, dm=%d,"
+                    " Vs=%s, alpha=%d, nE=%d, nD=%d, nH=%d, dff=%d,"
+                    " kernel=%d, eps=%.2e, Pdrop=%f)",
+                    self.d, self.I, self.O, self.Ltoken, self.c, self.dm,
+                    self.Vs, self.alpha, self.nE, self.nD, self.nH, self.dff,
+                    self.kernel, self.eps, self.Pdrop)

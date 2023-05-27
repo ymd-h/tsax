@@ -28,3 +28,9 @@ class Model(nn.Module):
             Keys can be consumed by this model.
         """
         return key, {}
+
+    def log_model(self) -> None:
+        """
+        Log Model Spec
+        """
+        pass
