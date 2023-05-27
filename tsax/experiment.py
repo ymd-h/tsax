@@ -177,7 +177,7 @@ def train(key: KeyArray,
     for ep in range(epoch):
         t = time.perf_counter()
 
-        key, key_use = jax.random.split(rngkey, 2)
+        key, key_use = jax.random.split(key, 2)
         train_data.shuffle(key_use)
 
         (state, key, epoch_loss), _ = train_data.scan(train_scan_fn, (state, key, 0))
