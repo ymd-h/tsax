@@ -147,6 +147,7 @@ def train(key: KeyArray,
         logger.info("Final Valid: Total Epoch %d, Loss: %.6f, Elapsed: %.3f sec",
                     epoch, final_loss / valid_size, time.perf_counter() - t0)
 
+    save_args = flax.training.orbax_utils.save_args_from_target(s.params)
     ckpt.save(epoch,
               s.params,
               save_kwargs={"save_args": save_args},
