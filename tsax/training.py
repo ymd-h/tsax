@@ -24,17 +24,17 @@ class TrainState(flax.training.train_state.TrainState):
         x, _ = data.ibatch(0)
 
         if isinstance(x, [tuple, list]):
-            seq, cat = x
+            params = model.init(key, *x)
             def apply_fn(variables, _x, *args, **kwargs):
                 _seq, _cat = _x
                 return model.apply(variables, _seq, _cat, *args, **kwargs)
         else:
-            seq, cat = x, None
+            params = model.init(key, x)
             def apply_fn(variables, *args, **kwargs):
                 return model.apply(variables, *args, **kwargs)
 
         return TrainState.create(
             apply_fn=apply_fn,
-            params=model.init(key, seq, cat),
+            params=params,
             split_fn=model.split_fn,
         )
