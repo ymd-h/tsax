@@ -130,12 +130,12 @@ class SeqData(Generic[DataT]):
         ----------
         fn : Callable
             Scan function
-        init : TypeVar(Carry)
+        init : CarryT
             Initial Carry
 
         Returns
         -------
-        carry : TypeVar(Carry)
+        carry : CarryT
             Carry
         values : Array
             Return Values
