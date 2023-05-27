@@ -128,7 +128,7 @@ class SeqData(Generic[DataT]):
           Array([[1],
                  [2]], dtype=int32)))
         """
-        self.data: DataT = data # [L, d]
+        self.data: DataT = ensure_SeqShape(data) # [L, d]
         self.xLen: int = int(xLen)
         self.yLen: int = int(yLen)
         self.batch_size: int = int(batch_size)
