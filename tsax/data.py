@@ -46,7 +46,8 @@ class SeqData(Generic[DataT]):
 
         Examples
         --------
-        >>> seq = SeqData(jnp.arange(10, dtype=float), xLen=2, yLen=2, batch_size=2)
+        >>> d = jnp.arange(10, dtype=float)
+        >>> seq = SeqData(d, xLen=2, yLen=2, batch_size=2)
         >>> seq.ibatch(0)
         (Array([[0., 1.],
                 [1., 2.]], dtype=float32),
@@ -55,9 +56,17 @@ class SeqData(Generic[DataT]):
 
         Togetter with categorical sequence
 
-        >>> seqcat = SeqData((jnp.arange(10, dtype=float), jnp.arange(10)),
-        ...                  xLen=1, yLen=1, batch_size=2)
+        >>> c = jnp.arange(10)
+        >>> seqcat = SeqData((d, c), xLen=1, yLen=1, batch_size=2)
         >>> seqcat.ibatch(0)
+        ((Array([[0.],
+                 [1.]], dtype=float32),
+          Array([[0],
+                 [1]], dtype=int32)),
+         (Array([[1.],
+                 [2.]], dtype=float32),
+          Array([[1],
+                 [2]], dtype=int32)))
         """
         self.data: DataT = data # [L, d]
         self.xLen: int = int(xLen)
