@@ -145,6 +145,12 @@ def train(key: KeyArray,
         metadata=checkpoint_metadata
     )
 
+    logger.info("Epoch: %s", epoch)
+    logger.info("Train Data: # of Batch: %d, Batch Size: %d",
+                train_data.nbatch, train_data.batch_size)
+    logger.info("Valid Data: # of Batch: %d, Batch Size: %d",
+                valid_data.nbatch, valid_data.batch_size)
+
     train_fn = jax.value_and_grad(
         lambda p, k, x, y: loss_fn(state.apply_fn(p, x, train=True, rngs=k), y)
     )
