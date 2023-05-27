@@ -20,13 +20,10 @@ import wblog
 
 from tsax.typing import Array, ArrayLike, KeyArray, DataT
 from tsax.data import SeqData
+from tsax.training import TrainState
 
 
 logger = wblog.getLogger()
-
-
-class TrainState(flax.training.train_state.TrainState):
-    split_fn: Callable[[KeyArray], Dict[str, KeyArray]]
 
 
 def train(key: KeyArray,
