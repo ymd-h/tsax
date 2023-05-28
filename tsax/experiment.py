@@ -151,6 +151,9 @@ def train(key: KeyArray,
     )
 
     logger.info("Epoch: %s", epoch)
+    if valid_data is not None:
+        logger.info("Valid Freq: %d", valid_freq)
+
     logger.info("Train Data: Batch Size: %d, # of Batch: %d",
                 train_data.batch_size, train_data.nbatch)
     logger.info("Valid Data: Batch Size: %d, # of Batch: %d",
