@@ -166,7 +166,7 @@ def train(key: KeyArray,
         lambda p, k, x, y: loss_fn(state.apply_fn(p, x, train=False, rngs=k), y)
     )
 
-    # @jax.jit # JIT compoe is too slow
+    # @jax.jit # JIT compile is too slow
     def train_step_fn(s, k, l, x, y):
         k, k_use = s.split_fn(k, train=True)
         loss, grad = train_fn(s.params, k_use, x, y)
@@ -175,7 +175,7 @@ def train(key: KeyArray,
 
         return s, k, l+loss
 
-    # @jax.jit # JIT compile is too slow to compile
+    # @jax.jit # JIT compile is too slow.
     def valid_step_fn(s, k, l, x, y):
         k, k_use = s.split_fn(k, train=False)
         loss = valid_fn(s.params, k_use, x, y)
