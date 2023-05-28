@@ -280,7 +280,7 @@ def load(state: TrainState,
         which = ckpt.best_step()
 
     logger.info("Load %d step", which)
-    restore_args = jax.training.orbax_utils.restore_args_from_target(state.params)
+    restore_args = orbax_utils.restore_args_from_target(state.params)
     state.params = ckpt.restore(which,
                                 items=state.params,
                                 restore_kwargs={"restore_args": restore_args})
