@@ -344,6 +344,6 @@ def predict(key: KeyArray,
 
 
     data = ensure_BatchSeqShape(data)
-    pred = pred_fn(state.params, key, data)
+    pred = pred_fn(key, data)
 
     return pred
