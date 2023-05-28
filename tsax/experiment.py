@@ -10,7 +10,7 @@ which can be installed by `pip install tsax[experiment]`
 from __future__ import annotations
 from datetime import datetime
 import os
-from typing import Callable, Dict, List, Literal, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Union
 import time
 
 import jax
@@ -244,7 +244,8 @@ def load(state: TrainState,
          checkpoint_directory: str,
          which: Union[int,
                       Literal["latest"],
-                      Literal["best"]] = "latest") -> TrainState:
+                      Literal["best"]] = "latest",
+         best_fn: Optional[Callable[[Any], float]] = None) -> TrainState:
     """
     Load Checkpoint
 
@@ -256,19 +257,29 @@ def load(state: TrainState,
         Checkpoint Directory
     which : int, "latest", "best", optional
         Checkpoiint Step.
+    best_fn : callable, optional
+        Function Determine Best Step
 
     Returns
     -------
     state : TrainState
         State with loaded Checkpoint
     """
+    if best_fn is None:
+        best_fn = lambda metrics: metrics.get("train_loss", 1e+10)
+
     ckpt = CheckpointManager(checkpoint_directory,
-                             Checkpointer(PyTreeCheckpointHandler()))
+                             Checkpointer(PyTreeCheckpointHandler()),
+                             CheckpointManagerOptions(best_fn=best_fn,
+                                                      best_mode="min"))
     if which == "latest":
+        logger.info("Use latest step")
         which = ckpt.latest_step()
     elif which == "best":
+        logger.info("Use best step")
         which = ckpt.best_step()
 
+    logger.info("Load %d step", which)
     restore_args = jax.training.orbax_utils.restore_args_from_target(state.params)
     state.params = ckpt.restore(which,
                                 items=state.params,
