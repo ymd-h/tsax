@@ -150,7 +150,7 @@ def train(key: KeyArray,
         metadata=checkpoint_metadata
     )
 
-    logger.info("Epoch: %s", epoch)
+    logger.info("Epoch: %d", epoch)
     if valid_data is not None:
         logger.info("Valid Freq: %d", valid_freq)
 
