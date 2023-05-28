@@ -8,6 +8,7 @@ This module requires additional dependencies,
 which can be installed by `pip install tsax[experiment]`
 """
 from __future__ import annotations
+import dataclasses
 from datetime import datetime
 import os
 from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Union
@@ -300,9 +301,12 @@ def load(state: TrainState,
 
     logger.info("Load %d step", which)
     restore_args = orbax_utils.restore_args_from_target(state.params)
-    state.params = ckpt.restore(which,
-                                items=state.params,
-                                restore_kwargs={"restore_args": restore_args})
+    state = dataclasses.replace(state,
+                                params=ckpt.restore(which,
+                                                    items=state.params,
+                                                    restore_kwargs={
+                                                        "restore_args": restore_args
+                                                    }))
 
     return state
 
