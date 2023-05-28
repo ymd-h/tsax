@@ -149,6 +149,13 @@ def train(key: KeyArray,
                              datetime.now().strftime("%Y%m%d-%H%M%S"))
     logger.info("Checkpoint Directory: %s", directory)
     os.makedirs(directory, exist_ok=True)
+    if checkpoint_options is None:
+        # To save metrics, add (pseudo) best_fn.
+        checkpoint_options = CheckpointManagerOptions(
+            best_fn=lambda metrics: metrics.get("train_loss", 1e+10),
+            best_mode="max",
+        )
+
     ckpt = CheckpointManager(
         directory,
         Checkpointer(PyTreeCheckpointHandler()),
@@ -271,15 +278,25 @@ def load(state: TrainState,
     ckpt = CheckpointManager(checkpoint_directory,
                              Checkpointer(PyTreeCheckpointHandler()),
                              CheckpointManagerOptions(best_fn=best_fn,
-                                                      best_mode="min"))
-    logger.debug("Stored Checkpoints: %s", ckpt.all_steps(read=True))
+                                                      best_mode="min",
+                                                      create=False))
+    logger.debug("Stored Checkpoints: %s", ckpt.all_steps())
+    logger.debug([c.metrics for c in ckpt._checkpoints])
+
+    if which == "best":
+        logger.info("Use best step")
+        which = ckpt.best_step()
+        if which is None:
+            logger.warning("No metrics are saved. Use latest step")
+            which = "latest"
 
     if which == "latest":
         logger.info("Use latest step")
         which = ckpt.latest_step()
-    elif which == "best":
-        logger.info("Use best step")
-        which = ckpt.best_step()
+
+    if which is None:
+        logger.warning("No Checkpoints are saved. Return without load.")
+        return state
 
     logger.info("Load %d step", which)
     restore_args = orbax_utils.restore_args_from_target(state.params)
