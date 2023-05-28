@@ -25,6 +25,7 @@ from orbax.checkpoint import (
     Checkpointer,
     PyTreeCheckpointHandler,
 )
+from tqdm import tqdm
 import wblog
 
 from tsax.typing import Array, ArrayLike, KeyArray, DataT
@@ -162,24 +163,21 @@ def train(key: KeyArray,
         lambda p, k, x, y: loss_fn(state.apply_fn(p, x, train=False, rngs=k), y)
     )
 
-    def train_scan_fn(skl, x, y):
-        s, k, l = skl
-
+    # @jax.jit # JIT compoe is too slow
+    def train_step_fn(s, k, l, x, y):
         k, k_use = s.split_fn(k, train=True)
         loss, grad = train_fn(s.params, k_use, x, y)
 
-        l += l
         s = s.apply_gradients(grads=grad)
 
-        return (s, k, l), None
+        return s, k, l+loss
 
-    def valid_scan_fn(skl, x, y):
-        s, k, l = skl
-
+    # @jax.jit # JIT compile is too slow to compile
+    def valid_step_fn(s, k, l, x, y):
         k, k_use = s.split_fn(k, train=False)
-        l += valid_fn(s.params, k_use, x, y)
+        loss = valid_fn(s.params, k_use, x, y)
 
-        return (s, k , l), None
+        return k, l+loss
 
     train_size: int = train_data.batch_size * train_data.nbatch
     valid_size: int = valid_data.batch_size * valid_data.nbatch
@@ -191,8 +189,11 @@ def train(key: KeyArray,
         key, key_use = jax.random.split(key, 2)
         train_data.shuffle(key_use)
 
-        (state, key, epoch_loss), _ = train_data.scan(train_scan_fn,
-                                                      (state, key, jnp.zeros((1,))))
+        epoch_loss = jnp.zeros((1,))
+        for i in tqdm(range(train_data.nbatch),
+                      ascii=True, leave=False, desc=f"Train: Epoch: {ep}"):
+            x, y = train_data.ibatch(i)
+            state, key, epoch_loss = train_step_fn(state, key, epoch_loss, x, y)
 
         dt = (time.perf_counter() - t)
         logger.info("Train: Epoch: %d, Loss: %.6f, Elapssed: %.3f sec",
@@ -205,15 +206,24 @@ def train(key: KeyArray,
                   metrics={"train_loss": epoch_loss / train_size})
 
         if (valid_data is not None) and (ep % valid_freq == 0):
-            (_, key, valid_loss), _ = valid_data.scan(valid_scan_fn,
-                                                      (state, key, jnp.zeros((1,))))
+            valid_loss = jnp.zeros((1,))
+            for i in tqdm(range(valid_data.nbatch),
+                          ascii=True, leave=False, desc=f"Valid: Epoch: {ep}"):
+                x, y = valid_data.ibatch(i)
+                key, valid_loss = valid_step_fn(state, key, valid_loss, x, y)
+
             logger.info("Valid: Epoch: %d, Loss: %.6f",
                         ep, float(valid_loss) / valid_size)
 
 
     if valid_data is not None:
-        (_, key, final_loss), _ = valid_data.scan(valid_scan_fn,
-                                                  (state, key, jnp.zeros((1,))))
+        final_loss = jnp.zeros((1,))
+        for i in tqdm(range(valid_data.nbatch),
+                      ascii=True, leave=False,
+                      desc=f"Final Valid: Total Epoch: {epoch}"):
+            x, y = valid_data.ibatch(i)
+            key, final_loss = valid_step_fn(state, key, final_loss, x, y)
+
         logger.info("Final Valid: Total Epoch %d, Loss: %.6f, Elapsed: %.3f sec",
                     epoch, float(final_loss) / valid_size, time.perf_counter() - t0)
 

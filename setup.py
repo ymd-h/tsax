@@ -5,6 +5,6 @@ setup(name="tsax",
       version="0.0.0",
       install_requires = ["jax", "flax", "well-behaved-logging"],
       extras_require={
-          "experiment": ["optax", "orbax"],
+          "experiment": ["optax", "orbax", "tqdm"],
       },
       packages=find_packages())
