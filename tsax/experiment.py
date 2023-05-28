@@ -240,7 +240,7 @@ def train(key: KeyArray,
     ckpt.save(epoch,
               state.params,
               save_kwargs={"save_args": save_args},
-              metrics={"train_loss": epoch_loss / train_size},
+              metrics={"train_loss": float(epoch_loss) / train_size},
               force=True)
     return state, directory
 
