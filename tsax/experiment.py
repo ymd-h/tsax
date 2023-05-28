@@ -108,7 +108,8 @@ def train(key: KeyArray,
           valid_freq: int = 10,
           checkpoint_directory: str = "./tsax-ckpt",
           checkpoint_options: Optional[CheckpointManagerOptions] = None,
-          checkpoint_metadata: Optional[Dict[str, Any]] = None) -> TrainState:
+          checkpoint_metadata: Optional[Dict[str, Any]] = None) -> Tuple[TrainState,
+                                                                         str]:
     """
     Train Model
 
@@ -139,6 +140,8 @@ def train(key: KeyArray,
     -------
     state : TrainState
         Trained State
+    directory : str
+        Checkpoint Directory
     """
     t0 = time.perf_counter()
 
@@ -239,7 +242,7 @@ def train(key: KeyArray,
               save_kwargs={"save_args": save_args},
               metrics={"train_loss": epoch_loss / train_size},
               force=True)
-    return state
+    return state, directory
 
 
 def load(state: TrainState,
