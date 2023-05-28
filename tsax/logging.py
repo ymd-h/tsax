@@ -7,7 +7,7 @@ import wblog
 
 def enable_logging(level: Optional[int] = None,
                    handlers:  Union[Handler, Iterable[Handler], None] = None,
-                   propagate: bool = True) -> None:
+                   propagate: bool = False) -> None:
     """
     Enable Logging for TSax
 
