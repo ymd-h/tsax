@@ -282,7 +282,7 @@ def load(state: TrainState,
                                                       best_mode="min",
                                                       create=False))
     logger.debug("Stored Checkpoints: %s", ckpt.all_steps())
-    logger.debug([c.metrics for c in ckpt._checkpoints])
+    logger.debug("Checkpoints Metrics: %s", [c.metrics for c in ckpt._checkpoints])
 
     if which == "best":
         logger.info("Use best step")
