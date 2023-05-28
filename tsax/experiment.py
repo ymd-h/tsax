@@ -272,6 +272,8 @@ def load(state: TrainState,
                              Checkpointer(PyTreeCheckpointHandler()),
                              CheckpointManagerOptions(best_fn=best_fn,
                                                       best_mode="min"))
+    logger.debug("Stored Checkpoints: %s", ckpt.all_steps(read=True))
+
     if which == "latest":
         logger.info("Use latest step")
         which = ckpt.latest_step()
