@@ -150,7 +150,7 @@ def train(key: KeyArray,
     logger.info("Checkpoint Directory: %s", directory)
     os.makedirs(directory, exist_ok=True)
     ckpt = CheckpointManager(
-        checkpoint_directory,
+        directory,
         Checkpointer(PyTreeCheckpointHandler()),
         options=checkpoint_options,
         metadata=checkpoint_metadata
