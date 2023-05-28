@@ -212,7 +212,8 @@ def train(key: KeyArray,
         ckpt.save(ep,
                   state.params,
                   save_kwargs={"save_args": save_args},
-                  metrics={"train_loss": epoch_loss / train_size})
+                  metrics={"train_loss": epoch_loss / train_size},
+                  force=(ep == epoch -1))
 
         if (valid_data is not None) and (ep % valid_freq == 0):
             valid_loss = jnp.zeros((1,))
@@ -236,12 +237,6 @@ def train(key: KeyArray,
         logger.info("Final Valid: Total Epoch %d, Loss: %.6f, Elapsed: %.3f sec",
                     epoch, float(final_loss) / valid_size, time.perf_counter() - t0)
 
-    save_args = orbax_utils.save_args_from_target(state.params)
-    ckpt.save(epoch,
-              state.params,
-              save_kwargs={"save_args": save_args},
-              metrics={"train_loss": float(epoch_loss) / train_size},
-              force=True)
     return state, directory
 
 
