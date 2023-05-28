@@ -831,7 +831,7 @@ class Informer(Model):
             Predicted Signal. [B, O, dm]
         """
         assert (cat is None) or seq.shape[:2] == cat.shape[:2], "BUG"
-        assert seq.shape[1:] == (self.I, self.d), "BUG"
+        assert seq.shape[1:] == (self.I, self.d), f"BUG: {seq.shape}"
         assert (cat is None) or cat.shape[2] == len(self.Vs), "BUG"
 
         B: int = seq.shape[0]
