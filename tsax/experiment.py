@@ -30,7 +30,7 @@ import wblog
 
 from tsax.typing import Array, ArrayLike, KeyArray, DataT
 from tsax.core import Model
-from tsax.data import SeqData
+from tsax.data import SeqData, ensure_BatchSeqShape
 
 __all__ = [
     "TrainState",
