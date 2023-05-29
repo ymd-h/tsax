@@ -263,16 +263,16 @@ class Attention(nn.Module):
         Parameters
         ----------
         Q : ArrayLike
-            Query. [B, L, dm]
+            Query. [B, Lq, dm]
         K : ArrayLike
-            Key. [B, L, dm]
+            Key. [B, Lk, dm]
         V : ArrayLike
-            Value. [B, L, dm]
+            Value. [B, Lk, dm]
 
         Returns
         -------
         A : Array
-            Attention. [B, L, dv]
+            Attention. [B, Lk, dv]
         """
         assert K.shape == V.shape, "BUG"
         assert Q.shape[0] == K.shape[0], "BUG"
@@ -285,15 +285,15 @@ class Attention(nn.Module):
         # V: [B, L, dm] -> [B, L, dv]
         V = nn.Dense(features=self.dv, name="WV")(V)
 
-        # QK^T: [B, L, L]
+        # QK^T: [B, Lk, Lq]
         QK: Array = jnp.matmul(Q, jnp.transpose(K, (0, 2, 1)))
-        assert QK.shape == (*Q.shape[:2], Q.shape[1]), "BUG"
+        assert QK.shape == (*Q.shape[:2], K.shape[1]), "BUG"
 
         QK = QK.at[:].divide(jnp.sqrt(self.dk))
 
-        # A: [B, L, dv]
+        # A: [B, Lk, dv]
         A: Array = jnp.matmul(nn.activation.softmax(QK), V)
-        assert A.shape == (*Q.shape[:2], self.dv)
+        assert A.shape == (*Q.shape[:2], self.dv), "BUG"
 
         return A
 
