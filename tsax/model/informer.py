@@ -41,6 +41,7 @@ __all__ = [
     "DecoderLayer",
     "Distilling",
     "MultiHeadAttention",
+    "Attention",
     "ProbSparseAttention",
     "Embedding",
     "FeedForward",
@@ -235,6 +236,65 @@ class Distilling(nn.Module):
 
         return x
 
+
+class Attention(nn.Module):
+    """
+    Attention Layer
+
+    Attributes
+    ----------
+    dk : int
+        Key Dimension
+    dv : int
+        Value Dimension
+    """
+    dk: int
+    dv: int
+
+    @nn.compact
+    def __call__(self,
+                 Q: ArrayLike,
+                 K: ArrayLike,
+                 V: ArrayLike) -> Array:
+        """
+        Call Attention Layer
+
+        Parameters
+        ----------
+        Q : ArrayLike
+            Query. [B, L, dm]
+        K : ArrayLike
+            Key. [B, L, dm]
+        V : ArrayLike
+            Value. [B, L, dm]
+
+        Returns
+        -------
+        A : Array
+            Attention. [B, L, dv]
+        """
+        assert K.shape == V.shape, "BUG"
+        assert Q.shape[0] == K.shape[0], "BUG"
+        assert Q.shape[2] == K.shape[2], "BUG"
+
+        # Q, K: [B, L, dm] -> [B, L, dk]
+        Q = nn.Dense(features=self.dk, name="WQ")(Q)
+        K = nn.Dense(features=self.dk, name="WK")(K)
+
+        # V: [B, L, dm] -> [B, L, dv]
+        V = nn.Dense(features=self.dv, name="WV")(V)
+
+        # QK^T: [B, L, L]
+        QK: Array = jnp.matmul(Q, jnp.transpose(K, (0, 2, 1)))
+        assert QK.shape == (*Q.shape[:2], Q.shape[1]), "BUG"
+
+        QK = QK.at[:].divide(jnp.sqrt(self.dk))
+
+        # A: [B, L, dv]
+        A: Array = jnp.matmul(nn.activation.softmax(QK), V)
+        assert A.shape == (*Q.shape[:2], self.dv)
+
+        return A
 
 
 class ProbSparseAttention(nn.Module):
