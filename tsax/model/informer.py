@@ -632,13 +632,11 @@ class DecoderLayer(nn.Module):
             mask=self.Ltoken,
             name="MaskedMultiHeadProbSparseAttention",
         )
-        mha = MultiHeadProbSparseAttention(
-            c=self.c,
+        mha = MultiHeadAttention(
             nH=self.nH,
             dm=self.dm,
             Pdrop=self.Pdrop,
-            mask=0,
-            name="MultiHeadProbSparseAttention",
+            name="MultiHeadAttention",
         )
         ff = FeedForward(dff=self.dff, Pdrop=self.Pdrop)
 
