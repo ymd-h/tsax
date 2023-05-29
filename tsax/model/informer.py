@@ -40,6 +40,7 @@ __all__ = [
     "EncoderLayer",
     "DecoderLayer",
     "Distilling",
+    "MultiHeadAttention",
     "MultiHeadProbSparseAttention",
     "Attention",
     "ProbSparseAttention",
@@ -398,6 +399,68 @@ class ProbSparseAttention(nn.Module):
         assert S.shape == (B, m, self.dv), "BUG"
 
         return S
+
+
+class MultiHeadAttention(nn.Module):
+    """
+    Multi Head Attention Layer
+
+    Attributes
+    ----------
+    nH : int
+        Number of Multi Head
+    dm : int
+        Model Dimension
+    """
+    dm: int
+    nH: int = NH
+    Pdrop: float = PDROP
+
+    @nn.compact
+    def __call__(self,
+                 Q: ArrayLike,
+                 K: ArrayLike,
+                 V: ArrayLike, *,
+                 with_dropout: bool = False) -> Array:
+        """
+        Call Multi Head Attention
+
+        Parameters
+        ----------
+        Q : ArrayLike
+            Query. [B, L, dm]
+        K : ArrayLike
+            Key. [B, L, dm]
+        V : ArrayLike
+            Value. [B, L, dm]
+        with_dropout : bool, optional
+            Whether dropout or not
+
+        Returns
+        -------
+        MHA : Array
+            Multi Head Attention. [B, L, dm]
+        """
+        assert K.shape == V.shape, "BUG"
+        assert Q.shape[0] == K.shape[0], "BUG"
+        assert Q.shape[2] == K.shape[2], "BUG"
+
+        # x: [B, L, dm (= dm/nH * nH)]
+        d: int = self.dm // self.nH
+        x = jnp.concatenate([Attention(dk=d,
+                                       dv=d,
+                                       name=f"head_{i}")(Q, K, V)
+                             for i in range(self.nH)],
+                            axis=2)
+        assert x.shape == (*Q.shape[:2], d * self.nH), "BUG"
+
+        MHA = nn.Dense(features=self.dm, name="WO")(x)
+        assert Q.shape == MHA.shape, "BUG"
+
+        if with_dropout:
+            MHA = MHA.at[:].set(nn.Dropout(self.Pdrop, deterministic=False)(MHA))
+
+        return MHA
 
 
 class MultiHeadProbSparseAttention(nn.Module):
