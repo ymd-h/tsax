@@ -40,7 +40,7 @@ __all__ = [
     "EncoderLayer",
     "DecoderLayer",
     "Distilling",
-    "MultiHeadAttention",
+    "MultiHeadProbSparseAttention",
     "Attention",
     "ProbSparseAttention",
     "Embedding",
@@ -400,7 +400,7 @@ class ProbSparseAttention(nn.Module):
         return S
 
 
-class MultiHeadAttention(nn.Module):
+class MultiHeadProbSparseAttention(nn.Module):
     """
     Multi Head Attention Layer
 
@@ -500,7 +500,7 @@ class EncoderLayer(nn.Module):
         """
         B, L, dm = inputs.shape
 
-        mha = MultiHeadAttention(
+        mha = MultiHeadProbSparseAttention(
             c=self.c,
             nH=self.nH,
             dm=self.dm,
@@ -561,21 +561,21 @@ class DecoderLayer(nn.Module):
         """
         B, Ldec, dm = outputs.shape
 
-        mmha = MultiHeadAttention(
+        mmha = MultiHeadProbSparseAttention(
             c=self.c,
             nH=self.nH,
             dm=self.dm,
             Pdrop=self.Pdrop,
             mask=self.Ltoken,
-            name="MaskedMultiHeadAttention",
+            name="MaskedMultiHeadProbSparseAttention",
         )
-        mha = MultiHeadAttention(
+        mha = MultiHeadProbSparseAttention(
             c=self.c,
             nH=self.nH,
             dm=self.dm,
             Pdrop=self.Pdrop,
             mask=0,
-            name="MultiHeadAttention",
+            name="MultiHeadProbSparseAttention",
         )
         ff = FeedForward(dff=self.dff, Pdrop=self.Pdrop)
 

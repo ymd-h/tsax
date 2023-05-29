@@ -11,7 +11,7 @@ from tsax.model.informer import (
     EncoderLayer,
     DecoderLayer,
     Distilling,
-    MultiHeadAttention,
+    MultiHeadProbSparseAttention,
     ProbSparseAttention,
     Embedding,
     FeedForward,
@@ -200,7 +200,7 @@ class TestProbSparseAttention(TestCase):
         self.assertAllclose(a, a_jit)
 
 
-class TestMultiHeadAttention(TestCase):
+class TestMultiHeadProbSparseAttention(TestCase):
     def test_mha(self):
         B, L, dm = 1, 12, 6
         c = 2
@@ -218,11 +218,11 @@ class TestMultiHeadAttention(TestCase):
         key, key_use = jax.random.split(key)
         V = jax.random.normal(key_use, (B, L, dm))
 
-        MHA = MultiHeadAttention(c=c,
-                                 dm=dm,
-                                 nH=nH,
-                                 Pdrop=Pdrop,
-                                 mask=0)
+        MHA = MultiHeadProbSparseAttention(c=c,
+                                           dm=dm,
+                                           nH=nH,
+                                           Pdrop=Pdrop,
+                                           mask=0)
 
         key_p, key_a, key_d = jax.random.split(key, 3)
         mha, _ = MHA.init_with_output({"params": key_p, "attention": key_a},
@@ -270,11 +270,11 @@ class TestMultiHeadAttention(TestCase):
         key, key_use = jax.random.split(key)
         V = jax.random.normal(key_use, (B, L, dm))
 
-        MHA = MultiHeadAttention(c=c,
-                                 dm=dm,
-                                 nH=nH,
-                                 Pdrop=Pdrop,
-                                 mask=6)
+        MHA = MultiHeadProbSparseAttention(c=c,
+                                           dm=dm,
+                                           nH=nH,
+                                           Pdrop=Pdrop,
+                                           mask=6)
 
         key, key_use = jax.random.split(key, 2)
         mha, _ = MHA.init_with_output({"params": key_use, "attention": key},
