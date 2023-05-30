@@ -185,9 +185,11 @@ class Embedding(nn.Module):
 
         L: int = seq.shape[1]
 
+        # Token Embedding as Projector
         embedded = ConvSeq(dm=self.dm, kernel=self.kernel)(seq)
         assert embedded.shape == (*seq.shape[:2], self.dm), f"BUG: {embedded.shape}"
 
+        # Positional Embedding
         embedded = (
             embedded
             .at[:].multiply(self.alpha)
@@ -195,6 +197,7 @@ class Embedding(nn.Module):
         )
 
         if cat is not None:
+            # Temporal Embedding
             embedded = (
                 embedded.at[:].add(CategoricalEncoding(Vs=self.Vs, dm=self.dm)(cat))
             )
