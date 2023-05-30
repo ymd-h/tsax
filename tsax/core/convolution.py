@@ -39,14 +39,17 @@ class ConvSeq(nn.Module):
 
         seq_pad = jnp.pad(seq, ((0, 0), (left, right), (0, 0)), mode="wrap")
 
+        idx = jnp.arange(seq.shape[1])
         seq_conv = jax.vmap(
-            lambda i: conv(
-                jnp.reshape(jax.lax.dynamic_slice(
-                    seq_pad, (0, i, 0), (seq.shape[0], self.kernel, seq.shape[2])
-                ), (seq.shape[0], -1))
-            ),
-            out_axes=1,
-        )(jnp.arange(seq.shape[1]))
+            lambda s: jax.vmap(
+                lambda i: conv(
+                    jnp.reshape(
+                        jax.lax.dynamic_slice(s, (i, 0), (self.kernel, s.shape[1])),
+                        (-1,)
+                    )
+                )
+            )(idx)
+        )(seq_pad)
         assert seq_conv.shape == (*seq.shape[:2], self.dm), f"BUG: {seq_conv.shape}"
 
         return seq_conv
