@@ -378,8 +378,11 @@ class ProbSparseAttention(nn.Module):
                                             _K.shape[0],
                                             shape=(U,),
                                             replace=False),:].get()
+            assert _Kbar.shape == (U, self.dk), "BUG"
 
             _Sbar = jnp.matmul(_Q, jnp.transpose(_Kbar, (1, 0)))
+            assert _Sbar.shape == (m, U), "BUG"
+
             _M = jnp.max(_Sbar, axis=1) - jnp.mean(_Sbar, axis=1)
             assert _M.shape == (m,), f"BUG: {_M.shape} != {(m,)}"
 
