@@ -724,9 +724,11 @@ class EncoderStack(nn.Module):
                                                             with_dropout=with_dropout)
             assert inputs.shape == (B, L, dm), "BUG"
 
-            inputs = Distilling(kernel=self.kernel,
-                                name=f"DistillingLayer_{i}")(inputs)
-            assert inputs.shape == (B, (L+1)//2, dm), "BUG"
+            if i < self.nE - 1:
+                # Last Layer doesn't have following Distilling Layer.
+                inputs = Distilling(kernel=self.kernel,
+                                    name=f"DistillingLayer_{i}")(inputs)
+                assert inputs.shape == (B, (L+1)//2, dm), "BUG"
 
         return nn.LayerNorm(epsilon=self.eps)(inputs)
 
