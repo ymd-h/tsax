@@ -423,22 +423,22 @@ class TestEncoderStack(TestCase):
         }
 
         e, _ = E.init_with_output(rngs, inputs)
-        self.assertEqual(e.shape, (B, ((L+1)//2 + 1)//2, dm))
+        self.assertEqual(e.shape, (B, (L+1)//2, dm))
 
         e_jit, _ = jax.jit(E.init_with_output)(rngs, inputs)
-        self.assertEqual(e_jit.shape, (B, ((L+1)//2 + 1)//2, dm))
+        self.assertEqual(e_jit.shape, (B, (L+1)//2, dm))
 
         self.assertAllclose(e, e_jit)
 
         e_drop, _ = E.init_with_output(rngs, inputs, with_dropout=True)
-        self.assertEqual(e_drop.shape, (B, ((L+1)//2 + 1)//2, dm))
+        self.assertEqual(e_drop.shape, (B, (L+1)//2, dm))
         self.assertNotAllclose(e, e_drop)
 
         e_drop_jit, _ = jax.jit(
             E.init_with_output,
             static_argnames=["with_dropout"],
         )(rngs, inputs, with_dropout=True)
-        self.assertEqual(e_drop_jit.shape, (B, ((L+1)//2 + 1)//2, dm))
+        self.assertEqual(e_drop_jit.shape, (B, (L+1)//2, dm))
         self.assertNotAllclose(e_jit, e_drop_jit)
 
         self.assertAllclose(e_drop, e_drop_jit)
