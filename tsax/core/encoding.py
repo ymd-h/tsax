@@ -143,7 +143,8 @@ class CategoricalEncoding(nn.Module):
 
     References
     ----------
-    .. [1] H. Zhou et al., "Informer: Beyond Efficient Transformer for Long Sequence Time-Series Forecasting", AAAI 2021, Vol. 35, No. 12
+    .. [1] H. Zhou et al., "Informer: Beyond Efficient Transformer
+       for Long Sequence Time-Series Forecasting", AAAI 2021, Vol. 35, No. 12
        https://ojs.aaai.org/index.php/AAAI/article/view/17325,
        https://arxiv.org/abs/2012.07436
 
