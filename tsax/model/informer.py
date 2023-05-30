@@ -386,8 +386,8 @@ class ProbSparseAttention(nn.Module):
 
             _S = jnp.zeros((m, self.dv), dtype=Q.dtype)
             _S = _S.at[:, :].set(
-                jnp.cumsum(_V, axis=0) if self.mask
-                else jnp.mean(_V, axis=0, keepdims=True)
+                jnp.cumsum(_V, axis=1) if self.mask
+                else jnp.mean(_V, axis=1, keepdims=True)
             )
             _S = _S.at[_I, :].set(_S1)
 
