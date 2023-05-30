@@ -162,9 +162,13 @@ class Embedding(nn.Module):
     Vs: Tuple[int, ...] = tuple()
     kernel: int = KERNEL_SIZE
     alpha: float = EMBEDDING_ALPHA
+    Pdrop: float = PDROP
 
     @nn.compact
-    def __call__(self, seq: ArrayLike, cat: Optional[ArrayLike] = None) -> Array:
+    def __call__(self,
+                 seq: ArrayLike,
+                 cat: Optional[ArrayLike] = None, *,
+                 with_dropout: bool = False) -> Array:
         """
         Call Embedding Layer
 
@@ -174,6 +178,8 @@ class Embedding(nn.Module):
             Numerical Sequence. [B, L, d_sequence]
         cat : ArrayLike, optional
             Categorical Sequence for Temporal Information. [B, L, d_categorical]
+        with_dropout : bool
+            Whether dropout or not
 
         Returns
         -------
@@ -200,6 +206,11 @@ class Embedding(nn.Module):
             # Temporal Embedding
             embedded = (
                 embedded.at[:].add(CategoricalEncoding(Vs=self.Vs, dm=self.dm)(cat))
+            )
+
+        if with_dropout:
+            embedded = embedded.at[:].set(
+                nn.Dropout(self.Pdrop, deterministic=False)(embedded)
             )
 
         return embedded
@@ -840,7 +851,8 @@ class Informer(Model):
         self.encoder_embed = Embedding(dm=self.dm,
                                        Vs=self.Vs,
                                        alpha=self.alpha,
-                                       kernel=self.kernel)
+                                       kernel=self.kernel,
+                                       Pdrop=self.Pdrop)
 
         self.decoder = DecoderStack(c=self.c,
                                     nD=self.nD,
@@ -853,7 +865,8 @@ class Informer(Model):
         self.decoder_embed = Embedding(dm=self.dm,
                                        Vs=self.Vs,
                                        alpha=self.alpha,
-                                       kernel=self.kernel)
+                                       kernel=self.kernel,
+                                       Pdrop=self.Pdrop)
         self.ff = nn.Dense(features=self.d)
 
     def encode(self,
@@ -882,7 +895,7 @@ class Informer(Model):
 
         B = seq.shape[0]
 
-        inputs = self.encoder_embed(seq, cat)
+        inputs = self.encoder_embed(seq, cat, with_dropout=with_dropout)
         assert inputs.shape == (B, self.I, self.dm), "BUG"
 
         inputs = self.encoder(inputs, with_dropout=with_dropout)
@@ -922,7 +935,7 @@ class Informer(Model):
 
         outputs = (jnp.zeros((B, self.Ltoken+self.O, self.dm), dtype=seq.dtype)
                    .at[:,:self.Ltoken,:]
-                   .set(self.decoder_embed(seq, cat)))
+                   .set(self.decoder_embed(seq, cat, with_dropout=with_dropout)))
         assert outputs.shape == (B, self.Ltoken+self.O, self.dm), "BUG"
 
         outputs = outputs.at[:].set(
