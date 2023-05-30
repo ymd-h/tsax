@@ -188,14 +188,16 @@ class Embedding(nn.Module):
         embedded = ConvSeq(dm=self.dm, kernel=self.kernel)(seq)
         assert embedded.shape == (*seq.shape[:2], self.dm), f"BUG: {embedded.shape}"
 
+        embedded = (
+            embedded
+            .at[:].multiply(self.alpha)
+            .at[:].add(PositionalEncoding(dm=self.dm, L=L, Lfreq=2*L)(embedded))
+        )
+
         if cat is not None:
-            embedded = (embedded
-                        .at[:].multiply(self.alpha)
-                        .at[:].add(PositionalEncoding(dm=self.dm,
-                                                      L=L,
-                                                      Lfreq=2*L)(embedded))
-                        .at[:].add(CategoricalEncoding(Vs=self.Vs,
-                                                       dm=self.dm)(cat)))
+            embedded = (
+                embedded.at[:].add(CategoricalEncoding(Vs=self.Vs, dm=self.dm)(cat))
+            )
 
         return embedded
 
