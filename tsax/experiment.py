@@ -176,8 +176,10 @@ def train(key: KeyArray,
 
     logger.info("Train Data: Batch Size: %d, # of Batch: %d",
                 train_data.batch_size, train_data.nbatch)
-    logger.info("Valid Data: Batch Size: %d, # of Batch: %d",
-                valid_data.batch_size, valid_data.nbatch)
+
+    if valid_data is not None:
+        logger.info("Valid Data: Batch Size: %d, # of Batch: %d",
+                    valid_data.batch_size, valid_data.nbatch)
 
     train_fn = jax.value_and_grad(
         lambda p, k, x, y: loss_fn(state.apply_fn(p, x, train=True, rngs=k), y)
@@ -203,7 +205,9 @@ def train(key: KeyArray,
         return k, l+loss
 
     train_size: int = train_data.batch_size * train_data.nbatch
-    valid_size: int = valid_data.batch_size * valid_data.nbatch
+
+    if valid_data is not None:
+        valid_size: int = valid_data.batch_size * valid_data.nbatch
 
     logger.info("Start Training")
     for ep in range(epoch):
