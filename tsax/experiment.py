@@ -10,6 +10,7 @@ which can be installed by `pip install tsax[experiment]`
 from __future__ import annotations
 import dataclasses
 from datetime import datetime
+from logging import getLogger, FileHandler
 import os
 from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Union
 import time
@@ -148,8 +149,13 @@ def train(key: KeyArray,
 
     directory = os.path.join(checkpoint_directory,
                              datetime.now().strftime("%Y%m%d-%H%M%S"))
-    logger.info("Checkpoint Directory: %s", directory)
     os.makedirs(directory, exist_ok=True)
+
+    h = FileHandler(os.path.join(directory, "train.log"))
+    getLogger("tsax").addHandler(h)
+    logger.info("Checkpoint Directory: %s", directory)
+
+
     if checkpoint_options is None:
         # To save metrics, add (pseudo) best_fn.
         checkpoint_options = CheckpointManagerOptions(
@@ -245,6 +251,7 @@ def train(key: KeyArray,
         logger.info("Final Valid: Total Epoch %d, Loss: %.6f, Elapsed: %.3f sec",
                     epoch, float(final_loss) / valid_size, time.perf_counter() - t0)
 
+    getLogger("tsax").removeHandler(h)
     return state, directory
 
 
