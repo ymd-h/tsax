@@ -106,6 +106,7 @@ def example01(L: int,
     state = TrainState.create_for(key_use, informer, train_seq, tx)
 
     def loss_fn(pred_y, true_y):
+        assert pred_y.shape == true_y.shape, "BUG"
         return jnp.sum((pred_y - true_y) ** 2)
 
     key, key_use = jax.random.split(key, 2)
