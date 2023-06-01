@@ -20,6 +20,14 @@ class TestSeqDat(TestCase):
         self.assertAllclose(x, jnp.asarray([[[0]], [[1]]]))
         self.assertAllclose(y, jnp.asarray([[[1]], [[2]]]))
 
+        x, y = seq.ibatch(1)
+        self.assertEqual(x.shape, (2, 1, 1))
+        self.assertEqual(y.shape, (2, 1, 1))
+
+        self.assertAllclose(x, jnp.asarray([[[2]], [[3]]]))
+        self.assertAllclose(y, jnp.asarray([[[3]], [[4]]]))
+
+
     def test_ibatch_with_cat(self):
         d = jnp.reshape(jnp.arange(10, dtype=float), (-1, 1))
         c = jnp.reshape(jnp.arange(10), (-1, 1)) + 10
