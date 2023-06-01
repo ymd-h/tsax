@@ -185,8 +185,7 @@ class SeqData(Generic[DataT]):
         x : DataT
         y : DataT
         """
-        bstride = self.batch_size * self.stride
-        idx = self.idx.at[i*bstride:(i+1)*bstride].get()
+        idx = self.idx.at[i*self.batch_size:(i+1)*self.batch_size].get()
         return self._vxget(idx), self._vyget(idx)
 
     def scan(self,
