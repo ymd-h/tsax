@@ -41,6 +41,23 @@ class TestSeqDat(TestCase):
         self.assertAllclose(ycat, jnp.stack((c.at[1:3,:].get(),
                                              c.at[2:4,:].get())))
 
+    def test_ensure_range(self):
+        d = jnp.arange(30, dtype=float)
+        seq = SeqData(d, xLen=2, yLen=2, batch_size=2)
+        for i in range(seq.nbatch):
+            with self.subTest(i=i):
+                x, y = seq.ibatch(i)
+                self.assertNotAllclose(x, y)
+                self.assertAny(y != 0)
+
+        seq.shuffle(jax.random.PRNGKey(30))
+        for i in range(seq.nbatch):
+            with self.subTest(i=i):
+                x, y = seq.ibatch(i)
+                self.assertNotAllclose(x, y)
+                self.assertAny(y != 0)
+
+
     def test_vmap(self):
         d = jnp.reshape(jnp.arange(10, dtype=float), (-1, 1))
         seq = SeqData(d, xLen=1, yLen=1, batch_size=2)
