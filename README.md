@@ -25,6 +25,9 @@ The name comes from Time Series on
 - [ ] (WIP) Autoformer
   - [H. Wu et al., "Autoformer: Decomposition Transformers with Auto-Correlation for Long-Term Series Forecasting", NeurIPS 2021](https://proceedings.neurips.cc/paper_files/paper/2021/hash/bcc0d400288793e8bdcd7c19a8ac0c2b-Abstract.html),
     [arXiv:2106.13008](https://arxiv.org/abs/2106.13008)
+- [ ] FEDformer
+  - [T. Zhou et al., "FEDformer: Frequency Enhanced Decomposed Transformer for Long-term Series Forecasting", ICML 2022](https://proceedings.mlr.press/v162/zhou22g.html)
+    [aeXiv:2201.12740](https://arxiv.org/abs/2201.12740)
 - ...
 
 ## Development
