@@ -27,6 +27,7 @@ from tsax import Informer
 logger = getLogger("tsax.example.example01")
 
 def example01(L: int,
+              stride: int,
               xL: int,
               yL: int,
               c: int,
@@ -49,6 +50,8 @@ def example01(L: int,
     ----------
     L : int
         Length of Data
+    stride : int
+        Stride for Sequence Division
     xL : int
         Lookback Horizon
     yL : int
@@ -82,19 +85,32 @@ def example01(L: int,
     key = initPRNGKey(seed)
 
     d: int = 2
-    logger.info("Generated Data: (%d, %d)", L, d)
+    logger.info("Generated Data: (%d, %d), stride: %d", L, d, stride)
 
     seq = (jnp.zeros((L, d))
            .at[:,0].add(jnp.sin(0.07 * jnp.pi * jnp.arange(L)))
            .at[:,1].add(jnp.cos(0.03 * jnp.pi * jnp.arange(L)))
-           .at[:,0].multiply(jnp.sin(-0.22 * jnp.pi * jnp.arange(L)))
-           .at[:,1].multiply(jnp.sin(0.013 * jnp.pi * (jnp.arange(L) ** 2))))
-    train_size = int(seq.shape[0] * 0.9)
+           .at[:,0].add(jnp.sin(-0.22 * jnp.pi * jnp.arange(L)))
+           .at[:,1].add(jnp.sin(0.013 * jnp.pi * (jnp.arange(L) ** 2))))
+    train_size = int(seq.shape[0] * 0.8)
+
+    fig, axes = plt.subplots(nrows=2, figsize=(10, 5))
+    for i, a in enumerate(axes):
+        a.plot(jnp.arange(train_size),
+               seq.at[:train_size, i].get(),
+               marker=".", linestyle=":", label="train")
+        a.plot(jnp.arange(train_size, seq.shape[0]),
+               seq.at[train_size:, i].get(),
+               marker=".", linestyle=":", label="valid")
+        a.legend()
+    plt.title("Original Data")
+    plt.savefig("01-informer-data.png")
+    plt.close()
 
     train_seq = SeqData(seq.at[:train_size].get(),
-                        xLen=xL, yLen=yL, batch_size=batch)
+                        xLen=xL, yLen=yL, batch_size=batch, stride=stride)
     valid_seq = SeqData(seq.at[train_size:].get(),
-                        xLen=xL, yLen=yL, batch_size=batch)
+                        xLen=xL, yLen=yL, batch_size=batch, stride=stride)
 
     informer = Informer(c=c, d=d, I=xL, O=yL, Ltoken=xL, dm=dm,
                         nE=nE, nD=nD, nH=nH, dff=dff, Pdrop=Pdrop)
@@ -144,18 +160,19 @@ if __name__ == "__main__":
 
     d = p.add_argument_group("Data")
     d.add_argument("--L", type=int, default=3000, help="Data Length")
+    d.add_argument("--stride", type=int, default=1, help="Stride for Sequence")
 
     i = p.add_argument_group("Informer")
-    i.add_argument("--xL", type=int, default=40, help="X Length")
-    i.add_argument("--yL", type=int, default=20, help="Y Length")
+    i.add_argument("--xL", type=int, default=20, help="X Length")
+    i.add_argument("--yL", type=int, default=10, help="Y Length")
     i.add_argument("--c", type=int, default=5, help="Hyperparameter: Sampling Factor")
     i.add_argument("--nE", type=int, default=3,
                    help="Number of Layers at Encoder Stack")
     i.add_argument("--nD", type=int, default=2,
                    help="Number of Layers at Decoder Stack")
     i.add_argument("--nH", type=int, default=8, help="Number of Multi Head")
-    i.add_argument("--dm", type=int, default=32, help="Number of Model Dimension")
-    i.add_argument("--dff", type=int, default=32,
+    i.add_argument("--dm", type=int, default=64, help="Number of Model Dimension")
+    i.add_argument("--dff", type=int, default=64,
                    help="Number of Units at Hidden Layer in Feed Forward")
     i.add_argument("--drop-rate", type=float, default=0.1,
                    help="Rate of Dropout for Training")
@@ -163,13 +180,14 @@ if __name__ == "__main__":
     e = p.add_argument_group("Experiment")
     e.add_argument("--lr", type=float, default=1e-4, help="Learning Rate")
     e.add_argument("--batch", type=int, default=32, help="Batch Size")
-    e.add_argument("--epoch", type=int, default=300, help="Number of Epoch")
+    e.add_argument("--epoch", type=int, default=10, help="Number of Epoch")
     e.add_argument("--seed", type=int, default=None, help="Random Seed")
     e.add_argument("--checkpoint-directory", default="./tsax-ckpt",
                    help="Checkpoint Directory")
 
     args = p.parse_args()
     example01(L=args.L,
+              stride=args.stride,
               xL=args.xL,
               yL=args.yL,
               c=args.c,
