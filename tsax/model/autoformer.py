@@ -748,8 +748,8 @@ class Autoformer(Model):
 
     def decode(self,
                inputs: ArrayLike,
-               seasonal_outputs: ArrayLike,
-               trend_outputs: ArrayLike, *,
+               seq: ArrayLike:,
+               cat: Optional[ArrayLike] = None, *,
                with_dropout: bool = False) -> Array:
         """
         Decode with Autoformer
@@ -757,13 +757,11 @@ class Autoformer(Model):
         Parameters
         ----------
         inputs : ArrayLike
-            Encoded Inputs. [B, I, dm].
-        seasonal_outputs : ArrayLike
-            Seasonal Outputs. [B, L, dm]
-        trend_outputs : ArrayLike
-            Trend Outputs. [B, L, dm]
-        with_dropout : bool
-            Whether dropout or not.
+            Encoded Inputs. [B, L, dm]
+        seq : ArrayLike
+            Outputs Signal. [B, L, d]
+        cat : AllayLike, optional
+            Categorical Features. [B, L, d]
 
         Returns
         -------
@@ -772,60 +770,66 @@ class Autoformer(Model):
         trend_outputs : ArrayLike
             Trend Outputs. [B, L, dm]
         """
-        assert seasonal_outputs.shape == trend_outputs.shape, "BUG"
         assert inputs.shape[0] == seasonal_outputs.shape[0], "BUG"
         assert inputs.shape[2] == seasonal_outputs.shape[2], "BUG"
+        assert (cat is None) or (seq.shape[:2] == cat.shape[:2]), "BUG"
+        assert (cat is None) or (cat.shape[2] == len(self.Vs)), "BUG"
 
-        B, L = seasonal_outputs.shape[:1]
+        B: int = inputs.shape[0]
+        S: int = self.I // 2
+        L: int = S + self.O
 
-        seasonal_outputs, trend_outputs = self.decoder(inputs,
-                                                       seasonal_outputs,
-                                                       trend_outputs,
-                                                       with_dropout=with_dropout)
-        assert seasonal_outputs.shape == trend_outputs.shape == (B, L, self.dm), "BUG"
 
-        return seasonal_outputs, trend_outputs
+        s, t = SeriesDecomp(seq.at[:,:S,:].get())
 
+        s_outputs = jnp.zeros((B, L, self.dm), dtype=seq.dtype).at[:,:S,:].set(s)
+        t_outputs = (jnp.zeros((B, L, self.dm), dtype=seq.dtype)
+                     .at[:,:S,:].set(t)
+                     .at[:,S:,:].set(jnp.mean(seq, axis=1, keepdims=True)))
+
+        # Only seasonal part is embedded.
+        s_outputs = self.decoder_embed(s_outputs, cat, with_dropout=with_dropout)
+        assert s_outputs.shape == (B, L, self.dm)
+
+        s_outputs, t_outputs = self.decoder(inputs, s_outputs, t_outputs,
+                                            with_dropout=with_dropout)
+        assert s_outputs.shape == t_outputs.shape == (B, L, self.dm), "BUG"
+
+        pred = s_outputs.at[:,L-O:,:].get() + t_outputs.at[:,L-O:,:].get()
+        return pred
 
     def __call__(self,
-                 inputs: ArrayLike, *,
+                 seq: ArrayLike,
+                 cat: Optional[ArrayLike] = None, *,
                  train: bool = False) -> Array:
         """
         Call Autoformer
 
         Parameters
         ----------
-        inputs : ArrayLike
-            Inputs Signal. [B, I, dm]
+        seq : ArrayLike
+            Inputs Signal. [B, I, d]
+        cat : ArrayLike, optional
+            Categorical Features. [B, I, C]
         train : bool, optional
             Whether train or not.
 
         Returns
         -------
         pred : Array
-            Predicted Signal. [B, O, dm]
+            Predicted Signal. [B, O, d]
         """
-        assert inputs.shape[1:] == (self.I, self.dm), "BUG"
+        assert (cat is None) or seq.shape[:2] == cat.shape[:2], "BUG"
+        assert seq.shape[1:] == (self.I, self.d), f"BUG: {seq.shape}"
+        assert (cat is None) or cat.shape[2] == len(self.Vs), "BUG"
+
         B = inputs.shape[0]
 
-        inputs = self.encode(inputs, with_dropout=train)
+        inputs = self.encode(seq, cat, with_dropout=train)
+        assert inputs.shape == (B, self.I, self.dm), "BUG"
 
-        S: int = self.I // 2
-        L: int = S + self.O
-        seasonal_outputs = jnp.zeros((B, L, self.dm), dtype=inputs.dtype)
-        trend_outputs = jnp.zeros((B, L, self.dm), dtype=inputs.dtype)
-
-        s, t = SeriesDecomp(inputs.at[:,:S,:].get())
-        seasonal_outputs.at[:,:S,:].set(s)
-        trend_outputs.at[:,:S,:].set(t)
-        trend_outputs.at[:,S:,:].set(jnp.mean(inputs, axis=1, keepdims=True))
-
-        seasonal_outputs, trend_outputs = self.decode(inputs,
-                                                      seasonal_outputs,
-                                                      trend_outputs,
-                                                      with_dropout=train)
-
-        return seasonal_outputs.at[:,L-O:,:].get() + trend_outputs.at[:,L-O:,:].get()
+        pred = self.decode(inputs, seq, cat, with_dropout=train)
+        return pred
 
     @staticmethod
     def split_key(key: KeyArray, *,
