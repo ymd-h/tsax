@@ -967,12 +967,12 @@ class Informer(Model):
         cat : ArrayLike, optional
             Categorical Features. [B, I, C]
         train : bool, optional
-            Whether dropout or not.
+            Whether train or not.
 
         Returns
         -------
         pred : Array
-            Predicted Signal. [B, O, dm]
+            Predicted Signal. [B, O, d]
         """
         assert (cat is None) or seq.shape[:2] == cat.shape[:2], "BUG"
         assert seq.shape[1:] == (self.I, self.d), f"BUG: {seq.shape}"
