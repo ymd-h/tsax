@@ -765,10 +765,8 @@ class Autoformer(Model):
 
         Returns
         -------
-        seasonal_outputs : ArrayLike
-            Seasonal Outputs. [B, L, dm]
-        trend_outputs : ArrayLike
-            Trend Outputs. [B, L, dm]
+        pred : Array
+            Predicted Signal. [B, O, d]
         """
         assert inputs.shape[0] == seasonal_outputs.shape[0], "BUG"
         assert inputs.shape[2] == seasonal_outputs.shape[2], "BUG"

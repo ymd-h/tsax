@@ -925,6 +925,11 @@ class Informer(Model):
             Outputs Signal. [B, L, d]
         cat : AllayLike, optional
             Categorical Features. [B, L, d]
+
+        Returns
+        -------
+        pred : Array
+            Predicted Signal. [B, O, d]
         """
         assert inputs.shape[0] == seq.shape[0], "BUG"
         assert inputs.shape[2] == self.dm, "BUG"
