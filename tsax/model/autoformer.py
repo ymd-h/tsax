@@ -22,7 +22,10 @@ from jax import Array
 from jax.typing import ArrayLike
 from flax import linen as nn
 
-from tsax.core import ResidualLayerNorm
+from tsax.core import (
+    Model,
+    ResidualLayerNorm
+)
 
 __all__ = [
     "Autoformer",
@@ -621,7 +624,7 @@ class DecoderStack(nn.Module):
         return seasonal_outputs, trend_outputs
 
 
-class Autoformer(nn.Module):
+class Autoformer(Model):
     """
     Autoformer
 
@@ -720,7 +723,7 @@ class Autoformer(nn.Module):
 
     def __call__(self,
                  inputs: ArrayLike, *,
-                 with_dropout: bool = False) -> Array:
+                 train: bool = False) -> Array:
         """
         Call Autoformer
 
@@ -728,8 +731,8 @@ class Autoformer(nn.Module):
         ----------
         inputs : ArrayLike
             Inputs Signal. [B, I, dm]
-        with_dropout : bool, optional
-            Whether dropout or not.
+        train : bool, optional
+            Whether train or not.
 
         Returns
         -------
@@ -739,7 +742,7 @@ class Autoformer(nn.Module):
         assert inputs.shape[1:] == (self.I, self.dm), "BUG"
         B = inputs.shape[0]
 
-        inputs = self.encode(inputs, with_dropout=with_dropout)
+        inputs = self.encode(inputs, with_dropout=train)
 
         S: int = self.I // 2
         L: int = S + self.O
@@ -754,6 +757,41 @@ class Autoformer(nn.Module):
         seasonal_outputs, trend_outputs = self.decode(inputs,
                                                       seasonal_outputs,
                                                       trend_outputs,
-                                                      with_dropout=with_dropout)
+                                                      with_dropout=train)
 
         return seasonal_outputs.at[:,L-O:,:].get() + trend_outputs.at[:,L-O:,:].get()
+
+    @staticmethod
+    def split_key(key: KeyArray, *,
+                  train: bool = False) -> Tuple[KeyArray, Dict[str, KeyArray]]:
+        """
+        Split PRNG Key for Autoformer
+
+        Parameters
+        ----------
+        key : KeyArray
+            Key will be split
+        train : bool, optional
+            Whether train or not
+
+        Returns
+        -------
+        key : KeyArray
+            New Key
+        key_for_model : KeyArray
+            Keys can be consumed by Autoformer.
+        """
+        if train:
+            key, key_a, key_d = jax.random.split(key, 2)
+            return key, {"dropout": key_d}
+
+        return key, dict()
+
+    def log_model(self) -> None:
+        """
+        Log Informer Spec
+        """
+        logger.info("Autoformer(I=%d, O=%d, dm=%d, nE=%d, nD=%d, nH=%d, dff=%d,"
+                    " kMA=%d, eps=%.2e, Pdrop=%f)",
+                    self.I, self.O, self.dm, self.nE, self.nD, self.nH, self.dff,
+                    self.kMA, self.eps, self.Pdrop)
