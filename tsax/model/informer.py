@@ -380,7 +380,7 @@ class ProbSparseAttention(nn.Module):
                                             replace=False),:].get()
             assert _Kbar.shape == (U, self.dk), "BUG"
 
-            _Sbar = jnp.matmul(_Q, jnp.transpose(_Kbar, (1, 0)))
+            _Sbar = jnp.tensordot(_Q, _Kbar, axes=((1,), (1,)))
             assert _Sbar.shape == (m, U), "BUG"
 
             _M = jnp.max(_Sbar, axis=1) - jnp.mean(_Sbar, axis=1)
@@ -392,7 +392,7 @@ class ProbSparseAttention(nn.Module):
             _Qbar = _Q.at[_I, :].get()
             assert _Qbar.shape == (u, self.dk), "BUG"
 
-            _QbarK = jnp.matmul(_Qbar, jnp.transpose(_K, (1, 0)))
+            _QbarK = jnp.tensordot(_Qbar, _K, axes=((1,), (1,)))
             assert _QbarK.shape == (u, n), "BUG"
 
             if self.mask:
