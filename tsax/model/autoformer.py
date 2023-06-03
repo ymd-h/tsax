@@ -714,6 +714,11 @@ class Autoformer(Model):
                                     kMA=self.kMA,
                                     eps=self.eps,
                                     Pdrop=self.Pdrop)
+        self.encoder_embed = Embedding(dm=self.dm,
+                                       Vs=self.Vs,
+                                       kernel=self.kernel,
+                                       Pdrop=self.Pdrop)
+
         self.decoder = DecoderStack(N=self.nD,
                                     dm=self.dm,
                                     nH=self.nH,
@@ -721,29 +726,43 @@ class Autoformer(Model):
                                     lMA=self.kMA,
                                     eps=self.eps,
                                     Pdrop=self.Pdrop)
+        self.decoder_embed = Embedding(dm=self.dm,
+                                       Vs=self.Vs,
+                                       kernel=self.kernel,
+                                       Pdrop=self.Pdrop)
 
     def encode(self,
-               inputs: ArrayLike, *,
+               seq: ArrayLike,
+               cat: Optional[ArrayLike] = None, *,
                with_dropout: bool = False) -> Array:
         """
         Encode with Autoformer
 
         Parameters
         ----------
-        inputs : ArrayLike
-            Inputs Signal. [B, I, dm]
-        with_dropout : bool, optional
-            Whether dropout or not.
+        seq : ArrayLike
+            Inputs. [B, I, d]
+        cat : ArrayLike, optional
+            Categorical Features. [B, I, C]
+        with_dropout : bool
+            Whether dropout or not
 
         Returns
         -------
         inputs : Array
             Encoded Inputs. [B, I, dm]
         """
-        assert inputs.shape[1:] == (self.I, self.dm)
+        assert (cat is None) or seq.shape[:1] == cat.shape[:1], "BUG"
+        assert seq.shape[1] == self.I, "BUG"
+
         B = inputs.shape[0]
+
+        inputs = self.encoder_embed(seq, cat, with_dropout=with_dropout)
+        assert inputs.shape == (B, self.I, self.dm), "BUG"
+
         inputs = self.encoder(inputs, with_dropout=with_dropout)
-        assert inputs.shape == (B, self.I, self.dm)
+        assert inputs.shape == (B, self.I, self.dm), "BUG"
+
         return inputs
 
     def decode(self,
