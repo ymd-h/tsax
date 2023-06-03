@@ -129,7 +129,7 @@ class FeedForward(nn.Module):
         B, L, dm = x.shape
 
         # h: [B, L, dff]
-        h = nn.activation.relu(ConvSeq(dm=self.dff, kernel=1)(x))
+        h = nn.activation.gelu(ConvSeq(dm=self.dff, kernel=1)(x))
         assert h.shape == (B, L, self.dff), "BUG"
 
         if with_dropout:
