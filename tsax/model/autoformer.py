@@ -27,6 +27,7 @@ from tsax.core import (
     ConvSeq,
     Embedding,
     ResidualLayerNorm,
+    FeedForward,
 )
 from tsax.core.encoding import EMBEDDING_ALPHA
 
@@ -39,7 +40,6 @@ __all__ = [
     "MutiHeadAttention",
     "AutoCorrelationAttention",
     "SeriesDecomp",
-    "FeedForward",
 ]
 
 K_MOVING_AVG: int = 25
@@ -77,55 +77,6 @@ PDROP: float = 0.1
 """
 Default Probability of Dropout Rate
 """
-
-class FeedForward(nn.Module):
-    """
-    Feed Forward Netrowk
-
-    Attributes
-    ----------
-    dff : int
-        Number of Hidden Units at Feed Forward
-    Pdrop : float
-        Dropout Rate
-    """
-    dff: int = DFF
-    Pdrop: float = PDROP
-
-    @nn.compact
-    def __call__(self,
-                 x: ArrayLike, *,
-                 with_dropout: bool = False) -> Array:
-        """
-        Call Feed Forward Network
-
-        Parameters
-        ----------
-        x : ArrayLike
-            Inputs. [B, L, dm]
-        with_dropout : bool, optional
-            Whether dropout or not.
-
-        Returns
-        -------
-        y : Array
-            Outputs. [B, L, dm]
-        """
-        dm: int = x.shape[2]
-
-        # h: [B, L, dff]
-        h = nn.activation.relu(nn.Dense(self.dff, use_bias=False)(x))
-
-        if with_dropout:
-            h = h.at[:].set(nn.Dropout(self.Pdrop, deterministic=False)(h))
-
-        # y: [B, L, dm]
-        y = nn.Dense(dm, use_bias=False)(h)
-
-        if with_dropout:
-            y = y.at[:].set(nn.Dropout(self.Pdrop, deterministic=False)(y))
-
-        return y
 
 
 class SeriesDecomp(nn.Module):
@@ -382,7 +333,7 @@ class EncoderLayer(nn.Module):
         shape = inputs.shape
 
         mha = MultiHeadAttention(nH=self.nH, dm=self.dm, Pdrop=self.Pdrop)
-        ff = FeedForward(dff=self.dff, Pdrop=self.Pdrop)
+        ff = FeedForward(dff=self.dff, Pdrop=self.Pdrop, bias=False)
 
         inputs = ResidualLayerNorm(lambda i: mha(i, i, i, with_dropout=with_dropout),
                                    self.eps)(inputs)
@@ -459,7 +410,7 @@ class DecoderLayer(nn.Module):
                                    name="SelfAttention")
         c_mha = MultiHeadAttention(nH=self.nH, dm=self.dm, Pdrop=self.Pdrop,
                                    name="CrossAttention")
-        ff = FeedForward(dff=self.dff, Pdrop=self.Pdrop)
+        ff = FeedForward(dff=self.dff, Pdrop=self.Pdrop, bias=False)
 
         s_mha_f = lambda so: s_mha(so, so, so, with_dropout=with_dropout)
         c_mha_f = lambda so: c_mha(so, inputs, inputs, with_dropout=with_dropout)
