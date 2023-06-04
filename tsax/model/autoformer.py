@@ -308,7 +308,6 @@ class EncoderLayer(nn.Module):
     nH: int = NH
     kMA: int = K_MOVING_AVG
     dff: int = DFF
-    eps: float = EPS
     Pdrop: float = PDROP
 
     @nn.compact
@@ -335,15 +334,13 @@ class EncoderLayer(nn.Module):
         mha = MultiHeadAttention(nH=self.nH, dm=self.dm, Pdrop=self.Pdrop)
         ff = FeedForward(dff=self.dff, Pdrop=self.Pdrop, bias=False)
 
-        inputs = ResidualLayerNorm(lambda i: mha(i, i, i, with_dropout=with_dropout),
-                                   self.eps)(inputs)
-        inputs, _ = SeriesDecomp(kMA=self.kMA)(inputs)
+        inputs, _ = SeriesDecomp(kMA=self.kMA)(
+            inputs + mha(inputs, inputs, inputs, with_dropout=with_dropout)
+        )
 
-        inputs = inputs.at[:].set(
-            ResidualLayerNorm(lambda i: ff(i, with_dropout=with_dropout),
-                              self.eps)(inputs)
-            )
-        inputs, _ = SeriesDecomp(kMA=self.kMA)(inputs)
+        inputs, _ = SeriesDecomp(kMA=self.kMA)(
+            inputs + ff(inputs, with_dropout=with_dropout)
+        )
 
         assert inputs.shape == shape, "BUG"
         return inputs
@@ -372,7 +369,6 @@ class DecoderLayer(nn.Module):
     nH: int = NH
     dff: int = DFF
     kMA: int = K_MOVING_AVG
-    eps: float = EPS
     Pdrop: float = PDROP
 
     @nn.compact
@@ -412,18 +408,23 @@ class DecoderLayer(nn.Module):
                                    name="CrossAttention")
         ff = FeedForward(dff=self.dff, Pdrop=self.Pdrop, bias=False)
 
-        s_mha_f = lambda so: s_mha(so, so, so, with_dropout=with_dropout)
-        c_mha_f = lambda so: c_mha(so, inputs, inputs, with_dropout=with_dropout)
-        ff_f = lambda so: ff(so, with_dropout=with_dropout)
+        seasonal_outputs, trend1 = SeriesDecomp(kMA=self.kMA)(
+            seasonal_outputs + s_mha(seasonal_outputs,
+                                     seasonal_outputs,
+                                     seasonal_outputs,
+                                     with_dropout=with_dropout)
+        )
 
-        seasonal_outputs = ResidualLayerNorm(s_mha_f, self.eps)(seasonal_outputs)
-        seasonal_outputs, trend1 = SeriesDecomp(kMA=self.kMA)(seasonal_outputs)
+        seasonal_outputs, trend2 = SeriesDecomp(kMA=self.kMA)(
+            seasonal_outputs + c_mha(seasonal_outputs,
+                                     inputs,
+                                     inputs,
+                                     with_dropout=with_dropout)
+        )
 
-        seasonal_outputs = ResidualLayerNorm(c_mha_f, self.eps)(seasonal_outputs)
-        seasonal_outputs, trend2 = SeriesDecomp(kMA=self.kMA)(seasonal_outputs)
-
-        seasonal_outputs = ResidualLayerNorm(ff_f, self.eps)(seasonal_outputs)
-        seasonal_outputs, trend3 = SeriesDecomp(kMA=self.kMA)(seasonal_outputs)
+        seasonal_outputs, trend3 = SeriesDecomp(kMA=self.kMA)(
+            seasonal_outputs + ff(seasonal_outputs)
+        )
 
         trend_outputs.at[:].add(
             ConvSeq(dm=self.dm, kernel=3, bias=False)(trend1 + trend2 + trend3)
@@ -487,7 +488,6 @@ class EncoderStack(nn.Module):
                                   dm=self.dm,
                                   dff=self.dff,
                                   kMA=self.kMA,
-                                  eps=self.eps,
                                   Pdrop=self.Pdrop,
                                   name=f"EncoderLayer_{i}")(inputs,
                                                             with_dropout=with_dropout)
@@ -562,7 +562,6 @@ class DecoderStack(nn.Module):
                 dm=self.dm,
                 dff=self.dff,
                 kMA=self.kMA,
-                eps=self.eps,
                 Pdrop=self.Pdrop,
                 name=f"DecoderLayer_{i}"
             )(
