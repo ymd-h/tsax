@@ -205,7 +205,7 @@ class AutoCorrelationAttention(nn.Module):
         K = nn.Dense(features=self.d, name="WK")(K)
 
         # V: [B, L, dm] -> [B, L, dv]
-        V = nn.Dense(features=self.dv, name="WV")(V)
+        V = nn.Dense(features=self.d, name="WV")(V)
 
         # Q_freq, K_freq: [B, L, dk]
         Q_freq = jnp.fft.rfft(Q, axis=1)
