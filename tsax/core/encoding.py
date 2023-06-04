@@ -5,6 +5,7 @@ import jax
 import jax.numpy as jnp
 from flax import linen as nn
 
+from tsax.core import ConvSeq
 from tsax.typing import Array, ArrayLike
 
 
