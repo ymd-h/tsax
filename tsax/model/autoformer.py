@@ -26,7 +26,6 @@ from tsax.core import (
     Model,
     ConvSeq,
     Embedding,
-    ResidualLayerNorm,
     FeedForward,
 )
 from tsax.core.encoding import EMBEDDING_ALPHA
