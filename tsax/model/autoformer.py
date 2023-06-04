@@ -307,7 +307,7 @@ class MultiHeadAttention(nn.Module):
         assert Q.shape[2] == K.shape[2] == V.shape[2], "BUG"
 
         # x: [B, L, dm (= dm/nH * nH)]
-        d: int = self.dm // self.nH
+        d: int = max(self.dm // self.nH, 1)
         x = jnp.concatenate([AutoCorrelationAttention(d=d, name=f"head_{i}")(Q, K, V)
                              for i in range(self.nH)],
                             axis=2)
