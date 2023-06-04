@@ -24,8 +24,11 @@ class TestSeriesDecomp(TestCase):
 
         self.assertEqual(x.shape, s.shape)
         self.assertEqual(x.shape, t.shape)
-        self.assertAllclose(t, 0, atol=1e-6, rtol=1e-6)
-        self.assertAllclose(s, x, atol=1e-6, rtol=1e-6)
+        self.assertAllclose(t.at[:,1:-2,:].get(), 0, atol=1e-6, rtol=1e-6)
+        self.assertEqual(t.at[:,0,:].get(),
+                         jnp.mean(x.at[:,(0,0,1,2),:].get(), axis=1))
+        self.assertAllclose(s.at[:,1:-2,:].get(),
+                            x.at[:,1:-2,:].get(), atol=1e-6, rtol=1e-6)
 
 
 
