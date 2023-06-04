@@ -38,6 +38,7 @@ __all__ = [
     "DecoderLayer",
     "MutiHeadAttention",
     "AutoCorrelationAttention",
+    "SeasonalLayerNorm",
     "SeriesDecomp",
 ]
 
