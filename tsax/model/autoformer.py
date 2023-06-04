@@ -400,7 +400,7 @@ class DecoderLayer(nn.Module):
         seasonal_outputs : Array
             Seasonal Outputs. [B, L, dm]
         trend_outputs : Array
-            Trend Outputs. [B, L, dm]
+            Trend Outputs. [B, L, d]
         """
         assert seasonal_outputs.shape == trend_outputs.shape, "BUG"
         assert inputs.shape[0] == seasonal_outputs.shape[0], "BUG"
@@ -442,7 +442,7 @@ class EncoderStack(nn.Module):
     ----------
     dm : int
         Model Dimension
-    N : int
+    nE : int
         Number of Encoder Layers
     nH : int
         Number of Multi Head
@@ -456,7 +456,7 @@ class EncoderStack(nn.Module):
         Dropout Rate
     """
     dm: int
-    N: int = NE
+    nE: int = NE
     nH: int = NH
     dff: int = DFF
     kMA: int = K_MOVING_AVG
@@ -520,7 +520,7 @@ class DecoderStack(nn.Module):
         Dropout Rate
     """
     dm: int
-    N: int = ND
+    nD: int = ND
     nH: int = NH
     dff: int = DFF
     kMA: int = K_MOVING_AVG
@@ -558,7 +558,7 @@ class DecoderStack(nn.Module):
         assert inputs.shape[0] == seasonal_outputs.shape[0], "BUG"
         assert inputs.shape[2] == seasonal_outputs.shape[2], "BUG"
 
-        for i in range(self.N):
+        for i in range(self.nD):
             seasonal_outputs, trend_outputs = DecoderLayer(
                 nH=self.nH,
                 dm=self.dm,
@@ -574,7 +574,9 @@ class DecoderStack(nn.Module):
                 with_dropout=with_dropout
             )
 
+        seasonal_outputs = nn.Dense(features=self.dm)(seasonal_outputs)
         assert seasonal_outputs.shape == trend_outputs.shape, "BUG"
+
         return seasonal_outputs, trend_outputs
 
 
@@ -585,10 +587,14 @@ class Autoformer(Model):
     Attributes
     ----------
     """
+    d: int
     I: int
     O: int
-    nE: int
-    nD: int
+    Vs: Tuple[int, ...] = tuple()
+    alpha: float = EMBEDDING_ALPHA
+    nE: int = NE
+    nD: int = ND
+    nH: int = NH
     dff: int = DFF
     kMA: int = K_MOVING_AVG
     eps: float = EPS
@@ -596,32 +602,33 @@ class Autoformer(Model):
 
     def setup(self):
         self.encoder = EncoderStack(N=self.nE,
-                                    dm=self.dm,
+                                    dm=self.d,
                                     nH=self.nH,
                                     dff=self.dff,
                                     kMA=self.kMA,
                                     eps=self.eps,
                                     Pdrop=self.Pdrop)
-        self.encoder_embed = Embedding(dm=self.dm,
+        self.encoder_embed = Embedding(dm=self.d,
                                        Vs=self.Vs,
-                                       kernel=self.kernel,
+                                       kernel=3,
                                        alpha=self.alpha,
                                        Pdrop=self.Pdrop,
                                        with_positional=False)
 
         self.decoder = DecoderStack(N=self.nD,
-                                    dm=self.dm,
+                                    dm=self.d,
                                     nH=self.nH,
                                     dff=self.dff,
                                     kMA=self.kMA,
                                     eps=self.eps,
                                     Pdrop=self.Pdrop)
-        self.decoder_embed = Embedding(dm=self.dm,
+        self.decoder_embed = Embedding(dm=self.d,
                                        Vs=self.Vs,
-                                       kernel=self.kernel,
+                                       kernel=3,
                                        alpha=self.alpha,
                                        Pdrop=self.Pdrop,
                                        with_positional=False)
+        self.ff = nn.Dense(features=self.d)
 
     def encode(self,
                seq: ArrayLike,
@@ -642,7 +649,7 @@ class Autoformer(Model):
         Returns
         -------
         inputs : Array
-            Encoded Inputs. [B, I, dm]
+            Encoded Inputs. [B, I, d]
         """
         assert (cat is None) or seq.shape[:1] == cat.shape[:1], "BUG"
         assert seq.shape[1] == self.I, "BUG"
@@ -650,10 +657,10 @@ class Autoformer(Model):
         B = inputs.shape[0]
 
         inputs = self.encoder_embed(seq, cat, with_dropout=with_dropout)
-        assert inputs.shape == (B, self.I, self.dm), "BUG"
+        assert inputs.shape == (B, self.I, self.d), "BUG"
 
         inputs = self.encoder(inputs, with_dropout=with_dropout)
-        assert inputs.shape == (B, self.I, self.dm), "BUG"
+        assert inputs.shape == (B, self.I, self.d), "BUG"
 
         return inputs
 
@@ -668,7 +675,7 @@ class Autoformer(Model):
         Parameters
         ----------
         inputs : ArrayLike
-            Encoded Inputs. [B, L, dm]
+            Encoded Inputs. [B, L, d]
         seq : ArrayLike
             Outputs Signal. [B, L, d]
         cat : AllayLike, optional
@@ -691,18 +698,18 @@ class Autoformer(Model):
 
         s, t = SeriesDecomp(seq.at[:,:S,:].get())
 
-        s_outputs = jnp.zeros((B, L, self.dm), dtype=seq.dtype).at[:,:S,:].set(s)
-        t_outputs = (jnp.zeros((B, L, self.dm), dtype=seq.dtype)
+        s_outputs = jnp.zeros((B, L, self.d), dtype=seq.dtype).at[:,:S,:].set(s)
+        t_outputs = (jnp.zeros((B, L, self.d), dtype=seq.dtype)
                      .at[:,:S,:].set(t)
                      .at[:,S:,:].set(jnp.mean(seq, axis=1, keepdims=True)))
 
         # Only seasonal part is embedded.
         s_outputs = self.decoder_embed(s_outputs, cat, with_dropout=with_dropout)
-        assert s_outputs.shape == (B, L, self.dm)
+        assert s_outputs.shape == (B, L, self.d)
 
         s_outputs, t_outputs = self.decoder(inputs, s_outputs, t_outputs,
                                             with_dropout=with_dropout)
-        assert s_outputs.shape == t_outputs.shape == (B, L, self.dm), "BUG"
+        assert s_outputs.shape == t_outputs.shape == (B, L, self.d), "BUG"
 
         pred = s_outputs.at[:,L-O:,:].get() + t_outputs.at[:,L-O:,:].get()
         return pred
@@ -735,9 +742,10 @@ class Autoformer(Model):
         B = inputs.shape[0]
 
         inputs = self.encode(seq, cat, with_dropout=train)
-        assert inputs.shape == (B, self.I, self.dm), "BUG"
+        assert inputs.shape == (B, self.I, self.d), "BUG"
 
         pred = self.decode(inputs, seq, cat, with_dropout=train)
+        assert predh.shape == (B, self.O, self.d), "BUG"
         return pred
 
     @staticmethod
