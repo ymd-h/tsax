@@ -108,14 +108,17 @@ class SeriesDecomp(nn.Module):
             Trend Component. [B, L, d]
         """
         B, L, d = x.shape
-        left = self.kMA // 2
+        left = (self.kMA -1) // 2
+        right = (self.kMA -1) - left
+
+        xpad = jnp.pad(x, ((0,0), (left, right), (0, 0)), mode="edge")
 
         trend = jax.vmap(
-            lambda idx: (jax.lax.dynamic_slice(x, (0, idx-left, 0), (B, self.kMA, d))
+            lambda idx: (jax.lax.dynamic_slice(xpad, (0, idx, 0), (B, self.kMA, d))
                          .mean(axis=1)),
             out_axes=1
         )(jnp.arange(L))
-        assert x.shape == trend.shape, f"BUG: {x.shape} vs {trend.shape}"
+        assert trend.shape == (B, L, d), f"BUG: {trend.shape} vs ({B}, {L}, {d})"
 
         season = x - trend
         return season, trend
