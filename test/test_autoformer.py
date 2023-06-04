@@ -40,5 +40,21 @@ class TestSeasonalLayerNorm(TestCase):
         self.assertAllclose(jnp.mean(y, axis=1), 0)
 
 
+class TestAutoCrrelationAttention(TestCase):
+    def test_ac(self):
+        Q = jax.random.normal(jax.random.PRNGKey(0), (2, 10, 4))
+        K = Q
+        V = Q
+
+        c = 2
+        d = 2
+
+        ac, _ = AutoCorrelationAttention(d=d, c=c).init_with_output(
+            jax.random.PRNGKey(42), Q, K, V
+        )
+
+        self.assertEqual(ac.shape, (*Q.shape[:2], d))
+
+
 if __name__ == "__main__":
     unittest.main()
