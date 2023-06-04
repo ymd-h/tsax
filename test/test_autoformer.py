@@ -31,6 +31,14 @@ class TestSeriesDecomp(TestCase):
                             x.at[:,1:-2,:].get(), atol=1e-6, rtol=1e-6)
 
 
+class TestSeasonalLayerNorm(TestCase):
+    def test_seasonal(self):
+        x = jnp.reshape(jnp.sin(0.5 * jnp.arange(12) * jnp.pi), (1, -1, 1))
+        y, _ = SeasonalLayerNorm(eps=1e-8).init_with_output(jax.random.PRNGKey(0), x)
+
+        self.assertEqual(x.shape, y.shape)
+        self.assertAllclose(jnp.mean(y, axis=1), 0)
+
 
 if __name__ == "__main__":
     unittest.main()
