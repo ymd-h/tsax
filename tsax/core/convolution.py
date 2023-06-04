@@ -16,6 +16,7 @@ class ConvSeq(nn.Module):
     """
     dm: int
     kernel: int = KERNEL_SIZE
+    bias: bool = True
 
     @nn.compact
     def __call__(self, seq: ArrayLike) -> Array:
@@ -32,7 +33,7 @@ class ConvSeq(nn.Module):
         seq_conv : Array
             Convoluted Sequence. [B, L, dm]
         """
-        conv = nn.Dense(features=self.dm)
+        conv = nn.Dense(features=self.dm, use_bias=self.bias)
 
         left: int = self.kernel // 2
         right: int = self.kernel - left
