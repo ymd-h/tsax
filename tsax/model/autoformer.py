@@ -13,6 +13,7 @@ References
    https://arxiv.org/abs/2106.13008
 """
 from __future__ import annotations
+import functools
 import math
 from typing import Tuple
 
@@ -232,29 +233,30 @@ class AutoCorrelationAttention(nn.Module):
 
         Wk = nn.activation.softmax(Wk, axis=-1)
 
-        @jax.vmap
-        def f(_w, _i, _v):
+        @functools.partial(jax.vmap, in_axes=(0, 0, 1), out_axes=1)
+        def _per_d(_w, _i, _v):
             assert _v.shape == (L,), "BUG"
-            f_ret =  _w * jnp.roll(_v, -_i)
-            assert f_ret.shape == _v.shape, "BUG"
-            return f_ret
+            d_ret =  _w * jnp.roll(_v, -_i)
+            assert d_ret.shape == _v.shape, "BUG"
+            return d_ret
 
         @jax.vmap
-        def g(_wk, _ik, _V):
+        def _per_B(_wk, _ik, _V):
             assert _wk.shape == _ik.shape == (self.d,), "BUG"
-            g_ret = f(_wk, _ik, _V)
-            assert g_ret.shape == (self.d, L), "BUG"
-            return g_ret
+            assert _V.shape == (L, self.d), "BUG"
+            B_ret = _per_d(_wk, _ik, _V)
+            assert B_ret.shape == (L, self.d), "BUG"
+            return B_ret
 
-        @jax.vmap
-        def h(wk, ik):
+        @functools.partial(jax.vmap, in_axes=-1)
+        def _per_k(wk, ik):
             assert wk.shape == ik.shape == (B, self.d), "BUG"
-            h_ret = g(wk, ik, jnp.moveaxis(V, 1, -1))
-            assert h_ret.shape == (B, self.d, L), "BUG"
-            return jnp.moveaxis(h_ret, -1, 1)
+            k_ret = _per_B(wk, ik, V)
+            assert k_ret.shape == (B, L, self.d), "BUG"
+            return k_ret
 
         # A: [B, L, dk]
-        A = jnp.sum(h(jnp.moveaxis(Wk, -1, 0), jnp.moveaxis(Ik, -1, 0)), axis=0)
+        A = jnp.sum(_per_k(Wk, Ik), axis=0)
         assert A.shape == (B, L, self.d), "BUG"
 
         return A
