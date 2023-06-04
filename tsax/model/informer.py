@@ -956,7 +956,7 @@ class Informer(Model):
         Log Informer Spec
         """
         logger.info("Informer(d=%d, I=%d, O=%d, Ltoken=%d, c=%d, dm=%d,"
-                    " Vs=%s, alpha=%d, nE=%d, nD=%d, nH=%d, dff=%d,"
+                    " Vs=%s, alpha=%f, nE=%d, nD=%d, nH=%d, dff=%d,"
                     " kernel=%d, eps=%.2e, Pdrop=%f)",
                     self.d, self.I, self.O, self.Ltoken, self.c, self.dm,
                     self.Vs, self.alpha, self.nE, self.nD, self.nH, self.dff,
