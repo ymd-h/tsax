@@ -25,7 +25,7 @@ from flax import linen as nn
 from tsax.core import (
     Model,
     ConvSeq,
-    CategoricalEncoding,
+    Embedding,
     ResidualLayerNorm,
 )
 
@@ -38,7 +38,6 @@ __all__ = [
     "MutiHeadAttention",
     "AutoCorrelationAttention",
     "SeriesDecomp",
-    "Embedding",
     "FeedForward",
 ]
 
@@ -167,69 +166,6 @@ class SeriesDecomp(nn.Module):
 
         season = x - trend
         return season, trend
-
-
-class Embedding(nn.Module):
-    """
-    Embedding Layer
-
-    Attributes
-    ----------
-    dm : int
-        Model Dimension
-    Vs : tuple of ints
-        Vocabulary Size for each Categorical Dimension
-    kernel : int
-        Kernel Size for 1d Convolution
-    """
-    dm: int
-    Vs: Tuple[int, ...] = tuple()
-    kernel: int = KERNEL_SIZE
-    Pdrop: float = PDROP
-
-    @nn.compact
-    def __call__(self,
-                 seq: ArrayLike.
-                 cat: Optional[ArrayLike] = None, *,
-                 with_dropout: bool = False) -> Array:
-        """
-        Call Embedding Layer
-
-        Parameters
-        ----------
-        seq : ArrayLike
-            Numerical Sequence. [B, L, d_sequence]
-        cat : ArrayLike, optional
-            Categorical Sequence for Temporal Information. [B, L, d_categorical]
-        with_dropout : bool
-            Whether dropout or not
-
-        Returns
-        -------
-        embedded : Array
-            Embedded. [B, L, dm]
-        """
-        assert (cat is None) or (seq.shape[:2] == cat.shape[:2]), "BUG"
-        assert (cat is None) or (len(self.Vs) == cat.shape[2]), "BUG"
-
-        L: int = seq.shape[1]
-
-        # Token Embedding as Projector
-        embedded = ConvSeq(dm=self.dm, kernel=self.kernel)(seq)
-        assert embedded.shape == (*seq.shape[:2], self.dm), f"BUG: {embedded.shape}"
-
-        if cat is not None:
-            # Temporal Embedding
-            embedded = (
-                embedded.at[:].add(CategoricalEncoding(Vs=self.Vs, dm=self.dm)(cat))
-            )
-
-        if with_dropout:
-            embedded = embedded.at[:].set(
-                nn.Dropout(self.Pdrop, deterministic=False)(embedded)
-            )
-
-        return embedded
 
 
 class AutoCorrelationAttention(nn.Module):
@@ -717,7 +653,9 @@ class Autoformer(Model):
         self.encoder_embed = Embedding(dm=self.dm,
                                        Vs=self.Vs,
                                        kernel=self.kernel,
-                                       Pdrop=self.Pdrop)
+                                       alpha=self.alpha,
+                                       Pdrop=self.Pdrop,
+                                       with_positional=False)
 
         self.decoder = DecoderStack(N=self.nD,
                                     dm=self.dm,
@@ -729,7 +667,9 @@ class Autoformer(Model):
         self.decoder_embed = Embedding(dm=self.dm,
                                        Vs=self.Vs,
                                        kernel=self.kernel,
-                                       Pdrop=self.Pdrop)
+                                       alpha=self.alpha,
+                                       Pdrop=self.Pdrop,
+                                       with_positional=False)
 
     def encode(self,
                seq: ArrayLike,

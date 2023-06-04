@@ -3,14 +3,15 @@ from typing import Optional, Tuple
 
 import jax
 import jax.numpy as jnp
-from jax import Array
-from jax.typing import ArrayLike
 from flax import linen as nn
+
+from tsax.typing import Array, ArrayLike
 
 
 __all__ = [
     "PositionalEncoding",
     "CategoricalEncoding",
+    "Embedding",
 ]
 
 
@@ -184,5 +185,85 @@ class CategoricalEncoding(nn.Module):
         )
 
         assert embedded.shape == (*x.shape[:-1], self.dm), "BUG"
+
+        return embedded
+
+
+class Embedding(nn.Module):
+    """
+    Embedding Layer
+
+    Attributes
+    ----------
+    dm : int
+        Model Dimension
+    Vs : tuple of ints
+        Vocabulary Size for each Categorical Dimension
+    kernel : int
+        Kernel Size for 1d Convolution
+    alpha : float
+        Coefficient for Input Sequence
+    Pdrop : float
+        Dropout Probability
+    with_positional : bool
+        Whether use positional encoding or not
+    """
+    dm: int
+    Vs: Tuple[int, ...]
+    kernel: int
+    alpha: float
+    Pdrop: float
+    with_positional: bool
+
+    @nn.compact
+    def __call__(self,
+                 seq: ArrayLike,
+                 cat: Optional[ArrayLike] = None, *,
+                 with_dropout: bool = False) -> Array:
+        """
+        Call Embedding Layer
+
+        Parameters
+        ----------
+        seq : ArrayLike
+            Numerical Sequence. [B, L, d_seq]
+        cat : ArrayLike, optional
+            Categorical Sequence for Temporal Information. [B, L, d_cat]
+        with_dropout : bool
+            Whether dropout or not
+
+        Returns
+        -------
+        embedded : Array
+            Embedded. [B, L, dm]
+        """
+        assert (cat is None) or (seq.shape[:2] == cat.shape[:2]), "BUG"
+        assert (cat is None) or (len(self.Vs) == cat.shape[2]), "BUG"
+
+        L: int = seq.shape[1]
+
+        # Token Embedding as Projector
+        embedded = ConvSeq(dm=self.dm, kernel=self.kernel)(seq)
+        assert embedded.shape == (*seq.shape[:2], self.dm), f"BUG: {embedded.shape}"
+
+        embedded = embedded.at[:].multiply(self.alpha)
+
+        # Positional Encoding
+        if self.with_positional:
+            embedded = (
+                embedded.at[:]
+                .add(PositionalEncoding(dm=self.dm, L=L, Lfreq=2*L)(embedded))
+            )
+
+        # Categorical Encoding designed for Temporal Embedding
+        if cat is not None:
+            embedded = (
+                embedded.at[:].add(CategoricalEncoding(Vs=self.Vs, dm=self.dm)(cat))
+            )
+
+        if with_dropout:
+            embedded = embedded.at[:].set(
+                nn.Dropout(self.Pdrop, deterministic=False)(embedded)
+            )
 
         return embedded

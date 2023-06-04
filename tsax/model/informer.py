@@ -27,8 +27,7 @@ import wblog
 from tsax.core import (
     Model,
     ConvSeq,
-    PositionalEncoding,
-    CategoricalEncoding,
+    Embedding,
     ResidualLayerNorm,
     SubsequentMask,
 )
@@ -44,7 +43,6 @@ __all__ = [
     "MultiHeadProbSparseAttention",
     "Attention",
     "ProbSparseAttention",
-    "Embedding",
     "FeedForward",
 ]
 
@@ -143,77 +141,6 @@ class FeedForward(nn.Module):
 
         return y
 
-class Embedding(nn.Module):
-    """
-    Embedding Layer
-
-    Attributes
-    ----------
-    dm : int
-        Model Dimension
-    Vs : tuple of ints
-        Vocabulary Size for each Categorical Dimension
-    kernel : int
-        Kernel Size for 1d Convolution
-    alpha : float
-        Coefficient for Input Sequence
-    """
-    dm: int
-    Vs: Tuple[int, ...] = tuple()
-    kernel: int = KERNEL_SIZE
-    alpha: float = EMBEDDING_ALPHA
-    Pdrop: float = PDROP
-
-    @nn.compact
-    def __call__(self,
-                 seq: ArrayLike,
-                 cat: Optional[ArrayLike] = None, *,
-                 with_dropout: bool = False) -> Array:
-        """
-        Call Embedding Layer
-
-        Parameters
-        ----------
-        seq : ArrayLike
-            Numerical Sequence. [B, L, d_sequence]
-        cat : ArrayLike, optional
-            Categorical Sequence for Temporal Information. [B, L, d_categorical]
-        with_dropout : bool
-            Whether dropout or not
-
-        Returns
-        -------
-        embedded : Array
-            Embedded. [B, L, dm]
-        """
-        assert (cat is None) or (seq.shape[:2] == cat.shape[:2]), "BUG"
-        assert (cat is None) or (len(self.Vs) == cat.shape[2]), "BUG"
-
-        L: int = seq.shape[1]
-
-        # Token Embedding as Projector
-        embedded = ConvSeq(dm=self.dm, kernel=self.kernel)(seq)
-        assert embedded.shape == (*seq.shape[:2], self.dm), f"BUG: {embedded.shape}"
-
-        # Positional Embedding
-        embedded = (
-            embedded
-            .at[:].multiply(self.alpha)
-            .at[:].add(PositionalEncoding(dm=self.dm, L=L, Lfreq=2*L)(embedded))
-        )
-
-        if cat is not None:
-            # Temporal Embedding
-            embedded = (
-                embedded.at[:].add(CategoricalEncoding(Vs=self.Vs, dm=self.dm)(cat))
-            )
-
-        if with_dropout:
-            embedded = embedded.at[:].set(
-                nn.Dropout(self.Pdrop, deterministic=False)(embedded)
-            )
-
-        return embedded
 
 class Distilling(nn.Module):
     """
@@ -857,7 +784,8 @@ class Informer(Model):
                                        Vs=self.Vs,
                                        alpha=self.alpha,
                                        kernel=self.kernel,
-                                       Pdrop=self.Pdrop)
+                                       Pdrop=self.Pdrop,
+                                       with_positional=True)
 
         self.decoder = DecoderStack(c=self.c,
                                     nD=self.nD,
@@ -871,7 +799,8 @@ class Informer(Model):
                                        Vs=self.Vs,
                                        alpha=self.alpha,
                                        kernel=self.kernel,
-                                       Pdrop=self.Pdrop)
+                                       Pdrop=self.Pdrop,
+                                       with_positional=True)
         self.ff = nn.Dense(features=self.d)
 
     def encode(self,
