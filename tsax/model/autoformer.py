@@ -426,9 +426,7 @@ class DecoderLayer(nn.Module):
         seasonal_outputs, trend3 = SeriesDecomp(kMA=self.kMA)(seasonal_outputs)
 
         trend_outputs.at[:].add(
-            nn.Dense(self.dm)(trend1) +
-            nn.Dense(self.dm)(trend2) +
-            nn.Dense(self.dm)(trend3)
+            ConvSeq(dm=self.dm, kernel=3, bias=False)(trend1 + trend2 + trend3)
         )
 
         return seasonal_outputs, trend_outputs
