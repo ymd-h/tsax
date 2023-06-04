@@ -513,6 +513,8 @@ class EncoderStack(nn.Module):
         inputs : Array
             Encoded Inputs. [B, L, dm]
         """
+        assert inputs.shape[2] == self.dm, "BUG"
+
         shape = inputs.shape
 
         for i in range(self.N):
@@ -588,7 +590,7 @@ class DecoderStack(nn.Module):
         """
         assert seasonal_outputs.shape == trend_outputs.shape, "BUG"
         assert inputs.shape[0] == seasonal_outputs.shape[0], "BUG"
-        assert inputs.shape[2] == seasonal_outputs.shape[2], "BUG"
+        assert inputs.shape[2] == seasonal_outputs.shape[2] == self.dm, "BUG"
 
         for i in range(self.nD):
             seasonal_outputs, trend_outputs = DecoderLayer(
