@@ -13,7 +13,14 @@ __all__ = [
     "PositionalEncoding",
     "CategoricalEncoding",
     "Embedding",
+    "EMBEDDING_ALPHA",
 ]
+
+EMBEDDING_ALPHA: float = 1.0
+"""
+Default Coefficient for Embedding Alpha.
+This is recommended value if input sequence has been normalized.
+"""
 
 
 def positional_encoding(dm: int,

@@ -27,11 +27,12 @@ import wblog
 from tsax.core import (
     Model,
     ConvSeq,
-    FeedFoward,
+    FeedForward,
     Embedding,
     ResidualLayerNorm,
     SubsequentMask,
 )
+from tsax.core.encoding import EMBEDDING_ALPHA
 
 __all__ = [
     "Informer",
@@ -53,12 +54,6 @@ logger = wblog.getLogger()
 KERNEL_SIZE: int = 3
 """
 Default Kernel Size for Conv1d at Distilling Layer
-"""
-
-EMBEDDING_ALPHA: float = 1.0
-"""
-Default Coefficient for Embedding Alpha.
-This is recommended value if input sequence has been normalized.
 """
 
 DFF: int = 2048

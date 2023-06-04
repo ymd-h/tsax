@@ -28,6 +28,7 @@ from tsax.core import (
     Embedding,
     ResidualLayerNorm,
 )
+from tsax.core.encoding import EMBEDDING_ALPHA
 
 __all__ = [
     "Autoformer",
