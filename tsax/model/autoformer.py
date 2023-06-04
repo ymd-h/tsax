@@ -151,7 +151,7 @@ class SeasonalLayerNorm(nn.Module):
             Output Sequcence. [B, L, d]
         """
         x = nn.LayerNorm(epsilon=self.eps)(x)
-        x = x.at[:].sub(jnp.mean(x, axis=1, keepdims=True))
+        x = x.at[:].add(-jnp.mean(x, axis=1, keepdims=True))
 
         return  x
 
