@@ -230,7 +230,7 @@ class AutoCorrelationAttention(nn.Module):
         Wk, Ik = jax.lax.top_k(jnp.moveaxis(Rxx, 1, -1), k)
         assert Wk.shape == Ik.shape == (B, self.d, k), "BUG"
 
-        Wk = flax.activation.softmax(Wk, axis=-1)
+        Wk = nn.activation.softmax(Wk, axis=-1)
 
         @jax.vmap
         def f(_w, _i, _v):
