@@ -225,7 +225,7 @@ class AutoCorrelationAttention(nn.Module):
         # ----------------------
 
         # Note: Use ``math`` for static calculation
-        k = int(math.floor(self.c * math.log(L)))
+        k = min(int(math.floor(self.c * math.log(L))), L)
 
         Wk, Ik = jax.lax.top_k(jnp.moveaxis(Rxx, 1, -1), k)
         assert Wk.shape == Ik.shape == (B, self.d, k), "BUG"
