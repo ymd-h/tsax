@@ -723,7 +723,7 @@ class Autoformer(Model):
                                     dm=self.dm,
                                     nH=self.nH,
                                     dff=self.dff,
-                                    lMA=self.kMA,
+                                    kMA=self.kMA,
                                     eps=self.eps,
                                     Pdrop=self.Pdrop)
         self.decoder_embed = Embedding(dm=self.dm,
