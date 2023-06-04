@@ -106,14 +106,15 @@ class SeriesDecomp(nn.Module):
         trend : Array
             Trend Component. [B, L, d]
         """
-        L = x.shape[1]
-        left = kMA // 2
-        right = kMA - left
+        B, L, d = x.shape
+        left = self.kMA // 2
 
         trend = jax.vmap(
-            lambda idx: x.at[:, idx-left:idx+right].get(mode="clip").mean(axis=0)
+            lambda idx: (jax.lax.dynamic_slice(x, (0, idx-left, 0), (B, self.kMA, d))
+                         .mean(axis=1)),
+            out_axes=1
         )(jnp.arange(L))
-        assert x.shape == trend.shape
+        assert x.shape == trend.shape, f"BUG: {x.shape} vs {trend.shape}"
 
         season = x - trend
         return season, trend
