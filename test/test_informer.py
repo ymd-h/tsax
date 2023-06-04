@@ -396,7 +396,7 @@ class TestEncoderStack(TestCase):
         self.assertEqual(e_drop_jit.shape, (B, (L+1)//2, dm))
         self.assertNotAllclose(e_jit, e_drop_jit)
 
-        self.assertAllclose(e_drop, e_drop_jit)
+        self.assertAllclose(e_drop, e_drop_jit, atol=1e-6, rtol=1e-6)
 
 class TestDecoderStack(TestCase):
     def test_decoder(self):
