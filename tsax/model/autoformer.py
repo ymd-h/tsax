@@ -707,7 +707,7 @@ class Autoformer(Model):
 
     def decode(self,
                inputs: ArrayLike,
-               seq: ArrayLike:,
+               seq: ArrayLike,
                cat: Optional[ArrayLike] = None, *,
                with_dropout: bool = False) -> Array:
         """
