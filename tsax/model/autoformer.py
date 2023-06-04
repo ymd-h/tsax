@@ -120,6 +120,38 @@ class SeriesDecomp(nn.Module):
         return season, trend
 
 
+class SeasonalLayerNorm(nn.Module):
+    """
+    Layer Normalization for Seasonal
+
+    Attributes
+    ----------
+    eps : float
+        Small Positive Value for LayerNorm
+    """
+    eps: float
+
+    @nn.compact
+    def __call__(self, x: ArrayLike) -> Array:
+        """
+        Call Seasonal Layer Normalization
+
+        Parameters
+        ----------
+        x : ArrayLike
+            Input Sequence. [B, L, d]
+
+        Returns
+        -------
+        x : Array
+            Output Sequcence. [B, L, d]
+        """
+        x = nn.LayerNorm(epsilon=self.eps)(x)
+        x = x.at[:].sub(jnp.mean(x, axis=1, keepdims=True))
+
+        return  x
+
+
 class AutoCorrelationAttention(nn.Module):
     """
     AutoCorrelation Attention
@@ -492,6 +524,8 @@ class EncoderStack(nn.Module):
                                   name=f"EncoderLayer_{i}")(inputs,
                                                             with_dropout=with_dropout)
 
+        inputs = inputs.at[:].set(SeasonalLayerNorm(eps=self.eps)(inputs))
+
         assert inputs.shape == shape, "BUG"
         return inputs
 
@@ -570,6 +604,10 @@ class DecoderStack(nn.Module):
                 trend_outputs,
                 with_dropout=with_dropout
             )
+
+        seasonal_outputs = seasonal_outputs.at[:].set(
+            SeasonalLayerNorm(eps=self.eps)(seasonal_outputs)
+        )
 
         seasonal_outputs = nn.Dense(features=self.dm)(seasonal_outputs)
         assert seasonal_outputs.shape == trend_outputs.shape, "BUG"
