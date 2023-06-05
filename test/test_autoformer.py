@@ -48,7 +48,7 @@ class TestAutoCrrelationAttention(TestCase):
         c = 2
         d = 2
 
-        ac, _ = AutoCorrelationAttention(d=d, c=c).init_with_output(
+        ac, _ = AutoCorrelationAttention(dk=d, dv=d, c=c).init_with_output(
             jax.random.PRNGKey(42), Q, K, V
         )
         self.assertEqual(ac.shape, (*Q.shape[:2], d))
