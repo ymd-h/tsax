@@ -181,7 +181,7 @@ class TestDecoderLayer(TestCase):
         key, key_use = jax.random.split(key, 2)
         outputs = jax.random.normal(key_use, (B, L, dm))
 
-        D = DecoderLayer(c=c, nH=nH, dm=dm, dff=dff, eps=eps, Pdrop=Pdrop, Ltoken=6)
+        D = DecoderLayer(c=c, nH=nH, dm=dm, dff=dff, eps=eps, Pdrop=Pdrop)
 
         key_p, key_a, key_d = jax.random.split(key, 3)
         d, _ = D.init_with_output({"params": key_p,
@@ -292,7 +292,6 @@ class TestDecoderStack(TestCase):
                          nD=nD,
                          nH=nH,
                          dff=dff,
-                         Ltoken=6,
                          eps=eps,
                          Pdrop=Pdrop)
 

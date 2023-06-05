@@ -346,7 +346,6 @@ class DecoderLayer(nn.Module):
     """
     c: int
     dm: int
-    Ltoken: int
     nH: int = NH
     dff: int = DFF
     eps: float = EPS
@@ -473,7 +472,6 @@ class DecoderStack(nn.Module):
     """
     c: int
     dm: int
-    Ltoken: int
     nD: int = ND
     nH: int = NH
     dff: int = DFF
@@ -507,7 +505,6 @@ class DecoderStack(nn.Module):
         for i in range(self.nD):
             outputs = DecoderLayer(c=self.c,
                                    dm=self.dm,
-                                   Ltoken=self.Ltoken,
                                    nH=self.nH,
                                    dff=self.dff,
                                    eps=self.eps,
@@ -597,7 +594,6 @@ class Informer(Model):
         self.decoder = DecoderStack(c=self.c,
                                     nD=self.nD,
                                     dm=self.dm,
-                                    Ltoken=self.Ltoken,
                                     nH=self.nH,
                                     dff=self.dff,
                                     eps=self.eps,
