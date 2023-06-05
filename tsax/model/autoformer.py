@@ -434,6 +434,10 @@ class EncoderStack(nn.Module):
 
     Attributes
     ----------
+    c : int
+        Coefficient for Selecting Top K Correlation.
+        floor(c * logL) Correlation is used.
+        ``1 <= c <= 3``
     dm : int
         Model Dimension
     nE : int
@@ -449,6 +453,7 @@ class EncoderStack(nn.Module):
     Pdrop : float
         Dropout Rate
     """
+    c : int
     dm: int
     nE: int = NE
     nH: int = NH
@@ -481,8 +486,9 @@ class EncoderStack(nn.Module):
         shape = inputs.shape
 
         for i in range(self.N):
-            inputs = EncoderLayer(nH=self.nH,
+            inputs = EncoderLayer(c=self.c,
                                   dm=self.dm,
+                                  nH=self.nH,
                                   dff=self.dff,
                                   kMA=self.kMA,
                                   Pdrop=self.Pdrop,
@@ -501,6 +507,10 @@ class DecoderStack(nn.Module):
 
     Attributes
     ----------
+    c : int
+        Coefficient for Selecting Top K Correlation.
+        floor(c * logL) Correlation is used.
+        ``1 <= c <= 3``
     dm : int
         Model Dimension
     N : int
@@ -516,6 +526,7 @@ class DecoderStack(nn.Module):
     Pdrop : float
         Dropout Rate
     """
+    c: int
     dm: int
     nD: int = ND
     nH: int = NH
@@ -557,8 +568,9 @@ class DecoderStack(nn.Module):
 
         for i in range(self.nD):
             seasonal_outputs, trend_outputs = DecoderLayer(
-                nH=self.nH,
+                c=self.c,
                 dm=self.dm,
+                nH=self.nH,
                 dff=self.dff,
                 kMA=self.kMA,
                 Pdrop=self.Pdrop,
@@ -586,7 +598,12 @@ class Autoformer(Model):
 
     Attributes
     ----------
+    c : int
+        Coefficient for Selecting Top K Correlation.
+        floor(c * logL) Correlation is used.
+        ``1 <= c <= 3``
     """
+    c: int
     d: int
     I: int
     O: int
@@ -601,8 +618,9 @@ class Autoformer(Model):
     Pdrop: float = PDROP
 
     def setup(self):
-        self.encoder = EncoderStack(N=self.nE,
+        self.encoder = EncoderStack(c=self.c,
                                     dm=self.d,
+                                    nE=self.nE,
                                     nH=self.nH,
                                     dff=self.dff,
                                     kMA=self.kMA,
@@ -615,8 +633,9 @@ class Autoformer(Model):
                                        Pdrop=self.Pdrop,
                                        with_positional=False)
 
-        self.decoder = DecoderStack(N=self.nD,
+        self.decoder = DecoderStack(c=self.c,
                                     dm=self.d,
+                                    nD=self.nD,
                                     nH=self.nH,
                                     dff=self.dff,
                                     kMA=self.kMA,
