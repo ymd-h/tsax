@@ -540,7 +540,7 @@ class DecoderStack(nn.Module):
     @nn.compact
     def __call__(self,
                  inputs: ArrayLike,
-                 sesonal_outputs: ArrayLike,
+                 seasonal_outputs: ArrayLike,
                  trend_outputs: ArrayLike, *,
                  with_dropout: bool = False) -> Tuple[Array, Array]:
         """
