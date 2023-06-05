@@ -275,8 +275,6 @@ class EncoderLayer(nn.Module):
         Number of Multi Head
     kMA : int
         Window Size of Moving Average
-    eps : float
-        Small Positive Value for Layer Normalization
     Pdrop : float
         Dropout Rate
     """
@@ -285,7 +283,6 @@ class EncoderLayer(nn.Module):
     nH: int = NH
     dff: int = DFF
     kMA: int = K_MOVING_AVG
-    eps: float = EPS
     Pdrop: float = PDROP
 
     @nn.compact
@@ -347,8 +344,6 @@ class DecoderLayer(nn.Module):
         Number of Hidden Units at Feed Forward
     kMA : int
         Window Size of Moving Average
-    eps : float
-        Small Positive Value for Layer Normalization
     Pdrop : float
         Dropout Rate
     """
@@ -357,7 +352,6 @@ class DecoderLayer(nn.Module):
     nH: int = NH
     dff: int = DFF
     kMA: int = K_MOVING_AVG
-    eps: float = EPS
     Pdrop: float = PDROP
 
     @nn.compact

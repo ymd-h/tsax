@@ -67,7 +67,6 @@ class TestEncoderLayer(TestCase):
         c = 2
         nH = 2
         dff = 32
-        eps = 0.1
         Pdrop = 0.8
 
         key = jax.random.PRNGKey(0)
@@ -75,7 +74,7 @@ class TestEncoderLayer(TestCase):
         key, key_use = jax.random.split(key, 2)
         inputs = jax.random.normal(key_use, (B, L, dm))
 
-        E = EncoderLayer(c=c, nH=nH, dm=dm, dff=dff, eps=eps, Pdrop=Pdrop)
+        E = EncoderLayer(c=c, nH=nH, dm=dm, dff=dff, Pdrop=Pdrop)
 
         key_p, key_d = jax.random.split(key, 2)
         e, _ = E.init_with_output({"params": key_p,
@@ -113,7 +112,6 @@ class TestDecoderLayer(TestCase):
         c = 2
         nH = 2
         dff = 32
-        eps = 0.1
         Pdrop = 0.8
 
         key = jax.random.PRNGKey(0)
