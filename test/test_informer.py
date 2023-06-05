@@ -98,7 +98,7 @@ class TestProbSparseAttention(TestCase):
         key, key_use = jax.random.split(key, 2)
         V = jax.random.normal(key_use, (B, L, d))
 
-        A = ProbSparseAttention(c=1, dk=d, dv=d, mask=3)
+        A = ProbSparseAttention(c=1, dk=d, dv=d, mask=True)
 
         key, key_use = jax.random.split(key, 2)
         a, _ = A.init_with_output({"params": key_use, "attention": key},

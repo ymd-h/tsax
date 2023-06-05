@@ -194,7 +194,7 @@ class ProbSparseAttention(nn.Module):
     c: int
     dk: int
     dv: int
-    mask: int = 0
+    mask: bool = False
     rng_collection: str = "attention"
 
     @nn.compact
@@ -234,7 +234,7 @@ class ProbSparseAttention(nn.Module):
         U: int = min(int(self.c * math.ceil(math.log(n))), n)
 
         if self.mask:
-            mask = SubsequentMask(n).at[:,self.mask:].set(0)
+            mask = SubsequentMask(n)
 
         @jax.vmap
         def _each_sample(_Q, _K, _V, _rng):
@@ -380,7 +380,7 @@ class DecoderLayer(nn.Module):
         mmha = MultiHeadAttention(
             attention=functools.partial(ProbSparseAttention,
                                         c=self.c,
-                                        mask=self.Ltoken),
+                                        mask=True),
             dm=self.dm,
             nH=self.nH,
             Pdrop=self.Pdrop,
