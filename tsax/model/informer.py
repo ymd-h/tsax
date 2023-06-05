@@ -13,6 +13,7 @@ References
    https://arxiv.org/abs/2012.07436
 """
 from __future__ import annotations
+import functools
 from typing import Optional, Tuple
 import math
 
@@ -31,6 +32,7 @@ from tsax.core import (
     Embedding,
     ResidualLayerNorm,
     SubsequentMask,
+    MultiHeadAttention,
 )
 from tsax.core.encoding import EMBEDDING_ALPHA
 
@@ -167,13 +169,6 @@ class Attention(nn.Module):
         assert Q.shape[0] == K.shape[0], "BUG"
         assert Q.shape[2] == K.shape[2], "BUG"
 
-        # Q, K: [B, L, dm] -> [B, L, dk]
-        Q = nn.Dense(features=self.dk, name="WQ")(Q)
-        K = nn.Dense(features=self.dk, name="WK")(K)
-
-        # V: [B, L, dm] -> [B, L, dv]
-        V = nn.Dense(features=self.dv, name="WV")(V)
-
         # QK^T: [B, Lk, Lq]
         QK: Array = jnp.matmul(Q, jnp.transpose(K, (0, 2, 1)))
         assert QK.shape == (*Q.shape[:2], K.shape[1]), "BUG"
@@ -238,10 +233,6 @@ class ProbSparseAttention(nn.Module):
         u: int = min(int(self.c * math.ceil(math.log(m))), m)
         U: int = min(int(self.c * math.ceil(math.log(n))), n)
 
-        Q = nn.Dense(features=self.dk, name="WQ")(Q)
-        K = nn.Dense(features=self.dk, name="WK")(K)
-        V = nn.Dense(features=self.dv, name="WV")(V)
-
         if self.mask:
             mask = SubsequentMask(n).at[:,self.mask:].set(0)
 
@@ -293,135 +284,6 @@ class ProbSparseAttention(nn.Module):
         return S
 
 
-class MultiHeadAttention(nn.Module):
-    """
-    Multi Head Attention Layer
-
-    Attributes
-    ----------
-    nH : int
-        Number of Multi Head
-    dm : int
-        Model Dimension
-    """
-    dm: int
-    nH: int = NH
-    Pdrop: float = PDROP
-
-    @nn.compact
-    def __call__(self,
-                 Q: ArrayLike,
-                 K: ArrayLike,
-                 V: ArrayLike, *,
-                 with_dropout: bool = False) -> Array:
-        """
-        Call Multi Head Attention
-
-        Parameters
-        ----------
-        Q : ArrayLike
-            Query. [B, L, dm]
-        K : ArrayLike
-            Key. [B, L, dm]
-        V : ArrayLike
-            Value. [B, L, dm]
-        with_dropout : bool, optional
-            Whether dropout or not
-
-        Returns
-        -------
-        MHA : Array
-            Multi Head Attention. [B, L, dm]
-        """
-        assert K.shape == V.shape, "BUG"
-        assert Q.shape[0] == K.shape[0], "BUG"
-        assert Q.shape[2] == K.shape[2], "BUG"
-
-        # x: [B, L, dm (= dm/nH * nH)]
-        d: int = self.dm // self.nH
-        x = jnp.concatenate([Attention(dk=d,
-                                       dv=d,
-                                       name=f"head_{i}")(Q, K, V)
-                             for i in range(self.nH)],
-                            axis=2)
-        assert x.shape == (*Q.shape[:2], d * self.nH), "BUG"
-
-        MHA = nn.Dense(features=self.dm, name="WO")(x)
-        assert Q.shape == MHA.shape, "BUG"
-
-        if with_dropout:
-            MHA = MHA.at[:].set(nn.Dropout(self.Pdrop, deterministic=False)(MHA))
-
-        return MHA
-
-
-class MultiHeadProbSparseAttention(nn.Module):
-    """
-    Multi Head Attention Layer
-
-    Attributes
-    ----------
-    c : int
-        Hyper Parameter of Sampling Factor
-    nH : int
-        Number of Multi Head
-    dm : int
-        Model Dimension
-    """
-    c: int
-    dm: int
-    nH: int = NH
-    Pdrop: float = PDROP
-    mask: int = 0
-
-    @nn.compact
-    def __call__(self,
-                 Q: ArrayLike,
-                 K: ArrayLike,
-                 V: ArrayLike, *,
-                 with_dropout: bool = False) -> Array:
-        """
-        Call Multi Head Attention
-
-        Parameters
-        ----------
-        Q : ArrayLike
-            Query. [B, L, dm]
-        K : ArrayLike
-            Key. [B, L, dm]
-        V : ArrayLike
-            Value. [B, L, dm]
-        with_dropout : bool, optional
-            Whether dropout or not
-
-        Returns
-        -------
-        MHA : Array
-            Multi Head Attention. [B, L, dm]
-        """
-        assert K.shape == V.shape, "BUG"
-        assert Q.shape[0] == K.shape[0], "BUG"
-        assert Q.shape[2] == K.shape[2], "BUG"
-
-        # x: [B, L, dm (= dm/nH * nH)]
-        d: int = self.dm // self.nH
-        x = jnp.concatenate([ProbSparseAttention(c=self.c,
-                                                 dk=d,
-                                                 dv=d,
-                                                 mask=self.mask,
-                                                 name=f"head_{i}")(Q, K, V)
-                             for i in range(self.nH)],
-                            axis=2)
-        assert x.shape == (*Q.shape[:2], d * self.nH), "BUG"
-
-        MHA = nn.Dense(features=self.dm, name="WO")(x)
-        assert Q.shape == MHA.shape, "BUG"
-
-        if with_dropout:
-            MHA = MHA.at[:].set(nn.Dropout(self.Pdrop, deterministic=False)(MHA))
-
-        return MHA
-
 
 class EncoderLayer(nn.Module):
     """
@@ -455,12 +317,11 @@ class EncoderLayer(nn.Module):
         """
         B, L, dm = inputs.shape
 
-        mha = MultiHeadProbSparseAttention(
-            c=self.c,
-            nH=self.nH,
+        mha = MultiHeadAttention(
+            attention=functools.partial(ProbSparseAttention, c=self.c, mask=False),
             dm=self.dm,
+            nH=self.nH,
             Pdrop=self.Pdrop,
-            mask=False
         )
         ff = FeedForward(dff=self.dff, Pdrop=self.Pdrop, activation="GELU")
 
@@ -516,19 +377,19 @@ class DecoderLayer(nn.Module):
         """
         B, Ldec, dm = outputs.shape
 
-        mmha = MultiHeadProbSparseAttention(
-            c=self.c,
-            nH=self.nH,
+        mmha = MultiHeadAttention(
+            attention=functools.partial(ProbSparseAttention,
+                                        c=self.c,
+                                        mask=self.Ltoken),
             dm=self.dm,
+            nH=self.nH,
             Pdrop=self.Pdrop,
-            mask=self.Ltoken,
-            name="MaskedMultiHeadProbSparseAttention",
         )
         mha = MultiHeadAttention(
-            nH=self.nH,
+            attention=Attention,
             dm=self.dm,
+            nH=self.nH,
             Pdrop=self.Pdrop,
-            name="MultiHeadAttention",
         )
         ff = FeedForward(dff=self.dff, Pdrop=self.Pdrop, activation="GELU")
 
