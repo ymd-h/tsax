@@ -10,7 +10,6 @@ from tsax.model.autoformer import (
     DecoderStack,
     EncoderLayer,
     DecoderLayer,
-    MultiHeadAttention,
     AutoCorrelationAttention,
     SeasonalLayerNorm,
     SeriesDecomp,
