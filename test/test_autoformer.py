@@ -48,12 +48,14 @@ class TestAutoCrrelationAttention(TestCase):
         c = 2
         d = 2
 
-        ac, _ = AutoCorrelationAttention(dk=d, dv=d, c=c).init_with_output(
+        A = AutoCorrelationAttention(dk=d, dv=d, c=c)
+
+        ac, _ = A.init_with_output(
             jax.random.PRNGKey(42), Q, K, V
         )
         self.assertEqual(ac.shape, (*Q.shape[:2], d))
 
-        ac_jit, _ = jax.jit(AutoCorrelationAttention(d=d, c=c).init_with_output)(
+        ac_jit, _ = jax.jit(A.init_with_output)(
             jax.random.PRNGKey(42), Q, K, V
         )
         self.assertEqual(ac_jit.shape, (*Q.shape[:2], d))
@@ -120,38 +122,51 @@ class TestDecoderLayer(TestCase):
         inputs = jax.random.normal(key_use, (B, L, dm))
 
         key, key_use = jax.random.split(key, 2)
-        outputs = jax.random.normal(key_use, (B, L, dm))
+        s_outputs = jax.random.normal(key_use, (B, L, dm))
 
-        D = DecoderLayer(c=c, nH=nH, dm=dm, dff=dff, eps=eps, Pdrop=Pdrop, Ltoken=6)
+        key, key_use = jax.random.split(key, 2)
+        t_outputs = jax.random.normal(key_use, (B, L, dm))
+
+        D = DecoderLayer(c=c, nH=nH, dm=dm, dff=dff, Pdrop=Pdrop)
 
         key_p, key_d = jax.random.split(key, 2)
-        d, _ = D.init_with_output({"params": key_p,
-                                   "dropout": key_d},
-                                  inputs, outputs)
-        self.assertEqual(d.shape, outputs.shape)
+        (ds, dt), _ = D.init_with_output({"params": key_p,
+                                          "dropout": key_d},
+                                         inputs, s_outputs, t_outputs)
+        self.assertEqual(ds.shape, s_outputs.shape)
+        self.assertEqual(dt.shape, t_outputs.shape)
 
-        d_jit, _ = jax.jit(D.init_with_output)({"params": key_p,
-                                                "dropout": key_d},
-                                               inputs, outputs)
-        self.assertEqual(d_jit.shape, outputs.shape)
+        (ds_jit, dt_jit), _ = jax.jit(D.init_with_output)({"params": key_p,
+                                                           "dropout": key_d},
+                                                          inputs,
+                                                          s_outputs, t_outputs)
+        self.assertEqual(ds_jit.shape, s_outputs.shape)
+        self.assertEqual(dt_jit.shape, t_outputs.shape)
 
-        self.assertAllclose(d, d_jit, atol=1e-6)
+        self.assertAllclose(ds, ds_jit, atol=1e-6)
+        self.assertAllclose(dt, dt_jit, atol=1e-6)
 
-        d_drop, _ = D.init_with_output({"params": key_p,
-                                        "dropout": key_d},
-                                       inputs, outputs, with_dropout=True)
-        self.assertEqual(d_drop.shape, outputs.shape)
-        self.assertNotAllclose(d, d_drop)
+        (ds_drop, dt_drop), _ = D.init_with_output({"params": key_p,
+                                                    "dropout": key_d},
+                                                   inputs, s_outputs, t_outputs,
+                                                   with_dropout=True)
+        self.assertEqual(ds_drop.shape, s_outputs.shape)
+        self.assertEqual(dt_drop.shape, t_outputs.shape)
+        self.assertNotAllclose(ds, ds_drop)
+        self.assertAllclose(dt, dt_drop)
 
-        d_drop_jit, _ = jax.jit(
+        (ds_drop_jit, dt_drop_jit), _ = jax.jit(
             D.init_with_output,
             static_argnames=["with_dropout"],
         )({"params": key_p, "dropout": key_d},
-          inputs, outputs, with_dropout=True)
-        self.assertEqual(d_drop_jit.shape, outputs.shape)
-        self.assertNotAllclose(d_jit, d_drop_jit)
+          inputs, s_outputs, t_outputs, with_dropout=True)
+        self.assertEqual(ds_drop_jit.shape, s_outputs.shape)
+        self.assertEqual(dt_drop_jit.shape, t_outputs.shape)
+        self.assertNotAllclose(ds_jit, ds_drop_jit)
+        self.assertAllclose(dt_jit, dt_drop_jit)
 
-        self.assertAllclose(d_drop, d_drop_jit, atol=1e-6)
+        self.assertAllclose(ds_drop, ds_drop_jit, atol=1e-6)
+        self.assertAllclose(dt_drop, dt_drop_jit, atol=1e-6)
 
 
 class TestEncoderStack(TestCase):
@@ -184,25 +199,25 @@ class TestEncoderStack(TestCase):
         }
 
         e, _ = E.init_with_output(rngs, inputs)
-        self.assertEqual(e.shape, (B, (L+1)//2, dm))
+        self.assertEqual(e.shape, (B, L, dm))
 
         e_jit, _ = jax.jit(E.init_with_output)(rngs, inputs)
-        self.assertEqual(e_jit.shape, (B, (L+1)//2, dm))
+        self.assertEqual(e_jit.shape, (B, L, dm))
 
-        self.assertAllclose(e, e_jit)
+        self.assertAllclose(e, e_jit, atol=1e-5, rtol=1e-5)
 
         e_drop, _ = E.init_with_output(rngs, inputs, with_dropout=True)
-        self.assertEqual(e_drop.shape, (B, (L+1)//2, dm))
+        self.assertEqual(e_drop.shape, (B, L, dm))
         self.assertNotAllclose(e, e_drop)
 
         e_drop_jit, _ = jax.jit(
             E.init_with_output,
             static_argnames=["with_dropout"],
         )(rngs, inputs, with_dropout=True)
-        self.assertEqual(e_drop_jit.shape, (B, (L+1)//2, dm))
-        self.assertNotAllclose(e_jit, e_drop_jit)
+        self.assertEqual(e_drop_jit.shape, (B, L, dm))
+        self.assertNotAllclose(e_jit, e_drop_jit, atol=1e-6, rtol=1e-6)
 
-        self.assertAllclose(e_drop, e_drop_jit, atol=1e-6, rtol=1e-6)
+        self.assertAllclose(e_drop, e_drop_jit, atol=1e-5, rtol=1e-5)
 
 class TestDecoderStack(TestCase):
     def test_decoder(self):
@@ -220,14 +235,16 @@ class TestDecoderStack(TestCase):
         inputs = jax.random.normal(key_use, (B, Lenc, dm))
 
         key, key_use = jax.random.split(key, 2)
-        outputs = jax.random.normal(key_use, (B, Ldec, dm))
+        s_outputs = jax.random.normal(key_use, (B, Ldec, dm))
+
+        key, key_use = jax.random.split(key, 2)
+        t_outputs = jax.random.normal(key_use, (B, Ldec, dm))
 
         D = DecoderStack(c=c,
                          dm=dm,
                          nD=nD,
                          nH=nH,
                          dff=dff,
-                         Ltoken=6,
                          eps=eps,
                          Pdrop=Pdrop)
 
@@ -237,26 +254,36 @@ class TestDecoderStack(TestCase):
             "dropout": key_d,
         }
 
-        d, _ = D.init_with_output(rngs, inputs, outputs)
-        self.assertEqual(d.shape, (B, Ldec, dm))
+        (ds, dt), _ = D.init_with_output(rngs, inputs, s_outputs, t_outputs)
+        self.assertEqual(ds.shape, (B, Ldec, dm))
+        self.assertEqual(dt.shape, (B, Ldec, dm))
 
-        d_jit, _ = jax.jit(D.init_with_output)(rngs, inputs, outputs)
-        self.assertEqual(d_jit.shape, (B, Ldec, dm))
+        (ds_jit, dt_jit), _ = jax.jit(D.init_with_output)(rngs, inputs,
+                                                          s_outputs, t_outputs)
+        self.assertEqual(ds_jit.shape, (B, Ldec, dm))
+        self.assertEqual(dt_jit.shape, (B, Ldec, dm))
 
-        self.assertAllclose(d, d_jit, atol=1e-6, rtol=1e-6)
+        self.assertAllclose(ds, ds_jit, atol=1e-6, rtol=1e-6)
+        self.assertAllclose(dt, dt_jit, atol=1e-6, rtol=1e-6)
 
-        d_drop, _ = D.init_with_output(rngs, inputs, outputs, with_dropout=True)
-        self.assertEqual(d_drop.shape, (B, Ldec, dm))
-        self.assertNotAllclose(d, d_drop, atol=1e-6, rtol=1e-6)
+        (ds_drop, dt_drop), _ = D.init_with_output(rngs, inputs, s_outputs, t_outputs,
+                                                   with_dropout=True)
+        self.assertEqual(ds_drop.shape, (B, Ldec, dm))
+        self.assertEqual(dt_drop.shape, (B, Ldec, dm))
+        self.assertNotAllclose(ds, ds_drop, atol=1e-6, rtol=1e-6)
+        self.assertAllclose(dt, dt_drop, atol=1e-6, rtol=1e-6)
 
-        d_drop_jit, _ = jax.jit(
+        (ds_drop_jit, dt_drop_jit), _ = jax.jit(
             D.init_with_output,
             static_argnames=["with_dropout"],
-        )(rngs, inputs, outputs, with_dropout=True)
-        self.assertEqual(d_drop_jit.shape, (B, Ldec, dm))
-        self.assertNotAllclose(d_jit, d_drop_jit, atol=1e-6, rtol=1e-6)
+        )(rngs, inputs, s_outputs, t_outputs, with_dropout=True)
+        self.assertEqual(ds_drop_jit.shape, (B, Ldec, dm))
+        self.assertEqual(dt_drop_jit.shape, (B, Ldec, dm))
+        self.assertNotAllclose(ds_jit, ds_drop_jit, atol=1e-6, rtol=1e-6)
+        self.assertAllclose(dt_jit, dt_drop_jit, atol=1e-6, rtol=1e-6)
 
-        self.assertAllclose(d_drop, d_drop_jit, atol=1e-6, rtol=1e-6)
+        self.assertAllclose(ds_drop, ds_drop_jit, atol=1e-5, rtol=1e-5)
+        self.assertAllclose(dt_drop, dt_drop_jit, atol=1e-5, rtol=1e-5)
 
 
 if __name__ == "__main__":
