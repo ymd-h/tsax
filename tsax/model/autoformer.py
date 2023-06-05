@@ -213,11 +213,14 @@ class AutoCorrelationAttention(nn.Module):
         # Q_freq, K_freq: [B, L, dk]
         Q_freq = jnp.fft.rfft(Q, axis=1)
         K_freq = jnp.fft.rfft(K, axis=1)
-        assert Q_freq.shape == K_freq.shape == (B, L//2 + 1, self.dk), "BUG"
+        shape = (B, L//2+1, self.dk)
+        assert (Q_freq.shape == K_freq.shape == shape,
+                f"BUG: {Q_freq.shape} vs {K_freq.shape} vs {shape}")
 
         # Rxx: [B, L, dk]
         Rxx = jnp.fft.irfft(Q_freq * jnp.conjugate(K_freq), n=L, axis=1)
-        assert Rxx.shape == (B, L, self.dk), "BUG"
+        shape = (B, L, self.dk)
+        assert Rxx.shape == shape, f"BUG: {Rxx.shape} vs {shape}"
 
         # Time Delay Aggregation
         # ----------------------
