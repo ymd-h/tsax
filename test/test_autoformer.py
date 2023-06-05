@@ -52,9 +52,14 @@ class TestAutoCrrelationAttention(TestCase):
         ac, _ = AutoCorrelationAttention(d=d, c=c).init_with_output(
             jax.random.PRNGKey(42), Q, K, V
         )
-
         self.assertEqual(ac.shape, (*Q.shape[:2], d))
 
+        ac_jit, _ = jax.jit(AutoCorrelationAttention(d=d, c=c).init_with_output)(
+            jax.random.PRNGKey(42), Q, K, V
+        )
+        self.assertEqual(ac_jit.shape, (*Q.shape[:2], d))
+
+        self.assertAllclose(ac, ac_jit)
 
 if __name__ == "__main__":
     unittest.main()
