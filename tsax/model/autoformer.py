@@ -414,7 +414,7 @@ class DecoderLayer(nn.Module):
         )
 
         seasonal_outputs, trend3 = SeriesDecomp(kMA=self.kMA)(
-            seasonal_outputs + ff(seasonal_outputs)
+            seasonal_outputs + ff(seasonal_outputs, with_dropout=with_dropout)
         )
 
         trend_outputs.at[:].add(
