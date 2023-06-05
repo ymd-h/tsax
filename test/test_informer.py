@@ -11,7 +11,6 @@ from tsax.model.informer import (
     EncoderLayer,
     DecoderLayer,
     Distilling,
-    MultiHeadProbSparseAttention,
     ProbSparseAttention,
 )
 from tsax.testing import TestCase
@@ -114,95 +113,6 @@ class TestProbSparseAttention(TestCase):
         self.assertNone(a_jit, jnp.isnan)
 
         self.assertAllclose(a, a_jit)
-
-
-class TestMultiHeadProbSparseAttention(TestCase):
-    def test_mha(self):
-        B, L, dm = 1, 12, 6
-        c = 2
-        nH = 2
-        Pdrop = 0.8
-
-        key = jax.random.PRNGKey(0)
-
-        key, key_use = jax.random.split(key)
-        Q = jax.random.normal(key_use, (B, L, dm))
-
-        key, key_use = jax.random.split(key)
-        K = jax.random.normal(key_use, (B, L, dm))
-
-        key, key_use = jax.random.split(key)
-        V = jax.random.normal(key_use, (B, L, dm))
-
-        MHA = MultiHeadProbSparseAttention(c=c,
-                                           dm=dm,
-                                           nH=nH,
-                                           Pdrop=Pdrop,
-                                           mask=0)
-
-        key_p, key_a, key_d = jax.random.split(key, 3)
-        mha, _ = MHA.init_with_output({"params": key_p, "attention": key_a},
-                                      Q, K, V)
-        self.assertEqual(mha.shape, Q.shape)
-
-        mha_jit, _ = jax.jit(MHA.init_with_output)({"params": key_p,
-                                                    "attention": key_a},
-                                                   Q, K, V)
-        self.assertEqual(mha_jit.shape, Q.shape)
-
-        self.assertAllclose(mha, mha_jit)
-
-        mha_drop, _ = MHA.init_with_output({"params": key_p,
-                                            "attention": key_a,
-                                            "dropout": key_d},
-                                           Q, K, V, with_dropout=True)
-        self.assertEqual(mha_drop.shape, Q.shape)
-        self.assertNotAllclose(mha, mha_drop)
-
-        mha_drop_jit, _ = jax.jit(
-            MHA.init_with_output,
-            static_argnames=["with_dropout"]
-        )({"params": key_p, "attention": key_a, "dropout": key_d},
-          Q, K, V, with_dropout=True)
-        self.assertEqual(mha_drop_jit.shape, Q.shape)
-        self.assertNotAllclose(mha_jit, mha_drop_jit)
-
-        self.assertAllclose(mha_drop, mha_drop_jit)
-
-    def test_mha_mask(self):
-        B, L, dm = 1, 12, 6
-        c = 2
-        nH = 2
-        Pdrop = 0.8
-
-        key = jax.random.PRNGKey(0)
-
-        key, key_use = jax.random.split(key)
-        Q = jax.random.normal(key_use, (B, L, dm))
-
-        key, key_use = jax.random.split(key)
-        K = jax.random.normal(key_use, (B, L, dm))
-
-        key, key_use = jax.random.split(key)
-        V = jax.random.normal(key_use, (B, L, dm))
-
-        MHA = MultiHeadProbSparseAttention(c=c,
-                                           dm=dm,
-                                           nH=nH,
-                                           Pdrop=Pdrop,
-                                           mask=6)
-
-        key, key_use = jax.random.split(key, 2)
-        mha, _ = MHA.init_with_output({"params": key_use, "attention": key},
-                                      Q, K, V)
-        self.assertEqual(mha.shape, Q.shape)
-
-        mha_jit, _ = jax.jit(MHA.init_with_output)({"params": key_use,
-                                                    "attention": key},
-                                                   Q, K, V)
-        self.assertEqual(mha_jit.shape, Q.shape)
-
-        self.assertAllclose(mha, mha_jit)
 
 
 class TestEncoderLayer(TestCase):
