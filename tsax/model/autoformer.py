@@ -213,11 +213,11 @@ class AutoCorrelationAttention(nn.Module):
         # Q_freq, K_freq: [B, L, dk]
         Q_freq = jnp.fft.rfft(Q, axis=1)
         K_freq = jnp.fft.rfft(K, axis=1)
-        assert Q_freq.shape == K_freq.shape == (B, L//2 + 1, self.d), "BUG"
+        assert Q_freq.shape == K_freq.shape == (B, L//2 + 1, self.dk), "BUG"
 
         # Rxx: [B, L, dk]
         Rxx = jnp.fft.irfft(Q_freq * jnp.conjugate(K_freq), n=L, axis=1)
-        assert Rxx.shape == (B, L, self.d), "BUG"
+        assert Rxx.shape == (B, L, self.dk), "BUG"
 
         # Time Delay Aggregation
         # ----------------------
@@ -226,7 +226,7 @@ class AutoCorrelationAttention(nn.Module):
         k = min(int(math.floor(self.c * math.log(L))), L)
 
         Wk, Ik = jax.lax.top_k(jnp.moveaxis(Rxx, 1, -1), k)
-        assert Wk.shape == Ik.shape == (B, self.d, k), "BUG"
+        assert Wk.shape == Ik.shape == (B, self.dk, k), "BUG"
 
         Wk = nn.activation.softmax(Wk, axis=-1)
 
@@ -239,22 +239,22 @@ class AutoCorrelationAttention(nn.Module):
 
         @jax.vmap
         def _per_B(_wk, _ik, _V):
-            assert _wk.shape == _ik.shape == (self.d,), "BUG"
-            assert _V.shape == (L, self.d), "BUG"
+            assert _wk.shape == _ik.shape == (self.dk,), "BUG"
+            assert _V.shape == (L, self.dv), "BUG"
             B_ret = _per_d(_wk, _ik, _V)
-            assert B_ret.shape == (L, self.d), "BUG"
+            assert B_ret.shape == (L, self.dv), "BUG"
             return B_ret
 
         @functools.partial(jax.vmap, in_axes=-1)
         def _per_k(wk, ik):
-            assert wk.shape == ik.shape == (B, self.d), "BUG"
+            assert wk.shape == ik.shape == (B, self.dk), "BUG"
             k_ret = _per_B(wk, ik, V)
-            assert k_ret.shape == (B, L, self.d), "BUG"
+            assert k_ret.shape == (B, L, self.dv), "BUG"
             return k_ret
 
-        # A: [B, L, dk]
+        # A: [B, L, dv]
         A = jnp.sum(_per_k(Wk, Ik), axis=0)
-        assert A.shape == (B, L, self.d), "BUG"
+        assert A.shape == (B, L, self.dv), "BUG"
 
         return A
 
@@ -283,8 +283,9 @@ class EncoderLayer(nn.Module):
     c: int
     dm: int
     nH: int = NH
-    kMA: int = K_MOVING_AVG
     dff: int = DFF
+    kMA: int = K_MOVING_AVG
+    eps: float = EPS
     Pdrop: float = PDROP
 
     @nn.compact
@@ -356,6 +357,7 @@ class DecoderLayer(nn.Module):
     nH: int = NH
     dff: int = DFF
     kMA: int = K_MOVING_AVG
+    eps: float = EPS
     Pdrop: float = PDROP
 
     @nn.compact
@@ -485,7 +487,7 @@ class EncoderStack(nn.Module):
 
         shape = inputs.shape
 
-        for i in range(self.N):
+        for i in range(self.nE):
             inputs = EncoderLayer(c=self.c,
                                   dm=self.dm,
                                   nH=self.nH,
