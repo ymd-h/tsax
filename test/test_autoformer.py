@@ -41,12 +41,13 @@ class TestSeasonalLayerNorm(TestCase):
 
 class TestAutoCrrelationAttention(TestCase):
     def test_ac(self):
-        Q = jax.random.normal(jax.random.PRNGKey(0), (2, 10, 4))
+        d = 3
+        c = 2
+
+        Q = jax.random.normal(jax.random.PRNGKey(0), (2, 10, d))
         K = Q
         V = Q
 
-        c = 2
-        d = 2
 
         A = AutoCorrelationAttention(dk=d, dv=d, c=c)
 
