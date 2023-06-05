@@ -28,6 +28,7 @@ from tsax.core import (
     ConvSeq,
     Embedding,
     FeedForward,
+    MultiHeadAttention,
 )
 from tsax.core.encoding import EMBEDDING_ALPHA
 
@@ -37,7 +38,6 @@ __all__ = [
     "DecoderStack",
     "EncoderLayer",
     "DecoderLayer",
-    "MutiHeadAttention",
     "AutoCorrelationAttention",
     "SeasonalLayerNorm",
     "SeriesDecomp",
@@ -163,14 +163,17 @@ class AutoCorrelationAttention(nn.Module):
 
     Attributes
     ----------
-    d : int
-        Query, Key, Value Dimension
+    dk : int
+        Key Dimension
+    dv : int
+        Value Dimension
     c : int
         Coefficient for Selecting Top K Correlation.
         floor(c * logL) Correlation is used.
         ``1 <= c <= 3``
     """
-    d: int
+    dk: int
+    dv: int
     c: int
 
     @nn.compact
@@ -198,6 +201,7 @@ class AutoCorrelationAttention(nn.Module):
         assert Q.shape[0] == K.shape[0] == V.shape[0], "BUG"
         assert K.shape[1] == V.shape[1], "BUG"
         assert Q.shape[2] == K.shape[2] == V.shape[2], "BUG"
+        assert self.dk == self.dv, "BUG"
 
         B, L, _ = Q.shape
 
@@ -205,13 +209,6 @@ class AutoCorrelationAttention(nn.Module):
         # K, V: [B, S, dm] -> [B, L, dm]
         K = K.at[:,0:L,:].get(mode="fill", fill_value=0)
         V = V.at[:,0:L,:].get(mode="fill", fill_value=0)
-
-        # Q, K: [B, L, dm] -> [B, L, dk]
-        Q = nn.Dense(features=self.d, name="WQ")(Q)
-        K = nn.Dense(features=self.d, name="WK")(K)
-
-        # V: [B, L, dm] -> [B, L, dv]
-        V = nn.Dense(features=self.d, name="WV")(V)
 
         # Q_freq, K_freq: [B, L, dk]
         Q_freq = jnp.fft.rfft(Q, axis=1)
@@ -262,75 +259,16 @@ class AutoCorrelationAttention(nn.Module):
         return A
 
 
-class MultiHeadAttention(nn.Module):
-    """
-    Multi HEad Attention Layer
-
-    Attributes
-    ----------
-    dm : int
-        Model Dimension
-    nH : int
-        Number of Multi Head
-    Pdrop : float
-        Dropout Rate
-    """
-    dm: int
-    nH: int = NH
-    Pdrop: float = PDROP
-
-    @nn.compact
-    def __call__(self,
-                 Q: ArrayLike,
-                 K: ArrayLike,
-                 V: ArrayLike, *,
-                 with_dropout: bool = False) -> Array:
-        """
-        Multi Head Attention
-
-        Parameters
-        ----------
-        Q : ArrayLike
-            Query. [B, L, dm]
-        K : ArrayLike
-            Key. [B, L, dm]
-        V : ArrayLike
-            Value. [B, L, dm]
-        with_dropout : bool, optional
-            Whether dropout or not.
-
-        Returns
-        -------
-        MHA : Array
-            Multi Head Attention. [B, L, dm]
-        """
-        assert Q.shape[0] == K.shape[0] == V.shape[0], "BUG"
-        assert K.shape[1] == V.shape[1], "BUG"
-        assert Q.shape[2] == K.shape[2] == V.shape[2], "BUG"
-
-        # x: [B, L, dm (= dm/nH * nH)]
-        d: int = max(self.dm // self.nH, 1)
-        x = jnp.concatenate([AutoCorrelationAttention(d=d, name=f"head_{i}")(Q, K, V)
-                             for i in range(self.nH)],
-                            axis=2)
-        assert x.shape == (*Q.shape[:2], d * self.nH)
-
-        # MHA: [B, L, dm]
-        MHA = nn.Dense(features=self.dm, name="WO")
-        assert Q.shape == MHA.shape, "BUG"
-
-        if with_dropout:
-            MHA = MHA.at[:].set(nn.Dropout(self.Pdrop, deterministic=False)(MHA))
-
-        return MHA
-
-
 class EncoderLayer(nn.Module):
     """
     Encoder Layer
 
     Attributes
     ----------
+    c : int
+        Coefficient for Selecting Top K Correlation.
+        floor(c * logL) Correlation is used.
+        ``1 <= c <= 3``
     dm : int
         Model Dimension
     nH : int
@@ -342,6 +280,7 @@ class EncoderLayer(nn.Module):
     Pdrop : float
         Dropout Rate
     """
+    c: int
     dm: int
     nH: int = NH
     kMA: int = K_MOVING_AVG
@@ -369,7 +308,12 @@ class EncoderLayer(nn.Module):
         """
         shape = inputs.shape
 
-        mha = MultiHeadAttention(nH=self.nH, dm=self.dm, Pdrop=self.Pdrop)
+        mha = MultiHeadAttention(
+            attention=functools.partial(AutoCorrelationAttention, c=self.c),
+            nH=self.nH,
+            dm=self.dm,
+            Pdrop=self.Pdrop
+        )
         ff = FeedForward(dff=self.dff, Pdrop=self.Pdrop, bias=False)
 
         inputs, _ = SeriesDecomp(kMA=self.kMA)(
@@ -390,6 +334,10 @@ class DecoderLayer(nn.Module):
 
     Attributes
     ----------
+    c : int
+        Coefficient for Selecting Top K Correlation.
+        floor(c * logL) Correlation is used.
+        ``1 <= c <= 3``
     dm : int
         Model Dimension
     nH : int
@@ -403,6 +351,7 @@ class DecoderLayer(nn.Module):
     Pdrop : float
         Dropout Rate
     """
+    c: int
     dm: int
     nH: int = NH
     dff: int = DFF
@@ -440,10 +389,18 @@ class DecoderLayer(nn.Module):
         assert inputs.shape[0] == seasonal_outputs.shape[0], "BUG"
         assert inputs.shape[2] == seasonal_outputs.shape[2] == self.dm, "BUG"
 
-        s_mha = MultiHeadAttention(nH=self.nH, dm=self.dm, Pdrop=self.Pdrop,
-                                   name="SelfAttention")
-        c_mha = MultiHeadAttention(nH=self.nH, dm=self.dm, Pdrop=self.Pdrop,
-                                   name="CrossAttention")
+        s_mha = MultiHeadAttention(
+            attention=functools.partial(AutoCorrelationAttention, c=self.c),
+            dm=self.dm,
+            nH=self.nH,
+            Pdrop=self.Pdrop
+        )
+        c_mha = MultiHeadAttention(
+            attention=functools.partial(AutoCorrelationAttention, c=self.c),
+            dm=self.dm,
+            nH=self.nH,
+            Pdrop=self.Pdrop
+        )
         ff = FeedForward(dff=self.dff, Pdrop=self.Pdrop, bias=False)
 
         seasonal_outputs, trend1 = SeriesDecomp(kMA=self.kMA)(
