@@ -36,10 +36,10 @@ class CLIArgs:
     """
     CLI Arguments
     """
-    action: Literal["train", "predict"]
-    model: Literal["informer", "autoformer"]
-    I: int
-    O: int
+    action: Literal["train", "predict"] = field(default="train")
+    model: Literal["informer", "autoformer"] = field(default="informer")
+    I: int = field(metadata=dict(required=True))
+    O: int = field(metadata=dict(required=True))
     nE: int = field(default=3)
     nD: int = field(default=3)
     nH: int = field(default=8)
