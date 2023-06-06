@@ -1,6 +1,6 @@
 """
-Experiment (:mod:`tsax.experiment`)
-===================================
+Experiment (:mod:`tsax.optional.experiment`)
+============================================
 
 Notes
 -----

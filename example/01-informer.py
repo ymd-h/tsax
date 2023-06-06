@@ -19,7 +19,7 @@ import optax
 
 from tsax.random import initPRNGKey
 from tsax.data import SeqData
-from tsax.experiment import train, predict, load, TrainState
+from tsax.optional.experiment import train, predict, load, TrainState
 from tsax.logging import enable_logging
 from tsax import Informer
 
