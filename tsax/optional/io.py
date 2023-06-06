@@ -148,6 +148,7 @@ def read_csv(filepath_or_buffer: Union[str, os.PathLike, io.RawIOBase],
     d = pd.read_csv(filepath_or_buffer, **kwargs)
 
     seq = jnp.asarray(d, dtype=float)
+    logger.debug("Sequence Shape: %s", seq.shape)
 
     if timestamp is None:
         return seq
