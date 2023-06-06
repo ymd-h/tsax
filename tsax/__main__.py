@@ -1,5 +1,5 @@
 import sys
-from tsax.cli import cli
+from tsax.optional.cli import cli
 
 
 if __name__ == "__main__":
