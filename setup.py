@@ -4,7 +4,8 @@ extras_require = {
           "experiment": ["optax", "orbax", "tqdm"],
           "io": ["pandas", "pyarrow"],
 }
-extras_require["cli"] = list(set(extras_require["experiment"] + extras_require["io"]))
+extras_require["cli"] = list(set(extras_require["experiment"] +
+                                 extras_require["io"]))
 
 setup(name="tsax",
       description="TSax: Time Series Forecasting",
