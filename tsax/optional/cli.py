@@ -8,7 +8,7 @@ This module requires optional dependancies.
 `pip install tsax[cli]`
 """
 from __future__ import annotations
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from logging import INFO, DEBUG, StreamHandler
 import sys
 from typing import Any, Callable, Literal, Optional, Union
