@@ -10,7 +10,7 @@ This module requires optional dependancies.
 from __future__ import annotations
 import io
 import os
-from typing import Optional, Union
+from typing import Optional, Union, Tuple
 from dataclasses import dataclass
 
 import jax
@@ -43,6 +43,38 @@ class TimeStampFeaturesOption:
 
     def __post_init__(self):
         logger.debug(self)
+
+    def sizes(self) -> Tuple[int,...]:
+        """
+        Get Sizes of used Time Stamp Features
+
+        Returns
+        -------
+        Vs : tuple of ints
+            Sizes of used Time Stamp Features
+        """
+        Vs = []
+
+        if self.month:
+            Vs.append(12)
+
+        if self.day:
+            Vs.append(31)
+
+        if self.week:
+            Vs.append(7)
+
+        if self.hour:
+            Vs.append(24)
+
+        if self.minute:
+            Vs.append(60)
+
+        if self.second:
+            Vs.append(60)
+
+        logger.debug("Feature Sizes: %s", Vs)
+        return tuple(Vs)
 
 
 def extractTimeStampFeatures(t: pd.DatetimeIndex,
