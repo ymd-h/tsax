@@ -5,7 +5,8 @@ extras_require = {
           "io": ["pandas", "pyarrow"],
 }
 extras_require["cli"] = list(set(extras_require["experiment"] +
-                                 extras_require["io"]))
+                                 extras_require["io"] +
+                                 ["argparse-dataclass"]))
 
 setup(name="tsax",
       description="TSax: Time Series Forecasting",
