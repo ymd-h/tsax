@@ -8,12 +8,12 @@ This module requires optional dependancies.
 `pip install tsax[cli]`
 """
 from __future__ import annotations
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, fields
 from logging import INFO, DEBUG, StreamHandler
 import sys
-from typing import Any, Callable, Literal, Optional, Union
+from typing import get_type_hints, Any, Callable, Literal, Optional, Union
 
-from argparse_dataclass import ArgumentParser
+import argparse_dataclass as argparse
 import wblog
 
 from tsax.logging import enable_logging
@@ -27,8 +27,19 @@ from tsax.optional.experiment import train, load, predict
 EXIT_SUCCESS: int = 0
 EXIT_FAILURE: int = 1
 
-
 logger = wblog.getLogger()
+
+# https://github.com/mivade/argparse_dataclass/issues/47
+def _patch_fields(cls, *args, **kwargs):
+    t = get_type_hints(cls)
+
+    def _update(_f):
+        _f.type = t[_f.name]
+        return _f
+
+    return tuple(_update(f) for f in fields(cls, *args, **kwargs))
+
+argparse.fields = _patch_fields
 
 
 @dataclass
@@ -36,8 +47,8 @@ class CLIArgs:
     """
     CLI Arguments
     """
-    action: Literal["train", "predict"] = field(default="train")
-    model: Literal["informer", "autoformer"] = field(default="informer")
+    action: Literal["train", "predict"]
+    model: Literal["informer", "autoformer"]
     I: int = field(metadata=dict(required=True))
     O: int = field(metadata=dict(required=True))
     nE: int = field(default=3)
@@ -53,21 +64,19 @@ class CLIArgs:
     debug: bool = field(default=False)
 
 
-def train_cli(args: CLIArgs,
-              key: KeyArray) -> int:
+def train_cli(args: CLIArgs, key: KeyArray) -> int:
     train(model=args.model)
     return EXIT_SUCCESS
 
 
-def predict_cli(args: CLIArgs,
-                key: KeyArray) -> int:
+def predict_cli(args: CLIArgs, key: KeyArray) -> int:
     predict(model=args.model)
     return EXIT_SUCCESS
 
 
 def cli(args: Optional[CLIArgs] = None) -> int:
     if args is None:
-        parser = ArgumentParser(CLIArgs,
+        parser = argparse.ArgumentParser(CLIArgs,
                                 "python -m tsax",
                                 description="TSax Command Line Interface")
         args = parser.parse_args()
