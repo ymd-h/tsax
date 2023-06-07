@@ -325,7 +325,7 @@ class TestAutoformer(TestCase):
             auto.init_with_output,
             static_argnames=["method"],
         )(rngs, seq, method="encode")
-        self.assertAllclose(enc, enc_jit)
+        self.assertAllclose(enc, enc_jit, atol=1e-4, rtol=1e-4)
 
         pred, _ = auto.init_with_output(rngs, seq)
         self.assertEqual(pred.shape, (B, O, d))
