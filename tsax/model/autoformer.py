@@ -671,7 +671,7 @@ class Autoformer(Model):
         assert (cat is None) or seq.shape[:1] == cat.shape[:1], "BUG"
         assert seq.shape[1] == self.I, "BUG"
 
-        B = inputs.shape[0]
+        B = seq.shape[0]
 
         inputs = self.encoder_embed(seq, cat, with_dropout=with_dropout)
         assert inputs.shape == (B, self.I, self.d), "BUG"
@@ -703,8 +703,8 @@ class Autoformer(Model):
         pred : Array
             Predicted Signal. [B, O, d]
         """
-        assert inputs.shape[0] == seasonal_outputs.shape[0], "BUG"
-        assert inputs.shape[2] == seasonal_outputs.shape[2], "BUG"
+        assert inputs.shape[0] == seq.shape[0], "BUG"
+        assert inputs.shape[2] == seq.shape[2], "BUG"
         assert (cat is None) or (seq.shape[:2] == cat.shape[:2]), "BUG"
         assert (cat is None) or (cat.shape[2] == len(self.Vs)), "BUG"
 
@@ -756,7 +756,7 @@ class Autoformer(Model):
         assert seq.shape[1:] == (self.I, self.d), f"BUG: {seq.shape}"
         assert (cat is None) or cat.shape[2] == len(self.Vs), "BUG"
 
-        B = inputs.shape[0]
+        B = seq.shape[0]
 
         inputs = self.encode(seq, cat, with_dropout=train)
         assert inputs.shape == (B, self.I, self.d), "BUG"
