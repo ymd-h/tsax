@@ -286,6 +286,134 @@ class TestDecoderStack(TestCase):
         self.assertAllclose(ds_drop, ds_drop_jit, atol=1e-5, rtol=1e-5)
         self.assertAllclose(dt_drop, dt_drop_jit, atol=1e-5, rtol=1e-5)
 
+class TestAutoformer(TestCase):
+    def test_without_categorical(self):
+        B, I, d, dm = 1, 5, 2, 8
+        O = 5
+        c = 2
+        nE, nD, nH = 2, 3, 4
+        dff = 16
+        kernel = 3
+        eps = 1e-8
+        Pdrop = 0.8
+
+        key = jax.random.PRNGKey(0)
+
+        key, key_use = jax.random.split(key, 2)
+        seq = jax.random.normal(key_use, (B, I, d))
+
+        auto = Autoformer(d=d,
+                          I=I,
+                          O=O,
+                          c=c,
+                          nE=nE,
+                          nD=nD,
+                          nH=nH,
+                          dff=dff,
+                          eps=eps,
+                          Pdrop=Pdrop)
+
+        key_p, key_a, key_d = jax.random.split(key, 3)
+        rngs = {
+            "params": key_p,
+            "attention": key_a,
+            "dropout": key_d,
+        }
+
+        enc, _ = auto.init_with_output(rngs, seq, method="encode")
+        enc_jit, _ = jax.jit(
+            auto.init_with_output,
+            static_argnames=["method"],
+        )(rngs, seq, method="encode")
+        self.assertAllclose(enc, enc_jit)
+
+        pred, _ = auto.init_with_output(rngs, seq)
+        self.assertEqual(pred.shape, (B, O, d))
+
+        pred_jit, _ = jax.jit(auto.init_with_output)(rngs, seq)
+        self.assertEqual(pred_jit.shape, (B, O, d))
+
+        self.assertAllclose(pred, pred_jit, atol=1e-6)
+
+        pred_drop, _ = auto.init_with_output(rngs, seq, train=True)
+        self.assertEqual(pred_drop.shape, (B, O, d))
+        self.assertNotAllclose(pred, pred_drop)
+
+        pred_drop_jit, _ = jax.jit(
+            auto.init_with_output,
+            static_argnames=["train"],
+        )(rngs, seq, train=True)
+        self.assertEqual(pred_drop_jit.shape, (B, O, d))
+        self.assertNotAllclose(pred_jit, pred_drop_jit)
+
+        self.assertAllclose(pred_drop, pred_drop_jit, atol=1e-6)
+
+    def test_with_categorical(self):
+        B, I, d, Vs, dm = 1, 5, 2, (7, 12), 8
+        O = 5
+        c = 2
+        nE, nD, nH = 2, 3, 4
+        dff = 16
+        kernel = 3
+        eps = 1e-8
+        Pdrop = 0.8
+
+        key = jax.random.PRNGKey(0)
+
+        key, key_use = jax.random.split(key, 2)
+        seq = jax.random.normal(key_use, (B, I, d))
+
+        key, key_use = jax.random.split(key, 2)
+        cat = jax.random.randint(key_use,
+                                 (B, I, len(Vs)),
+                                 0, jnp.asarray(Vs, dtype=int))
+
+        auto = Autoformer(d=d,
+                          I=I,
+                          O=O,
+                          Vs=Vs,
+                          c=c,
+                          nE=nE,
+                          nD=nD,
+                          nH=nH,
+                          dff=dff,
+                          eps=eps,
+                          Pdrop=Pdrop)
+
+        key_p, key_a, key_d = jax.random.split(key, 3)
+        rngs = {
+            "params": key_p,
+            "attention": key_a,
+            "dropout": key_d,
+        }
+
+        enc, _ = auto.init_with_output(rngs, seq, cat, method="encode")
+        enc_jit, _ = jax.jit(
+            auto.init_with_output,
+            static_argnames=["method"],
+        )(rngs, seq, cat, method="encode")
+        self.assertAllclose(enc, enc_jit)
+
+        pred, _ = auto.init_with_output(rngs, seq, cat)
+        self.assertEqual(pred.shape, (B, O, d))
+
+        pred_jit, _ = jax.jit(auto.init_with_output)(rngs, seq, cat)
+        self.assertEqual(pred_jit.shape, (B, O, d))
+
+        self.assertAllclose(pred, pred_jit, atol=5e-4, rtol=5e-4)
+
+        pred_drop, _ = auto.init_with_output(rngs, seq, cat, train=True)
+        self.assertEqual(pred_drop.shape, (B, O, d))
+        self.assertNotAllclose(pred, pred_drop)
+
+        pred_drop_jit, _ = jax.jit(
+            auto.init_with_output,
+            static_argnames=["train"],
+        )(rngs, seq, cat, train=True)
+        self.assertEqual(pred_drop_jit.shape, (B, O, d))
+        self.assertNotAllclose(pred_jit, pred_drop_jit)
+
+        self.assertAllclose(pred_drop, pred_drop_jit, atol=1e-5, rtol=1e-5)
 
 if __name__ == "__main__":
     unittest.main()
