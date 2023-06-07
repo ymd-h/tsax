@@ -8,6 +8,7 @@ This module requires optional dependancies.
 `pip install tsax[cli]`
 """
 from __future__ import annotations
+from argparse import ArgumentDefaultsHelpFormatter
 from dataclasses import dataclass, field, fields
 from logging import INFO, DEBUG, StreamHandler
 import sys
@@ -41,27 +42,40 @@ def _patch_fields(cls, *args, **kwargs):
 
 argparse.fields = _patch_fields
 
+def arg(**kwargs):
+    f = {}
+    if "default" in kwargs:
+        f["default"] = kwargs.pop("default")
+    f = {**f, "metadata": kwargs}
+
+    return field(**f)
 
 @dataclass
 class CLIArgs:
     """
     CLI Arguments
     """
-    action: Literal["train", "predict"]
-    model: Literal["informer", "autoformer"]
-    I: int = field(metadata=dict(required=True))
-    O: int = field(metadata=dict(required=True))
-    nE: int = field(default=3)
-    nD: int = field(default=3)
-    nH: int = field(default=8)
-    dff: int = field(default=256)
-    dm: int = field(default=32)
-    Pdrop: float = field(default=0.1)
-    eps: float = field(default=1e-12)
-    seed: Optional[int] = field(default=None)
-    version: bool = field(default=False)
-    verbose: bool = field(default=False)
-    debug: bool = field(default=False)
+    data: str = arg(help="Data")
+    action: Literal["train", "predict"] = arg(help="CLI Action: {train, predict}")
+    model: Literal["informer", "autoformer"] = arg(
+        help="Model: {informer, autoformer}"
+    )
+    I: int = arg(help="Input Length. Lookback Horizon.")
+    O: int = arg(help="Output Length. Prediction Horizon.")
+    nE: int = arg(default=3, help="Number of Encoder Layers")
+    nD: int = arg(default=3, help="Number of Decoder Layers")
+    nH: int = arg(default=8, help="Number of Multi Head at Attention Layers")
+    dff: int = arg(default=256, help="Number of Hidden Units at Feed Forward Layers")
+    dm: int = arg(default=32, help="Internal Model Dimension. (Some models ignores.)")
+    Pdrop: float = arg(default=0.1, help="Dropout Rate")
+    eps: float = arg(default=1e-12, help="Small Positive Value for LayerNorm")
+    seed: Optional[int] = arg(
+        default=None,
+        help="Seed for PRNG. If None (default), hardware random is used."
+    )
+    version: bool = arg(default=False)
+    verbose: bool = arg(default=False, help="Enable Verbose Logging")
+    debug: bool = arg(default=False, help="Enable Debug Logging")
 
 
 def train_cli(args: CLIArgs, key: KeyArray) -> int:
@@ -76,9 +90,12 @@ def predict_cli(args: CLIArgs, key: KeyArray) -> int:
 
 def cli(args: Optional[CLIArgs] = None) -> int:
     if args is None:
-        parser = argparse.ArgumentParser(CLIArgs,
-                                "python -m tsax",
-                                description="TSax Command Line Interface")
+        parser = argparse.ArgumentParser(
+            CLIArgs,
+            "python -m tsax",
+            description="TSax Command Line Interface",
+            formatter_class=ArgumentDefaultsHelpFormatter
+        )
         args = parser.parse_args()
 
 
