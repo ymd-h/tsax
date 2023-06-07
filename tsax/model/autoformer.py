@@ -645,6 +645,7 @@ class Autoformer(Model):
                                        alpha=self.alpha,
                                        Pdrop=self.Pdrop,
                                        with_positional=False)
+        self.decomp = SeriesDecomp(kMA=self.kMA)
         self.ff = nn.Dense(features=self.d)
 
     def encode(self,
@@ -713,7 +714,7 @@ class Autoformer(Model):
         L: int = S + self.O
 
 
-        s, t = SeriesDecomp(seq.at[:,:S,:].get())
+        s, t = self.decomp(seq.at[:,:S,:].get())
 
         s_outputs = jnp.zeros((B, L, self.d), dtype=seq.dtype).at[:,:S,:].set(s)
         t_outputs = (jnp.zeros((B, L, self.d), dtype=seq.dtype)
