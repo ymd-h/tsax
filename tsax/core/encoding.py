@@ -245,8 +245,10 @@ class Embedding(nn.Module):
         embedded : Array
             Embedded. [B, L, dm]
         """
-        assert (cat is None) or (seq.shape[:2] == cat.shape[:2]), "BUG"
-        assert (cat is None) or (len(self.Vs) == cat.shape[2]), "BUG"
+        fmt = f"BUG: {seq.shape} vs {cat.shape if cat is not None else None}"
+        assert (cat is None) or (seq.shape[0] == cat.shape[0]), fmt
+        assert (cat is None) or (seq.shape[1] >= cat.shape[1]), fmt
+        assert (cat is None) or (len(self.Vs) == cat.shape[2]), fmt
 
         L: int = seq.shape[1]
 
@@ -259,14 +261,16 @@ class Embedding(nn.Module):
         # Positional Encoding
         if self.with_positional:
             embedded = (
-                embedded.at[:]
-                .add(PositionalEncoding(dm=self.dm, L=L, Lfreq=2*L)(embedded))
+                embedded
+                .at[:].add(PositionalEncoding(dm=self.dm, L=L, Lfreq=2*L)(embedded))
             )
 
         # Categorical Encoding designed for Temporal Embedding
         if cat is not None:
+            S: int = cat.shape[1]
             embedded = (
-                embedded.at[:].add(CategoricalEncoding(Vs=self.Vs, dm=self.dm)(cat))
+                embedded
+                .at[:,:S,:].add(CategoricalEncoding(Vs=self.Vs, dm=self.dm)(cat))
             )
 
         if with_dropout:

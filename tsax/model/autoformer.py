@@ -669,7 +669,7 @@ class Autoformer(Model):
         inputs : Array
             Encoded Inputs. [B, I, d]
         """
-        assert (cat is None) or seq.shape[:1] == cat.shape[:1], "BUG"
+        assert (cat is None) or seq.shape[:2] == cat.shape[:2], "BUG"
         assert seq.shape[1] == self.I, "BUG"
 
         B = seq.shape[0]
@@ -714,7 +714,7 @@ class Autoformer(Model):
         L: int = S + self.O
 
 
-        s, t = self.decomp(seq.at[:,:S,:].get())
+        s, t = self.decomp(seq.at[:,-S:,:].get())
 
         s_outputs = jnp.zeros((B, L, self.d), dtype=seq.dtype).at[:,:S,:].set(s)
         t_outputs = (jnp.zeros((B, L, self.d), dtype=seq.dtype)
@@ -722,7 +722,9 @@ class Autoformer(Model):
                      .at[:,S:,:].set(jnp.mean(seq, axis=1, keepdims=True)))
 
         # Only seasonal part is embedded.
-        s_outputs = self.decoder_embed(s_outputs, cat, with_dropout=with_dropout)
+        s_outputs = self.decoder_embed(s_outputs,
+                                       cat.at[:,-S:,:].get(),
+                                       with_dropout=with_dropout)
         assert s_outputs.shape == (B, L, self.d)
 
         s_outputs, t_outputs = self.decoder(inputs, s_outputs, t_outputs,
