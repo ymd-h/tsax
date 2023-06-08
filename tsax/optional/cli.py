@@ -69,6 +69,12 @@ class CLIArgs:
     dm: int = arg(default=32, help="Internal Model Dimension. (Some models ignores.)")
     Pdrop: float = arg(default=0.1, help="Dropout Rate")
     eps: float = arg(default=1e-12, help="Small Positive Value for LayerNorm")
+    lr: float = arg(
+        default=1e-5,
+        help="Learning Rate for Optimizer"
+    )
+    batch: int = arg(default=32, help="Batch Size")
+    epoch: int = arg(default=100, help="Training Epoch")
     seed: Optional[int] = arg(
         default=None,
         help="Seed for PRNG. If None (default), hardware random is used."
