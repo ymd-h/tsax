@@ -21,8 +21,17 @@ from tsax.logging import enable_logging
 from tsax.random import initPRNGKey
 from tsax.typing import KeyArray
 from tsax.version import get_version
+from tsax.model import (
+    Informer,
+    Autoformer,
+)
 from tsax.optional.io import inferTimeStampFeaturesOption, read_csv
-from tsax.optional.experiment import train, load, predict
+from tsax.optional.experiment import (
+    TrainState,
+    train,
+    load,
+    predict,
+)
 
 
 EXIT_SUCCESS: int = 0
