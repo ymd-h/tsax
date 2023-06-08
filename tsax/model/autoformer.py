@@ -766,7 +766,7 @@ class Autoformer(Model):
         assert inputs.shape == (B, self.I, self.d), "BUG"
 
         pred = self.decode(inputs, seq, cat, with_dropout=train)
-        assert predh.shape == (B, self.O, self.d), "BUG"
+        assert pred.shape == (B, self.O, self.d), "BUG"
         return pred
 
     @staticmethod
