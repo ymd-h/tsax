@@ -88,7 +88,6 @@ class CLIArgs:
         default=None,
         help="Seed for PRNG. If None (default), hardware random is used."
     )
-    version: bool = arg(default=False)
     verbose: bool = arg(default=False, help="Enable Verbose Logging")
     debug: bool = arg(default=False, help="Enable Debug Logging")
 
@@ -108,15 +107,11 @@ def cli(args: Optional[CLIArgs] = None) -> int:
         parser = argparse.ArgumentParser(
             CLIArgs,
             "python -m tsax",
-            description="TSax Command Line Interface",
+            description=f"TSax Command Line Interface (v{get_version()})",
             formatter_class=ArgumentDefaultsHelpFormatter
         )
         args = parser.parse_args()
 
-
-    if args.version:
-        print(f"TSax v{get_version()}")
-        return EXIT_SUCCESS
 
     if args.debug:
         enable_logging(DEBUG)
