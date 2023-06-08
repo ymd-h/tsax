@@ -732,7 +732,7 @@ class Autoformer(Model):
                                             with_dropout=with_dropout)
         assert s_outputs.shape == t_outputs.shape == (B, L, self.d), "BUG"
 
-        pred = s_outputs.at[:,L-O:,:].get() + t_outputs.at[:,L-O:,:].get()
+        pred = s_outputs.at[:,-self.O:,:].get() + t_outputs.at[:,-self.O:,:].get()
         return pred
 
     def __call__(self,
