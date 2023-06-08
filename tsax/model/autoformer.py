@@ -206,14 +206,15 @@ class AutoCorrelationAttention(nn.Module):
 
         # Resize by truncation or 0 filling.
         # K, V: [B, S, dm] -> [B, L, dm]
-        K = K.at[:,0:L,:].get(mode="fill", fill_value=0)
-        V = V.at[:,0:L,:].get(mode="fill", fill_value=0)
+        K = jnp.zeros((B, L, self.dk), dtype=K.dtype).at[:,:K.shape[1],:].set(K)
+        V = jnp.zeros((B, L, self.dv), dtype=V.dtype).at[:,:V.shape[1],:].set(V)
+        assert K.shape == V.shape == (B, L, self.dk), f"BUG: {K.shape} vs {V.shape} vs {(B, L, self.dk)}"
 
         # Q_freq, K_freq: [B, L, dk]
         Q_freq = jnp.fft.rfft(Q, axis=1)
         K_freq = jnp.fft.rfft(K, axis=1)
         shape = (B, L//2+1, self.dk)
-        msg = f"BUG: {Q_freq.shape} vs {K_freq.shape} vs {shape}"
+        msg = f"BUG: Q_freq: {Q_freq.shape} vs K_freq: {K_freq.shape} vs Expected: {shape}"
         assert Q_freq.shape == K_freq.shape == shape, msg
 
         # Rxx: [B, L, dk]
