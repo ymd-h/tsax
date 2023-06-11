@@ -807,8 +807,8 @@ class Autoformer(Model):
         """
         Log Informer Spec
         """
-        logger.info("Autoformer(d=%d, I=%d, O=%d, Vs=%s, alpha=%f"
-                    "nE=%d, nD=%d, nH=%d, dff=%d,"
+        logger.info("Autoformer(d=%d, I=%d, O=%d, Vs=%s, alpha=%f,"
+                    " nE=%d, nD=%d, nH=%d, dff=%d,"
                     " kMA=%d, eps=%.2e, Pdrop=%f)",
                     self.d, self.I, self.O, self.Vs, self.alpha,
                     self.nE, self.nD, self.nH, self.dff,
