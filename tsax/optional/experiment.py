@@ -227,7 +227,7 @@ def train(
 
     h = FileHandler(os.path.join(directory, "train.log"))
     h.setFormatter(Formatter("%(asctime)s: %(name)s: %(levelname)s: %(message)s",
-                             '%Y-%m-%d %H:%M:%S.uuu'))
+                             '%Y-%m-%d %H:%M:%S.%uuu'))
     getLogger("tsax").addHandler(h)
     logger.info("Checkpoint Directory: %s", directory)
 
