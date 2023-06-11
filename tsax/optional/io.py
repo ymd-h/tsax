@@ -136,8 +136,8 @@ def inferTimeStampFeaturesOption(t: pd.DatetimeIndex) -> TimeStampFeaturesOption
         Option
     """
     logger.info("Infer TimeStampFeaturesOption")
-    DT = t.iloc[-1] - t.iloc[0]
-    dt = t.iloc[1] - t.iloc[0]
+    DT = t[-1] - t[0]
+    dt = t[1]  - t[0]
 
     logger.debug("DT: %s, dt: %s", DT, dt)
 
