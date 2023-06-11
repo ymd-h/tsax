@@ -50,10 +50,10 @@ class CLIArgs:
     CLI Arguments
     """
     # Generic
-    action: Literal["train", "predict"] = arg(help="CLI Action: {train, predict}")
+    action: Literal["train", "predict"] = arg(help="CLI Action")
     seed: Optional[int] = arg(
         default=None,
-        help="Seed for PRNG. If None (default), hardware random is used."
+        help="Seed for PRNG. If None, hardware random is used."
     )
     verbose: bool = arg(default=False, help="Enable Verbose Logging")
     debug: bool = arg(default=False, help="Enable Debug Logging")
@@ -67,7 +67,7 @@ class CLIArgs:
     # Model
     model: Literal["informer", "autoformer"] = arg(
         default="autoformer",
-        help="Model: {informer, autoformer}"
+        help="Model"
     )
     I: int = arg(default=10, help="Input Length. Lookback Horizon.")
     O: int = arg(default=10, help="Output Length. Prediction Horizon.")
