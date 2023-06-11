@@ -273,8 +273,8 @@ class SeqData(Generic[DataT]):
                            batch_size=self.batch_size, stride=self.stride)
 
         return (
-            tree_map(lambda d: f(d.at[:-test_size].get()), self.data),
-            tree_map(lambda d: f(d.at[-test_size:].get()), self.data),
+            f(tree_map(lambda d: d.at[:-test_size].get(), self.data)),
+            f(tree_map(lambda d: d.at[-test_size:].get(), self.data)),
         )
 
     def dimension(self) -> int:
