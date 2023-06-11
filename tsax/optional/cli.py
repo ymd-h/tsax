@@ -57,8 +57,18 @@ argparse.fields = _patch_fields
 
 def arg(**kwargs):
     f = {}
-    if "default" in kwargs:
-        f["default"] = kwargs.pop("default")
+    known_list = [
+        "default",
+        "default_factory",
+        "init",
+        "repr",
+        "hash",
+        "compare",
+        "kw_only"
+    ]
+    for kl in known_list:
+        if kl in kwargs:
+            f[kl] = kwargs.pop(kl)
     f = {**f, "metadata": kwargs}
 
     return field(**f)
