@@ -45,7 +45,7 @@ import wblog
 
 from tsax.typing import Array, ArrayLike, KeyArray, DataT
 from tsax.core import Model
-from tsax.data import SeqData, ensure_BatchSeqShape
+from tsax.data import SeqData, ensure_BatchSeqShape, data_shape
 
 __all__ = [
     "TrainState",
@@ -96,7 +96,7 @@ class TrainState(train_state.TrainState):
         else:
             x = data
 
-        logger.info("Create TrainState for Shape: %s", x.shape)
+        logger.info("Create TrainState for Shape: %s", data_shape(x))
 
         key_p, key = model.split_key(key, train=False)
         key["params"] = key_p

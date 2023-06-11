@@ -12,6 +12,7 @@ __all__ = [
     "SeqData",
     "ensure_SeqShape",
     "ensure_BatchSeqShape",
+    "data_shape",
 ]
 
 
@@ -288,3 +289,26 @@ class SeqData(Generic[DataT]):
         """
         D, _ = tree_flatten(self.data)
         return D[0].shape[-1]
+
+
+def data_shape(data: Union[SeqData, ArrayLike]) -> Tuple[int, ...]:
+    """
+    Get Shape
+
+    Parameters
+    ----------
+    data : SeqData or ArrayLike
+        Data
+
+    Returns
+    -------
+    shape : tuple of ints
+        Shape
+    """
+    if isinstance(data, SeqData):
+        data, _ = data.ibatch(0)
+
+    data, _ = tree_flatten(data)
+    data = data[0]
+
+    return data.shape
