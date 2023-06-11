@@ -157,6 +157,7 @@ def createModel(args: CLIArgs, data: SeqData, Vs: Tuple[int, ...]) -> Model:
     logger.info("Model: %s", args.model)
     if args.model == "informer":
         model_class = Informer
+        kwargs["Ltoken"] = args.I // 2
     elif args.model == "autoformer":
         model_class = Autoformer
     else:
