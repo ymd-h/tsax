@@ -1,12 +1,15 @@
 from setuptools import setup, find_packages
 
 extras_require = {
-          "experiment": ["optax", "orbax", "tqdm"],
-          "io": ["pandas", "pyarrow"],
+    "experiment": ["optax", "orbax", "tqdm"],
+    "io": ["pandas", "pyarrow"],
+    "oam": ["argparse_dataclass"],
 }
-extras_require["cli"] = list(set(extras_require["experiment"] +
-                                 extras_require["io"] +
-                                 ["argparse-dataclass"]))
+extras_require["cli"] = list(
+    set(extras_require["experiment"] +
+        extras_require["io"] +
+        extras_require["oam"])
+)
 
 setup(name="tsax",
       description="TSax: Time Series Forecasting",
