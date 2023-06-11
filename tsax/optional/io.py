@@ -151,10 +151,12 @@ def inferTimeStampFeaturesOption(t: pd.DatetimeIndex) -> TimeStampFeaturesOption
     )
 
 
-def read_csv(filepath_or_buffer: Union[str, os.PathLike, io.RawIOBase],
-             timestamp: Optional[int] = None,
-             opt: Optional[TimeStampFeaturesOption] = None,
-             **kwargs) -> Union[Array, Tuple[Array, Array]]:
+def read_csv(
+        filepath_or_buffer: Union[str, os.PathLike, io.RawIOBase],
+        timestamp: Optional[int] = None,
+        opt: Optional[TimeStampFeaturesOption] = None,
+        **kwargs
+) -> Tuple[Union[Array, Tuple[Array, Array]], Tuple[int,...]]:
     """
     Read CSV
 
@@ -169,10 +171,10 @@ def read_csv(filepath_or_buffer: Union[str, os.PathLike, io.RawIOBase],
 
     Returns
     -------
-    seq : Array
+    data: Array or tuple of Array and Array
         Sequence Data
-    cat : Array, optional
-        Categorial Data from Time Stamp
+    Vs : tuple of ints
+        Sizes of Categorical Features
     """
     if timestamp is not None:
         kwargs = {**kwargs, "index_col": timestamp, "parse_dates": True}
@@ -183,7 +185,7 @@ def read_csv(filepath_or_buffer: Union[str, os.PathLike, io.RawIOBase],
     logger.debug("Sequence Shape: %s", seq.shape)
 
     if timestamp is None:
-        return seq
+        return seq, tuple()
 
     if opt is None:
         opt = inferTimeStampFeaturesOption(seq.index)
@@ -191,6 +193,6 @@ def read_csv(filepath_or_buffer: Union[str, os.PathLike, io.RawIOBase],
     cat = extractTimeStampFeatures(seq.index, opt)
 
     if cat is None:
-        return seq
+        return seq, tuple()
 
-    return seq, cat
+    return (seq, cat), opt.sizes()
