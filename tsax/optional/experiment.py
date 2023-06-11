@@ -12,9 +12,20 @@ import dataclasses
 from datetime import datetime
 from logging import getLogger, FileHandler
 import os
-from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Union
+from typing import (
+    overload,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Tuple,
+    Union,
+)
 import time
 
+from typing_extensions import TypeAlias
 import jax
 import jax.numpy as jnp
 import flax
@@ -159,6 +170,8 @@ class PredictState(PyTreeNode):
             params=params,
             split_fn=model.split_key,
         )
+
+State: TypeAlias = Union[TrainState, PredictState]
 
 
 def train(key: KeyArray,
@@ -319,12 +332,28 @@ def train(key: KeyArray,
     return state, directory
 
 
-def load(state: Union[TrainState, PredictState],
+@overload
+def load(state: TrainState,
          checkpoint_directory: str,
          which: Union[int,
                       Literal["latest"],
                       Literal["best"]] = "latest",
-         best_fn: Optional[Callable[[Any], float]] = None) -> TrainState:
+         best_fn: Optional[Callable[[Any], float]] = None) -> TrainState: ...
+
+@overload
+def load(state: PredictState,
+         checkpoint_directory: str,
+         which: Union[int,
+                      Literal["latest"],
+                      Literal["best"]] = "latest",
+         best_fn: Optional[Callable[[Any], float]] = None) -> PredictState: ...
+
+def load(state: State,
+         checkpoint_directory: str,
+         which: Union[int,
+                      Literal["latest"],
+                      Literal["best"]] = "latest",
+         best_fn: Optional[Callable[[Any], float]] = None) -> State:
     """
     Load Checkpoint
 
