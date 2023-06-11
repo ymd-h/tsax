@@ -148,7 +148,6 @@ class SeqData(Generic[DataT]):
             Len, _ = tree_flatten(Len) # Support nested type
             Len = Len[0]
 
-        logger.debug("data.shape[0]: %d", Len)
         self.idx: Array = jnp.arange(0, Len - self.xLen - self.yLen, self.stride)
 
         self.nbatch: int = self.idx.shape[0] // self.batch_size
