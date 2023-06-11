@@ -139,7 +139,7 @@ def inferTimeStampFeaturesOption(t: pd.DatetimeIndex) -> TimeStampFeaturesOption
     DT = t[-1] - t[0]
     dt = t[1]  - t[0]
 
-    logger.debug("DT: %s, dt: %s", DT, dt)
+    logger.debug("%s <= time delta <= %s", DT, dt)
 
     return TimeStampFeaturesOption(
         month = (dt < pd.to_timedelta("31 day") < DT),
