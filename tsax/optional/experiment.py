@@ -226,8 +226,8 @@ def train(
     os.makedirs(directory, exist_ok=True)
 
     h = FileHandler(os.path.join(directory, "train.log"))
-    h.setFormatter(Formatter("%(asctime)s: %(name)s: %(levelname)s: %(message)s",
-                             '%Y-%m-%d %H:%M:%S.%uuu'))
+    Formatter.default_msec_format = '%s.%03d'
+    h.setFormatter(Formatter("%(asctime)s: %(name)s: %(levelname)s: %(message)s"))
     getLogger("tsax").addHandler(h)
     logger.info("Checkpoint Directory: %s", directory)
 

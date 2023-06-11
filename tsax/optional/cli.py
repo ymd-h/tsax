@@ -127,8 +127,8 @@ class CLIArgs:
 
 def setup_logging(args: CLIArgs) -> None:
     h = StreamHandler()
-    h.setFormatter(Formatter("%(asctime)s: %(name)s: %(levelname)s: %(message)s",
-                             '%Y-%m-%d %H:%M:%S.%uuu'))
+    Formatter.default_msec_format = '%s.%03d'
+    h.setFormatter(Formatter("%(asctime)s: %(name)s: %(levelname)s: %(message)s"))
     if args.debug:
         enable_logging(DEBUG, h)
         logger.info("Enable Debug")
