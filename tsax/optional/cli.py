@@ -179,13 +179,16 @@ def train_cli(args: TrainArgs,
         state = load(state, load_dir, args.load_which)
 
     if args.valid_ratio is not None:
+        logger.info("Split Train / Valid Data")
         data, valid_data = data.train_test_split(args.valid_ratio)
     elif args.valid_data is not None:
+        logger.info("Use Separete Valid Data")
         timestamp = args.valid_data_timestamp
         if timestamp is None:
             timestamp = args.data_timestamp
         valid_data = read_csv(args.valid_data, timestamp)
     else:
+        logger.info("No Valid Data")
         valid_data = None
 
     loss_fn = {
