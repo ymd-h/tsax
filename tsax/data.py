@@ -4,6 +4,7 @@ from typing import Callable, Generic, Tuple
 import jax
 import jax.numpy as jnp
 from jax.tree_util import tree_flatten, tree_map
+import wblog
 
 from tsax.typing import ArrayLike, Array, KeyArray, CarryT, DataT
 
@@ -12,6 +13,9 @@ __all__ = [
     "ensure_SeqShape",
     "ensure_BatchSeqShape",
 ]
+
+
+logger = wblog.getLogger()
 
 
 def ensure_SeqShape(data: DataT) -> DataT:
@@ -133,15 +137,20 @@ class SeqData(Generic[DataT]):
         self.yLen: int = int(yLen)
         self.batch_size: int = int(batch_size)
         self.stride: int = int(stride)
+        logger.info("SeqData(xLen=%d, yLen=%d, batch_size=%d, stride=%d)",
+                    self.xLen, self.yLen, self.batch_size, self.stride)
 
         Len = tree_map(lambda d: d.shape[0], self.data)
         if not isinstance(Len, int):
             # DataT: tuple or list
             Len, _ = tree_flatten(Len) # Support nested type
             Len = Len[0]
+
+        logger.debug("data.shape[0]: %d", Len)
         self.idx: Array = jnp.arange(0, Len - self.xLen - self.yLen, self.stride)
 
         self.nbatch: int = self.idx.shape[0] // self.batch_size
+        logger.debug("nbatch: %d", self.nbatch)
 
         _get = lambda L, b: lambda i: tree_map(
             lambda d: jax.lax.dynamic_slice(d,
