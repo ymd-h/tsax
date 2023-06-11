@@ -186,7 +186,9 @@ def train_cli(args: TrainArgs,
         timestamp = args.valid_data_timestamp
         if timestamp is None:
             timestamp = args.data_timestamp
-        valid_data = read_csv(args.valid_data, timestamp)
+        valid_data, _ = read_csv(args.valid_data, timestamp)
+        valid_data = SeqData(valid_data, xLen=args.I, yLen=args.O,
+                             batch_size=args.batch, stride=args.data_stride)
     else:
         logger.info("No Valid Data")
         valid_data = None
