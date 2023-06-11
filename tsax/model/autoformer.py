@@ -43,6 +43,8 @@ __all__ = [
     "SeriesDecomp",
 ]
 
+_UNUSED: int = -1
+
 K_MOVING_AVG: int = 25
 """
 Default Length of Moving Average
@@ -606,6 +608,7 @@ class Autoformer(Model):
     d: int
     I: int
     O: int
+    dm: int = _UNUSED
     Vs: Tuple[int, ...] = tuple()
     alpha: float = EMBEDDING_ALPHA
     nE: int = NE
