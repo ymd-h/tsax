@@ -22,6 +22,7 @@ import jax.numpy as jnp
 from jax import Array
 from jax.typing import ArrayLike
 from flax import linen as nn
+import wblog
 
 from tsax.core import (
     Model,
@@ -42,6 +43,10 @@ __all__ = [
     "SeasonalLayerNorm",
     "SeriesDecomp",
 ]
+
+
+logger = wblog.getLogger()
+
 
 _UNUSED: int = -1
 
