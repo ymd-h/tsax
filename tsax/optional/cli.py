@@ -242,7 +242,10 @@ def cli(args: Optional[CLIArgs] = None) -> int:
             CLIArgs,
             "python -m tsax",
             description=f"TSax Command Line Interface (v{get_version()})",
-            formatter_class=ArgumentDefaultsHelpFormatter
+
+            # ToDo: Uncomment after fix [1]
+            # [1] https://github.com/mivade/argparse_dataclass/issues/32
+            #formatter_class=ArgumentDefaultsHelpFormatter
         )
         args = parser.parse_args()
 
