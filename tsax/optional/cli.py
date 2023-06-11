@@ -63,6 +63,7 @@ class CLIArgs:
         default=None,
         help="TimeStamp Column at Data (optional)"
     )
+    data_stride: int = arg(default=1, help="Data Stride")
 
     # Model
     model: Literal["informer", "autoformer"] = arg(
@@ -206,6 +207,13 @@ def predict_cli(args: PredictArgs,
     return EXIT_SUCCESS
 
 
+def load_data(args: CLIArgs) -> Tuple[SeqData, Tuple[int, ...]]:
+    raw, Vs = read_csv(args.data, args.data_timestamp)
+    data = SeqData(raw, xLen=args.I, yLen=args.O,
+                   batch_size=args.batch, stride=args.data_stride)
+    return data, Vs
+
+
 def cli(args: Optional[CLIArgs] = None) -> int:
     if args is None:
         parser = ArgumentParser(
@@ -219,7 +227,7 @@ def cli(args: Optional[CLIArgs] = None) -> int:
     setup_logging(args)
     key: KeyArray = initPRNGKey(args.seed)
 
-    data, Vs = read_csv(args.data, args.data_timestamp)
+    data, Vs = load_data(args)
     model = createModel(args, data, Vs)
 
     try:
