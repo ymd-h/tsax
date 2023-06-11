@@ -118,7 +118,7 @@ def extractTimeStampFeatures(t: pd.DatetimeIndex,
         logger.warning("Time Stamp Features are Empty")
         return None
 
-    return jnp.stack(cat)
+    return jnp.stack(cat, axis=1)
 
 
 def inferTimeStampFeaturesOption(t: pd.DatetimeIndex) -> TimeStampFeaturesOption:
@@ -195,4 +195,5 @@ def read_csv(
     if cat is None:
         return seq, tuple()
 
+    logger.debug("Categorical Shape: %s", cat.shape)
     return (seq, cat), opt.sizes()
