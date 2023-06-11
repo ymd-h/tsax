@@ -276,5 +276,5 @@ class SeqData(Generic[DataT]):
         d : int
             Data Dimension
         """
-        D, _ tree_flatten(self.data)
+        D, _ = tree_flatten(self.data)
         return D[0].shape[-1]
