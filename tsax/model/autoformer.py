@@ -798,7 +798,7 @@ class Autoformer(Model):
             Keys can be consumed by Autoformer.
         """
         if train:
-            key, key_a, key_d = jax.random.split(key, 2)
+            key, key_d = jax.random.split(key, 2)
             return key, {"dropout": key_d}
 
         return key, dict()
