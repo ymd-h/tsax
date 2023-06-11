@@ -142,12 +142,12 @@ def inferTimeStampFeaturesOption(t: pd.DatetimeIndex) -> TimeStampFeaturesOption
     logger.debug("DT: %s, dt: %s", DT, dt)
 
     return TimeStampFeaturesOption(
-        month = (dt < pd.to_timedelta("month") < DT),
-        day = (dt < pd.to_timedelta("day") < DT),
+        month = (dt < pd.to_timedelta("31 day") < DT),
+        day = (dt < pd.to_timedelta("1 day") < DT),
         week = (dt < pd.to_timedelta("7 day") < DT),
-        hour = (dt < pd.to_timedelta("hour") < DT),
-        minute = (dt < pd.to_timedelta("minute") < DT),
-        second = (dt < pd.to_timedelta("second") < DT),
+        hour = (dt < pd.to_timedelta("1 hour") < DT),
+        minute = (dt < pd.to_timedelta("1 minute") < DT),
+        second = (dt < pd.to_timedelta("1 second") < DT),
     )
 
 
