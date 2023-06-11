@@ -14,6 +14,8 @@ from logging import INFO, DEBUG, StreamHandler
 import sys
 from typing import Any, Callable, Literal, Optional, Union
 
+import jax
+import optax
 import wblog
 
 from tsax.typing import KeyArray, DataT
