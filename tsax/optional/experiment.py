@@ -174,17 +174,18 @@ class PredictState(PyTreeNode):
 State: TypeAlias = Union[TrainState, PredictState]
 
 
-def train(key: KeyArray,
-          state: TrainState,
-          train_data: SeqData[DataT],
-          epoch: int,
-          loss_fn: Callable[[DataT, DataT], Array],
-          valid_data: Optional[SeqData[DataT]] = None,
-          valid_freq: int = 10,
-          checkpoint_directory: str = "./tsax-ckpt",
-          checkpoint_options: Optional[CheckpointManagerOptions] = None,
-          checkpoint_metadata: Optional[Dict[str, Any]] = None) -> Tuple[TrainState,
-                                                                         str]:
+def train(
+        key: KeyArray,
+        state: TrainState,
+        train_data: SeqData[DataT],
+        epoch: int,
+        loss_fn: Callable[[DataT, DataT], Array],
+        valid_data: Optional[SeqData[DataT]] = None,
+        valid_freq: int = 10,
+        checkpoint_directory: str = "./tsax-ckpt",
+        checkpoint_options: Optional[CheckpointManagerOptions] = None,
+        checkpoint_metadata: Optional[Dict[str, Any]] = None
+) -> Tuple[TrainState, str]:
     """
     Train Model
 
