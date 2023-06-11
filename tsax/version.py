@@ -44,5 +44,5 @@ def get_version_tuple(pkg: str = "tsax") -> Tuple[int, int, int]:
     version : tuple of ints
         Version tuple
     """
-    return tuple(int(v) for v in get_version(pkg))
+    return tuple(int(v) for v in get_version(pkg).split("."))
 
