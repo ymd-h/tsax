@@ -9,12 +9,11 @@ This module requires optional dependancies.
 """
 from __future__ import annotations
 from argparse import ArgumentDefaultsHelpFormatter
-from dataclasses import dataclass, field, fields
+from dataclasses import dataclass
 from logging import INFO, DEBUG, StreamHandler
 import sys
-from typing import get_type_hints, Any, Callable, Literal, Optional, Union
+from typing import Any, Callable, Literal, Optional, Union
 
-import argparse_dataclass as argparse
 import wblog
 
 from tsax.typing import KeyArray, DataT
@@ -36,42 +35,13 @@ from tsax.optional.experiment import (
     load,
     predict,
 )
+from tsax.optional.oam import arg, ArgumentParser
 
 
 EXIT_SUCCESS: int = 0
 EXIT_FAILURE: int = 1
 
 logger = wblog.getLogger()
-
-# https://github.com/mivade/argparse_dataclass/issues/47
-def _patch_fields(cls, *args, **kwargs):
-    t = get_type_hints(cls)
-
-    def _update(_f):
-        _f.type = t[_f.name]
-        return _f
-
-    return tuple(_update(f) for f in fields(cls, *args, **kwargs))
-
-argparse.fields = _patch_fields
-
-def arg(**kwargs):
-    f = {}
-    known_list = [
-        "default",
-        "default_factory",
-        "init",
-        "repr",
-        "hash",
-        "compare",
-        "kw_only"
-    ]
-    for kl in known_list:
-        if kl in kwargs:
-            f[kl] = kwargs.pop(kl)
-    f = {**f, "metadata": kwargs}
-
-    return field(**f)
 
 
 @dataclass
@@ -238,14 +208,11 @@ def predict_cli(args: PredictArgs,
 
 def cli(args: Optional[CLIArgs] = None) -> int:
     if args is None:
-        parser = argparse.ArgumentParser(
+        parser = ArgumentParser(
             CLIArgs,
             "python -m tsax",
             description=f"TSax Command Line Interface (v{get_version()})",
-
-            # ToDo: Uncomment after fix [1]
-            # [1] https://github.com/mivade/argparse_dataclass/issues/32
-            #formatter_class=ArgumentDefaultsHelpFormatter
+            formatter_class=ArgumentDefaultsHelpFormatter
         )
         args = parser.parse_args()
 
