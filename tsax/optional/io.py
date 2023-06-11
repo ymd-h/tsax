@@ -190,7 +190,7 @@ def read_csv(
     if opt is None:
         opt = inferTimeStampFeaturesOption(d.index)
 
-    cat = extractTimeStampFeatures(seq.index, opt)
+    cat = extractTimeStampFeatures(d.index, opt)
 
     if cat is None:
         return seq, tuple()
