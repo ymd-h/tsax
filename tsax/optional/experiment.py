@@ -19,8 +19,9 @@ import jax
 import jax.numpy as jnp
 import flax
 import flax.linen as nn
+import flax.core as fcore
 from flax.training import train_state, orbax_utils
-from flax.struct import field
+from flax.struct import PyTreeNode, field
 import optax
 from orbax.checkpoint import (
     CheckpointManager,
@@ -37,6 +38,7 @@ from tsax.data import SeqData, ensure_BatchSeqShape
 
 __all__ = [
     "TrainState",
+    "PredictState",
     "train",
     "load",
     "predict",
@@ -47,6 +49,9 @@ logger = wblog.getLogger()
 
 
 class TrainState(train_state.TrainState):
+    """
+    TSax Experiment Training State
+    """
     split_fn: Callable[[KeyArray], Dict[str, KeyArray]] = field(pytree_node=False)
 
     @staticmethod
@@ -97,6 +102,61 @@ class TrainState(train_state.TrainState):
             apply_fn=apply_fn,
             params=params,
             tx=tx,
+            split_fn=model.split_key,
+        )
+
+class PredictState(PyTreeNode):
+    """
+    TSax Experiment Predict State
+    """
+    apply_fn: Callable = field(pytree_node=False)
+    params: fcore.FrozenDict[str, Any] = field(pytree_node=True)
+    split_fn: Callable[[KeyArray], Dict[str, KeyArray]] = field(pytree_node=False)
+
+    @staticmethod
+    def create_for(key: KeyArray,
+                   model: Model,
+                   data: Union[SeqData[DataT], DataT]) -> PredictState:
+        """
+        Create TrainState for Model & Data
+
+        Parameters
+        ----------
+        key : KeyArray
+            PRNG Key
+        model : Model
+            TSax model
+        data : SeqData or DataT
+            Input Data
+
+        Returns
+        -------
+        state : PredictState
+            Predict State
+        """
+        model.log_model()
+
+        if isinstance(data, SeqData):
+            x, _ = data.ibatch(0)
+        else:
+            x = data
+
+        logger.info("Create TrainState for Shape: %s", x.shape)
+
+        key_p, key = model.split_key(key, train=False)
+        key["params"] = key_p
+        if isinstance(x, Union[Tuple,List]):
+            params = model.init(key, *x)
+            def apply_fn(variables, _x, *args, **kwargs):
+                return model.apply(variables, *_x, *args, **kwargs)
+        else:
+            params = model.init(key, x)
+            def apply_fn(variables, *args, **kwargs):
+                return model.apply(variables, *args, **kwargs)
+
+        return Predict.create(
+            apply_fn=apply_fn,
+            params=params,
             split_fn=model.split_key,
         )
 
@@ -259,7 +319,7 @@ def train(key: KeyArray,
     return state, directory
 
 
-def load(state: TrainState,
+def load(state: Union[TrainState, PredictState],
          checkpoint_directory: str,
          which: Union[int,
                       Literal["latest"],
@@ -270,7 +330,7 @@ def load(state: TrainState,
 
     Parameters
     ----------
-    state : TrainState
+    state : TrainState or PredictState
         State to be set
     checkpoint_directory : str
         Checkpoint Directory
@@ -322,7 +382,7 @@ def load(state: TrainState,
     return state
 
 def predict(key: KeyArray,
-            state: TrainState,
+            state: Union[TrainState,PredictState],
             data: Union[DataT, SeqData[DataT]]) -> Array:
     """
     Predict with Model
@@ -331,7 +391,7 @@ def predict(key: KeyArray,
     ----------
     key : KeyArray
         PRNG Key
-    state : TrainState
+    state : TrainState or PredictState
         Trained State
     data : DataT
         Predict Data. [L, d]
