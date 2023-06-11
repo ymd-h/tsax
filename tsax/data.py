@@ -233,3 +233,36 @@ class SeqData(Generic[DataT]):
             return fn(self._vxget(i), self._vyget(i))
 
         return f(self._bidx())
+
+    def train_test_split(self,
+                         test_size: Union[int, float]) -> Tuple[SeqData, SeqData]:
+        """
+        Split for Train / Test
+
+        Parameters
+        ----------
+        test_size : int or float
+            If it is ``int``, considered as the number of records.
+            If it is ``float``, considered as ratio.
+
+        Returns
+        -------
+        train : SeqData
+        test : SeqData
+        """
+        if 0 < test_size < 1:
+            Len = tree_map(lambda d: d.shape[0], self.data)
+            if not isinstance(Len, int):
+                # DataT: tuple or list
+                Len, _ = tree_flatten(Len) # Support nested type
+                Len = Len[0]
+            test_size = int(Len * test_size)
+
+        def f(d: DataT) -> SeqData:
+            return SeqData(d, xLen=self.xLen, yLen=self.yLen,
+                           batch_size=self.batch_size, stride=self.stride)
+
+        return (
+            tree_map(lambda d: f(d.at[:-test_size].get()), self.data),
+            tree_map(lambda d: f(d.at[-test_size:].get()), self.data),
+        )
