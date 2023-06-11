@@ -266,3 +266,15 @@ class SeqData(Generic[DataT]):
             tree_map(lambda d: f(d.at[:-test_size].get()), self.data),
             tree_map(lambda d: f(d.at[-test_size:].get()), self.data),
         )
+
+    def dimension(self) -> int:
+        """
+        Get Dimension of Sequence
+
+        Returns
+        -------
+        d : int
+            Data Dimension
+        """
+        D, _ tree_flatten(self.data)
+        return D[0].shape[-1]
