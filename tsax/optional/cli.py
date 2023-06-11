@@ -192,7 +192,7 @@ def train_cli(args: TrainArgs,
         "mae": AE,
     }[args.loss]
 
-    train(key, state, data, epoch, loss_fn, valid_data, args.valid_freq)
+    train(key, state, data, args.epoch, loss_fn, valid_data, args.valid_freq)
     return EXIT_SUCCESS
 
 
