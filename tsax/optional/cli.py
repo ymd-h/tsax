@@ -232,14 +232,10 @@ def cli(args: Optional[CLIArgs] = None) -> int:
     data, Vs = load_data(args)
     model = createModel(args, data, Vs)
 
-    try:
-        logger.info("Action: %s", args.action)
-        if args.action == "train":
-            return train_cli(args, key, data, model)
-        elif args.action == "predict":
-            return predict_cli(args, key, data, model)
-        else:
-            raise ValueError(f"Unkown Action: {args.action}")
-    except Exception as e:
-        logger.critical(e)
-        return EXIT_FAILURE
+    logger.info("Action: %s", args.action)
+    if args.action == "train":
+        return train_cli(args, key, data, model)
+    elif args.action == "predict":
+        return predict_cli(args, key, data, model)
+    else:
+        raise ValueError(f"Unkown Action: {args.action}")
