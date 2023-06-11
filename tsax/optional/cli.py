@@ -179,7 +179,7 @@ def train_cli(args: TrainArgs,
     key, key_use = jax.random.split(key)
     state = TrainState.create_for(key_use, model, data, tx)
     if args.load_dir is not None:
-        state = load(state, load_dir, args.load_which)
+        state = load(state, args.load_dir, args.load_which)
 
     if args.valid_ratio is not None:
         logger.info("Split Train / Valid Data")
@@ -212,7 +212,7 @@ def predict_cli(args: PredictArgs,
     key, key_use = jax.random.split(key)
     state = PredictState.create_for(key_use, model, data)
     if args.load_dir is not None:
-        state = load(state, load_dir, args.load_which)
+        state = load(state, args.load_dir, args.load_which)
 
     pred = predict(key, state, data)
     return EXIT_SUCCESS
