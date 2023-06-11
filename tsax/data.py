@@ -38,6 +38,7 @@ def ensure_SeqShape(data: DataT) -> DataT:
     def f(d):
         if d.ndim == 1:
             d = jnp.reshape(d, (d.shape[0], 1))
+        logger.debug("Ensured Shape: %s", d.shape)
         return d
 
     return tree_map(f, data)
