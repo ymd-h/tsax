@@ -10,7 +10,7 @@ which can be installed by `pip install tsax[experiment]`
 from __future__ import annotations
 import dataclasses
 from datetime import datetime
-from logging import getLogger, FileHandler
+from logging import getLogger, FileHandler, Formatter
 import os
 from typing import (
     overload,
@@ -226,6 +226,8 @@ def train(
     os.makedirs(directory, exist_ok=True)
 
     h = FileHandler(os.path.join(directory, "train.log"))
+    h.setFormatter(Formatter("%(asctime)s: %(name)s: %(levelname)s: %(message)s",
+                             '%Y-%m-%d %H:%M:%S.uuu'))
     getLogger("tsax").addHandler(h)
     logger.info("Checkpoint Directory: %s", directory)
 
