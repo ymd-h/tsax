@@ -32,26 +32,11 @@ logger = wblog.getLogger()
 
 def _patch_fields(cls, *args, **kwargs):
     t = get_type_hints(cls)
-    v = get_version_tuple("argparse_dataclass")
 
     def _ensure_type(_f):
         # Ensure type under `from __future__ import annotations`
         # https://github.com/mivade/argparse_dataclass/issues/47
         _f.type = t[_f.name]
-        return _f
-
-    def _literal_support(_f):
-        # Literal Support has been implemented at main branch,
-        # however, it hasn't been released yet.
-        if v > (1, 0, 0):
-            return _f
-
-        if get_origin(_f.type) is Literal:
-            types = [type(a) for a in get_args(_f.type)]
-
-        _f.metadata["choices"] = get_args(_f.type)
-        _f.type = types[0]
-
         return _f
 
     return tuple(_ensure_type(f) for f in fields(cls, *args, **kwargs))
@@ -86,5 +71,15 @@ class ArgumentParser(argparse_dataclass.ArgumentParser):
             f = next(filter(lambda f: f.name == name, fields(self._options_type)))
             kwargs["default"] = f.default
             logger.debug("Patch default of %s: MISSING -> %s", name, f.default)
+
+        # Literal Support has been implemented at main branch,
+        # however, it hasn't been released yet.
+        v = get_version_tuple("argparse_dataclass")
+        if (v <= (1, 0, 0)) and (get_origin(kwargs.get("type")) is Literal):
+            t = kwargs["type"]
+            types = [type(a) for a in get_args(t)]
+
+            kwargs["choices"] =  get_args(t)
+            kwargs["type"] = types[0]
 
         return super().add_argument(*args, **kwargs)
