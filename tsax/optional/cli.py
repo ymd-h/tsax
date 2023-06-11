@@ -10,7 +10,7 @@ This module requires optional dependancies.
 from __future__ import annotations
 from argparse import ArgumentDefaultsHelpFormatter
 from dataclasses import dataclass
-from logging import INFO, DEBUG, StreamHandler
+from logging import INFO, DEBUG, StreamHandler, Formatter
 import sys
 from typing import Any, Callable, Literal, Optional, Union
 
@@ -126,13 +126,15 @@ class CLIArgs:
 
 
 def setup_logging(args: CLIArgs) -> None:
+    h = StreamHandler()
+    h.setFormatter(Formatter("%(asctime)s: %(name)s: %(levelname)s: %(message)s"))
     if args.debug:
-        enable_logging(DEBUG)
+        enable_logging(DEBUG, h)
         logger.info("Enable Debug")
         return None
 
     if args.verbose:
-        enable_logging(INFO)
+        enable_logging(INFO, h)
         logger.info("Enable Verbose")
         return None
 
