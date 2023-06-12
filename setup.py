@@ -10,10 +10,13 @@ extras_require["cli"] = list(
         extras_require["io"] +
         extras_require["oam"])
 )
+extras_require["all"] = list(
+    set(sum(extras_require.values(), []))
+)
 
 setup(name="tsax",
       description="TSax: Time Series Forecasting",
       version="0.0.0",
-      install_requires = ["jax", "flax", "well-behaved-logging"],
+      install_requires = ["jax", "flax", "typing_extensions", "well-behaved-logging"],
       extras_require=extras_require,
       packages=find_packages())
