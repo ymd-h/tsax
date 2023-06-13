@@ -8,7 +8,7 @@ import jax
 import jax.numpy as jnp
 from flax.struct import PyTreeNode, field
 
-from tsax.typing import ArrayLike
+from tsax.typing import Array, ArrayLike
 
 
 __all__ = [
