@@ -15,14 +15,14 @@ References
 from __future__ import annotations
 import functools
 import math
-from typing import Tuple
+from typing import Dict, Optional, Tuple
 
 import jax
 import jax.numpy as jnp
 from flax import linen as nn
 import wblog
 
-from tsax.typing import Array
+from tsax.typing import Array, KeyArray
 from tsax.core import (
     Model,
     ConvSeq,
