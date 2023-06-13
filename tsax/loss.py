@@ -7,7 +7,7 @@ from __future__ import annotations
 import jax.numpy as jnp
 from jax.tree_util import tree_flatten
 
-from tsax.typing import Array, DataT
+from tsax.typing import Array, ArrayLike, DataT
 
 __all__ = [
     "AE",
