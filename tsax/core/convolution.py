@@ -48,6 +48,8 @@ class ConvSeq(nn.Module):
         seq_conv : Array
             Convoluted Sequence. [B, L, dm]
         """
+        seq = jnp.asarray(seq)
+
         conv = nn.Dense(features=self.dm, use_bias=self.bias)
 
         left: int = self.kernel // 2
@@ -105,6 +107,8 @@ class FeedForward(nn.Module):
         y : Array
             Outputs. [B, L, dm]
         """
+        x = jnp.asarray(x)
+
         B, L, dm = x.shape
 
         activation = {

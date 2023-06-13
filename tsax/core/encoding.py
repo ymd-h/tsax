@@ -123,6 +123,7 @@ class PositionalEncoding:
         PE : Array
             Positional Encoding. [L, dm]
         """
+        x = jnp.asarray(x)
         assert x.shape[1:] == (self.L, self.dm), f"BUG: {x.shape}"
 
         if self.lazy:
@@ -184,6 +185,7 @@ class CategoricalEncoding(nn.Module):
         embedded : Array
             Embedded. [B, L, dm]
         """
+        x = jnp.asarray(x)
         assert x.shape[-1] == len(self.Vs), "BUG"
 
         embedded = jnp.sum(
@@ -245,6 +247,8 @@ class Embedding(nn.Module):
         embedded : Array
             Embedded. [B, L, dm]
         """
+        seq = jnp.asarray(seq)
+        cat = jnp.asarray(cat) if cat is not None else None
         fmt = f"BUG: {seq.shape} vs {cat.shape if cat is not None else None}"
         assert (cat is None) or (seq.shape[0] == cat.shape[0]), fmt
         assert (cat is None) or (seq.shape[1] >= cat.shape[1]), fmt

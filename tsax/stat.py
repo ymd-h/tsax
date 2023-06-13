@@ -32,6 +32,7 @@ class MetricsSummary(PyTreeNode):
         runs : ArrayLike
             Metrics of Multiple Runs. [# of runs, # of steps]
         """
+        runs = jnp.asarray(runs)
         assert runs.shape[0] > 1, "BUG"
 
         N = runs.shape[0]
