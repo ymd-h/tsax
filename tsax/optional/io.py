@@ -193,6 +193,10 @@ def read_csv(
     if timestamp is None:
         return seq, tuple()
 
+    if not isinstance(d.index, pd.DatetimeIndex):
+        logger.warning("Index is not DatetimeIndex")
+        return seq, tuple()
+
     if opt is None:
         opt = inferTimeStampFeaturesOption(d.index)
 
