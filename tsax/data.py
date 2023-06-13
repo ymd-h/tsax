@@ -225,7 +225,7 @@ class SeqData(Generic[DataT]):
 
         return jax.lax.scan(f, init, self._bidx())
 
-    def vmap(self, fn: Callable[[DataT, DataT], Array]) -> DataT:
+    def vmap(self, fn: Callable[[DataT, DataT], Array]) -> Array:
         """
         Call Function over all batches with vmap
 
