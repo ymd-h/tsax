@@ -58,7 +58,7 @@ class ConvSeq(nn.Module):
         seq_pad = jnp.pad(seq, ((0, 0), (left, right), (0, 0)), mode="wrap")
 
         idx = jnp.arange(seq.shape[1])
-        seq_conv = jax.vmap(
+        seq_conv: Array = jax.vmap(
             lambda s: jax.vmap(
                 lambda i: conv(
                     jnp.reshape(
@@ -109,7 +109,7 @@ class FeedForward(nn.Module):
         """
         B, L, dm = x.shape
 
-        activation = {
+        activation: Callable[[Array], Array] = {
             "ReLU": nn.activation.relu,
             "GELU": nn.activation.gelu,
         }[self.activation]

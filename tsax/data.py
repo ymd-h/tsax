@@ -4,7 +4,6 @@ from typing import cast, Callable, Generic, Tuple, Union
 import jax
 import jax.numpy as jnp
 from jax.tree_util import tree_flatten, tree_map
-from typing_extensions import Self
 import wblog
 
 from tsax.typing import ArrayLike, Array, KeyArray, CarryT, DataT

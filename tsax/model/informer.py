@@ -277,7 +277,7 @@ class ProbSparseAttention(nn.Module):
 
         rng = jax.random.split(self.make_rng(self.rng_collection), B)
 
-        S = _each_sample(Q, K, V, rng)
+        S: Array = _each_sample(Q, K, V, rng)
         assert S.shape == (B, m, self.dv), "BUG"
 
         return S
@@ -631,7 +631,7 @@ class Informer(Model):
 
         B = seq.shape[0]
 
-        inputs = self.encoder_embed(seq, cat, with_dropout=with_dropout)
+        inputs: Array = self.encoder_embed(seq, cat, with_dropout=with_dropout)
         assert inputs.shape == (B, self.I, self.dm), "BUG"
 
         inputs = self.encoder(inputs, with_dropout=with_dropout)

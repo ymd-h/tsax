@@ -88,7 +88,7 @@ class MultiHeadAttention(nn.Module):
 
         a = jnp.reshape(a, (B, L, d*self.nH))
 
-        MHA = nn.Dense(features=self.dm, name="WO", use_bias=self.bias)(a) # type: ignore
+        MHA: Array = nn.Dense(features=self.dm, name="WO", use_bias=self.bias)(a) # type: ignore
         assert MHA.shape == (B, L, self.dm), "BUG"
 
         if with_dropout:

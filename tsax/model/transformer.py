@@ -15,7 +15,7 @@ References
    https://arxiv.org/abs/1706.03762
 """
 from __future__ import annotations
-from typing import Optional
+from typing import cast, Optional
 
 import jax
 import jax.numpy as jnp
@@ -117,7 +117,7 @@ class Embedding(nn.Module):
             Embedded features with positional encoding. [B, L, dm]
         """
         # embedded: [B, L, dm]
-        embedded = self.embed(text) * self.scale
+        embedded: Array = self.embed(text) * self.scale
         assert embedded.shape == (text.shape[0], self.L, self.dm), "BUG"
 
         embedded = embedded.at[:,:,:].add(self.pe(embedded))
@@ -141,7 +141,7 @@ class Embedding(nn.Module):
         value : Array
             Attended. [B, L, V]
         """
-        return self.embed.attend(query)
+        return cast(Array, self.embed.attend(query))
 
 
 class FeedForward(nn.Module):
@@ -181,7 +181,7 @@ class FeedForward(nn.Module):
         h = nn.activation.relu(nn.Dense(self.dff)(x))
 
         # y: [B, L, dm]
-        y = nn.Dense(dm)(h)
+        y: Array = nn.Dense(dm)(h)
 
         if with_dropout:
             y = y.at[:].set(nn.Dropout(self.Pdrop, deterministic=False)(y))
@@ -314,7 +314,7 @@ class MultiHeadAttention(nn.Module):
         assert x.shape == (*Q.shape[:2], d * self.nH), "BUG"
 
         # MHA: [B, L, dm]
-        MHA = nn.Dense(features=self.dm, use_bias=False, name="WO")(x) # type: ignore
+        MHA: Array = nn.Dense(features=self.dm, use_bias=False, name="WO")(x) # type: ignore
         assert Q.shape == MHA.shape, "BUG"
 
         if with_dropout:
@@ -740,7 +740,7 @@ class Transformer(nn.Module):
             assert outputs.shape == (B, self.dm), f"BUG: {outputs.shape}"
 
         # p: [B, L, V] / [B, V]
-        p = self.embed.attend(outputs)
+        p: Array = self.embed.attend(outputs)
         assert p.shape == (*outputs.shape[:-1], self.V), "BUG"
 
         p = nn.activation.softmax(p)

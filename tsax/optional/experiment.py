@@ -13,6 +13,7 @@ from datetime import datetime
 from logging import getLogger, FileHandler, Formatter
 import os
 from typing import (
+    cast,
     overload,
     Any,
     Callable,
@@ -434,14 +435,14 @@ def predict(key: KeyArray,
         Predicted
     """
     @jax.jit
-    def pred_fn(k, x):
+    def pred_fn(k, x) -> Array:
         _, k = state.split_fn(k, train=False)
-        return state.apply_fn(state.params, x, train=False, rngs=k)
+        return cast(Array, state.apply_fn(state.params, x, train=False, rngs=k))
 
 
-    if isinstance(data, SeqData[DataT]):
+    if isinstance(data, SeqData):
         idx = jnp.arange(data.nbatch)
-        key = jax.random.split(key, data.nbath)
+        key = jax.random.split(key, data.nbatch)
 
         return jax.vmap(lambda i, k: pred_fn(k, data._vxget(i)))(idx, key)
 
