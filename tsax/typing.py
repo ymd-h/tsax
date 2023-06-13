@@ -9,9 +9,6 @@ from jax import Array
 from jax.typing import ArrayLike
 from jax.random import KeyArray
 
-CarryT = TypeVar("CarryT")
-DataT = TypeVar("DataT",
-                bound=Union[ArrayLike, List[ArrayLike], Tuple[ArrayLike, ...]])
 
 __all__ = [
     "Array",
@@ -20,3 +17,8 @@ __all__ = [
     "CarryT",
     "DataT",
 ]
+
+
+CarryT = TypeVar("CarryT")
+DataT = TypeVar("DataT",
+                bound=Union[ArrayLike, List[ArrayLike], Tuple[ArrayLike, ...]])
