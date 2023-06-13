@@ -21,4 +21,4 @@ __all__ = [
 
 CarryT = TypeVar("CarryT")
 DataT = TypeVar("DataT",
-                bound=Union[ArrayLike, List[ArrayLike], Tuple[ArrayLike, ...]])
+                bound=Union[Array, List[Array], Tuple[Array, ...]])
