@@ -23,6 +23,7 @@ class TestCase(unittest.TestCase):
     def assertAll(self,
                   x: ArrayLike,
                   fn: Optional[Callable[[ArrayLike], Array]] = None):
+        _x: ArrayLike
         if fn is not None:
             _x = fn(x)
         else:
