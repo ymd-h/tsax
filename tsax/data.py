@@ -268,15 +268,15 @@ class SeqData(Generic[DataT]):
                 Len = Len[0]
             test_size = int(Len * test_size)
 
-        test_size = int(test_size)
+        size: int = int(test_size)
 
         def f(d: DataT) -> SeqData[DataT]:
             return SeqData(d, xLen=self.xLen, yLen=self.yLen,
                            batch_size=self.batch_size, stride=self.stride)
 
         return (
-            f(tree_map(lambda d: d.at[:-test_size].get(), self.data)),
-            f(tree_map(lambda d: d.at[-test_size:].get(), self.data)),
+            f(tree_map(lambda d: d.at[:-size].get(), self.data)),
+            f(tree_map(lambda d: d.at[-size:].get(), self.data)),
         )
 
     def dimension(self) -> int:

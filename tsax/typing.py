@@ -17,6 +17,7 @@ __all__ = [
     "CarryT",
     "DataT",
     "SplitFn",
+    "ActivationFn",
 ]
 
 
@@ -29,3 +30,7 @@ class SplitFn(Protocol):
     def __call__(self,
                  key: KeyArray, *,
                  train: bool=False) -> Tuple[KeyArray, Dict[str, KeyArray]]: ...
+
+
+class ActivationFn(Protocol):
+    def __call__(self, x: Array) -> Array: ...

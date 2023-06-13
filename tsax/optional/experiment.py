@@ -123,7 +123,7 @@ class PredictState(PyTreeNode):
     TSax Experiment Predict State
     """
     apply_fn: Callable = field(pytree_node=False)
-    params: fcore.FrozenDict[str, Mapping[str, Any]] = field(pytree_node=True)
+    params: fcore.FrozenDict[str, Any] = field(pytree_node=True)
     split_fn: SplitFn = field(pytree_node=False)
 
     @staticmethod
@@ -169,7 +169,7 @@ class PredictState(PyTreeNode):
 
         return PredictState(
             apply_fn=apply_fn,
-            params=params,
+            params=cast(fcore.FrozenDict[str, Any], params),
             split_fn=model.split_key,
         )
 
@@ -379,7 +379,7 @@ def load(state: State,
         State with loaded Checkpoint
     """
     if best_fn is None:
-        best_fn = lambda metrics: metrics.get("train_loss", 1e+10)
+        best_fn = lambda metrics: cast(float, metrics.get("train_loss", 1e+10))
 
     ckpt = CheckpointManager(checkpoint_directory,
                              Checkpointer(PyTreeCheckpointHandler()),
@@ -445,10 +445,12 @@ def predict(key: KeyArray,
         idx = jnp.arange(data.nbatch)
         key = jax.random.split(key, data.nbatch)
 
-        return jax.vmap(lambda i, k: pred_fn(k, cast(SeqData, data)._vxget(i)))(idx, key)
+        return jax.vmap(
+            lambda i, k: cast(Array, pred_fn(k, cast(SeqData, data)._vxget(i)))
+        )(idx, key)
 
 
     data = ensure_BatchSeqShape(data)
-    pred = pred_fn(key, data)
+    pred = cast(Array, pred_fn(key, data))
 
     return pred
