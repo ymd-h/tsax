@@ -416,7 +416,7 @@ def load(state: State,
     return state
 
 def predict(key: KeyArray,
-            state: Union[TrainState,PredictState],
+            state: Union[TrainState, PredictState],
             data: Union[DataT, SeqData[DataT]]) -> Array:
     """
     Predict with Model
