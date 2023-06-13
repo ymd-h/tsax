@@ -43,7 +43,7 @@ class MetricsSummary(PyTreeNode):
             unbiased_variance=V
         )
 
-    def add(other: MetricsSummary) -> MetricsSummary:
+    def add(self, other: MetricsSummary) -> MetricsSummary:
         """
         Add 2 MetricsSummary and Returns New One
 
