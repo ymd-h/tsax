@@ -166,7 +166,7 @@ class PredictState(PyTreeNode):
             def apply_fn(variables, *args, **kwargs):
                 return model.apply(variables, *args, **kwargs)
 
-        return Predict.create(
+        return PredictState(
             apply_fn=apply_fn,
             params=params,
             split_fn=model.split_key,
