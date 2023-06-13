@@ -34,13 +34,13 @@ class ConvSeq(nn.Module):
     bias: bool = True
 
     @nn.compact
-    def __call__(self, seq: ArrayLike) -> Array:
+    def __call__(self, seq: Array) -> Array:
         """
         Convolute Sequnece
 
         Parameters
         ----------
-        seq : ArrayLike
+        seq : Array
             Sequence. [B, L, d]
 
         Returns
@@ -97,7 +97,7 @@ class FeedForward(nn.Module):
 
         Parameters
         ----------
-        x : ArrayLike
+        x : Array
             Inputs. [B, L, dm]
         with_dropout : bool, optional
             Whether dropout or not
