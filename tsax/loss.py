@@ -3,6 +3,7 @@ TSax Loss (:mod:`tsax.loss`)
 ============================
 """
 from __future__ import annotations
+from typing import cast
 
 import jax.numpy as jnp
 from jax.tree_util import tree_flatten
@@ -17,7 +18,7 @@ __all__ = [
 
 def _extract(true_y: DataT) -> Array:
     t, _ = tree_flatten(true_y)
-    return t[0]
+    return cast(Array, t[0])
 
 
 def AE(pred_y: ArrayLike, true_y: DataT) -> Array:
