@@ -20,4 +20,4 @@ def SubsequentMask(L: int) -> Array:
     mask : Array
         Subsequent Mask. [L, L]
     """
-    return jnp.tril(jnp.ones((L, L), dtype=int))
+    return cast(Array, jnp.tril(jnp.ones((L, L), dtype=int)))

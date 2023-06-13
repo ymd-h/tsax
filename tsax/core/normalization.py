@@ -4,7 +4,7 @@ from typing import Callable
 import jax
 import jax.numpy as jnp
 from jax import Array
-from jax.typing import ArrayLike
+from jax.typing import Array
 import flax.linen as nn
 
 
@@ -19,17 +19,17 @@ class ResidualLayerNorm(nn.Module):
     eps : float
         Small Positive Value for Layer Normalization
     """
-    sublayer: Callable[[ArrayLike], Array]
+    sublayer: Callable[[Array], Array]
     eps: float
 
     @nn.compact
-    def __call__(self, x: ArrayLike) -> Array:
+    def __call__(self, x: Array) -> Array:
         """
         Residual Connection followed by Layer Normalization
 
         Parameters
         ----------
-        x : ArrayLike
+        x : Array
             Input for Residual Connection and Sub Layer
 
         Returns
@@ -37,4 +37,4 @@ class ResidualLayerNorm(nn.Module):
         x : Array
             Layer Normalized
         """
-        return nn.LayerNorm(epsilon=self.eps)(x + self.sublayer(x))
+        return cast(Array, nn.LayerNorm(epsilon=self.eps)(x + self.sublayer(x)))
