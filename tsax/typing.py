@@ -9,7 +9,7 @@ from jax import Array
 from jax.typing import ArrayLike
 from jax.random import KeyArray
 
-CarryT = TypeVar("Carry")
+CarryT = TypeVar("CarryT")
 DataT = TypeVar("DataT",
                 bound=Union[ArrayLike, List[ArrayLike], Tuple[ArrayLike, ...]])
 
