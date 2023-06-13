@@ -730,9 +730,8 @@ class Autoformer(Model):
                      .at[:,S:,:].set(jnp.mean(seq, axis=1, keepdims=True)))
 
         # Only seasonal part is embedded.
-        s_outputs = self.decoder_embed(s_outputs,
-                                       cat.at[:,-S:,:].get(),
-                                       with_dropout=with_dropout)
+        cat_pad = cat.at[:,-S:,:].get() if cat is not None else None
+        s_outputs = self.decoder_embed(s_outputs, cat_pad, with_dropout=with_dropout)
         assert s_outputs.shape == (B, L, self.d)
 
         s_outputs, t_outputs = self.decoder(inputs, s_outputs, t_outputs,
