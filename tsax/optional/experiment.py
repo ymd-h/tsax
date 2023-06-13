@@ -44,7 +44,7 @@ from orbax.checkpoint import (
 from tqdm import tqdm
 import wblog
 
-from tsax.typing import Array, KeyArray, DataT
+from tsax.typing import Array, KeyArray, DataT, SplitFn
 from tsax.core import Model
 from tsax.data import SeqData, ensure_BatchSeqShape, data_shape
 
@@ -123,7 +123,7 @@ class PredictState(PyTreeNode):
     """
     apply_fn: Callable = field(pytree_node=False)
     params: fcore.FrozenDict[str, Any] = field(pytree_node=True)
-    split_fn: Callable[[KeyArray], Dict[str, KeyArray]] = field(pytree_node=False)
+    split_fn: SplitFn = field(pytree_node=False)
 
     @staticmethod
     def create_for(key: KeyArray,
