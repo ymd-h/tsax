@@ -156,7 +156,7 @@ class PredictState(PyTreeNode):
 
         key_p, key = model.split_key(key, train=False)
         key["params"] = key_p
-        if isinstance(x, Union[Tuple[Array], List[Array]]):
+        if isinstance(x, (Tuple[Array], List[Array])):
             params = model.init(key, *x)
             def apply_fn(variables, _x, *args, **kwargs):
                 return model.apply(variables, *_x, *args, **kwargs)
