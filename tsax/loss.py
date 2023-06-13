@@ -36,6 +36,7 @@ def AE(pred_y: ArrayLike, true_y: DataT) -> Array:
     loss : Array
         Sum Absolute Error
     """
+    pred_y = jnp.asarray(pred_y)
     t = _extract(true_y)
     assert pred_y.shape == t.shape, "BUG"
 
@@ -58,6 +59,7 @@ def SE(pred_y: ArrayLike, true_y: DataT) -> Array:
     loss : Array
         Sum Squared Error
     """
+    pred_y = jnp.asarray(pred_y)
     t = _extract(true_y)
     assert pred_y.shape == t.shape, "BUG"
 
