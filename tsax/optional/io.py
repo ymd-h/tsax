@@ -182,7 +182,10 @@ def read_csv(
     kwargs.pop("iterator")
     kwargs.pop("chunksize")
 
-    d = pd.read_csv(filepath_or_buffer, **kwargs, iterator=False, chunksize=None)
+    d: pd.DataFrame = pd.read_csv(filepath_or_buffer, # type: ignore
+                                  **kwargs,
+                                  iterator=False,
+                                  chunksize=None)
 
     seq = jnp.asarray(d, dtype=float)
     logger.debug("Sequence Shape: %s", seq.shape)

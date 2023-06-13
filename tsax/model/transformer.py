@@ -233,11 +233,11 @@ class Attention(nn.Module):
                 (mask.shape == (Q.shape[0], Q.shape[1], Q.shape[1]))), "BUG"
 
         # Q, K: [B, L, dm] -> [B, L, dk]
-        Q = nn.Dense(features=self.dk, use_bias=False, name="WQ")(Q)
-        K = nn.Dense(features=self.dk, use_bias=False, name="WK")(K)
+        Q = nn.Dense(features=self.dk, use_bias=False, name="WQ")(Q) # type: ignore
+        K = nn.Dense(features=self.dk, use_bias=False, name="WK")(K) # type: ignore
 
         # V: [B, L, dm] -> [B, L, dv]
-        V = nn.Dense(features=self.dv, use_bias=False, name="WV")(V)
+        V = nn.Dense(features=self.dv, use_bias=False, name="WV")(V) # type: ignore
 
         # QK^T: [B, L, L]
         QK: Array = jnp.matmul(Q, jnp.transpose(K, (0, 2, 1)))
@@ -308,13 +308,13 @@ class MultiHeadAttention(nn.Module):
 
         # x: [B, L, dm (= dm/nH * nH)]
         d: int = self.dm // self.nH
-        x = jnp.concatenate([Attention(dk=d, dv=d, name=f"head_{i}")(Q, K, V, mask)
+        x = jnp.concatenate([Attention(dk=d, dv=d, name=f"head_{i}")(Q, K, V, mask) # type: ignore
                              for i in range(self.nH)],
                             axis=2)
         assert x.shape == (*Q.shape[:2], d * self.nH), "BUG"
 
         # MHA: [B, L, dm]
-        MHA = nn.Dense(features=self.dm, use_bias=False, name="WO")(x)
+        MHA = nn.Dense(features=self.dm, use_bias=False, name="WO")(x) # type: ignore
         assert Q.shape == MHA.shape, "BUG"
 
         if with_dropout:
@@ -444,9 +444,9 @@ class DecoderLayer(nn.Module):
         assert ((inputs_mask.shape[1] in [1, inputs.shape[1]]) and
                 (outputs_mask.shape[1] in [1, outputs.shape[1]])), "BUG"
 
-        mmha = MultiHeadAttention(nH=self.nH, dm=self.dm, Pdrop=self.Pdrop,
+        mmha = MultiHeadAttention(nH=self.nH, dm=self.dm, Pdrop=self.Pdrop, # type: ignore
                                   name="MaskedMultiHeadAttention")
-        mha  = MultiHeadAttention(nH=self.nH, dm=self.dm, Pdrop=self.Pdrop,
+        mha  = MultiHeadAttention(nH=self.nH, dm=self.dm, Pdrop=self.Pdrop, # type: ignore
                                   name="MultiHeadAttention")
         ff = FeedForward(dff=self.dff, Pdrop=self.Pdrop)
 
@@ -517,7 +517,7 @@ class EncoderStack(nn.Module):
         inputs_mask = jnp.reshape(mask, (mask.shape[0], 1, mask.shape[1]))
 
         for i in range(self.N):
-            inputs = EncoderLayer(nH=self.nH,
+            inputs = EncoderLayer(nH=self.nH, # type: ignore
                                   dm=self.dm,
                                   dff=self.dff,
                                   eps=self.eps,
@@ -601,7 +601,7 @@ class DecoderStack(nn.Module):
 
 
         for i in range(self.N):
-            outputs = DecoderLayer(nH=self.nH,
+            outputs = DecoderLayer(nH=self.nH, # type: ignore
                                    dm=self.dm,
                                    dff=self.dff,
                                    eps=self.eps,
