@@ -145,8 +145,7 @@ class SeqData(Generic[DataT]):
         Len = tree_map(lambda d: d.shape[0], self.data)
         if not isinstance(Len, int):
             # DataT: tuple or list
-            Len, _ = tree_flatten(Len) # Support nested type
-            Len = Len[0]
+            Len = _extract_1st(Len) # Support nested type
 
         self.idx: Array = jnp.arange(0, Len - self.xLen - self.yLen, self.stride)
 
@@ -289,8 +288,7 @@ class SeqData(Generic[DataT]):
         d : int
             Data Dimension
         """
-        D, _ = tree_flatten(self.data)
-        return cast(Array, D[0]).shape[-1]
+        return _extract_1st(self.data).shape[-1]
 
 
 def _extract_1st(data: DataT) -> Array:
