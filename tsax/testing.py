@@ -36,6 +36,7 @@ class TestCase(unittest.TestCase):
     def assertAny(self,
                   x: ArrayLike,
                   fn: Optional[Callable[[ArrayLike], Array]] = None):
+        _x: ArrayLike
         if fn is not None:
             _x = fn(x)
         else:
@@ -46,6 +47,7 @@ class TestCase(unittest.TestCase):
     def assertNone(self,
                    x: ArrayLike,
                    fn: Optional[Callable[[ArrayLike], Array]] = None):
+        _x: ArrayLike
         if fn is not None:
             _x = fn(x)
         else:
