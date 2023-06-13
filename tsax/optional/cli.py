@@ -169,7 +169,7 @@ def createModel(args: CLIArgs, data: SeqData, Vs: Tuple[int, ...]) -> Model:
     return model_class(**kwargs)
 
 
-def train_cli(args: TrainArgs,
+def train_cli(args: CLIArgs,
               key: KeyArray,
               data: SeqData,
               model: Model) -> int:
@@ -205,7 +205,7 @@ def train_cli(args: TrainArgs,
     return EXIT_SUCCESS
 
 
-def predict_cli(args: PredictArgs,
+def predict_cli(args: CLIArgs,
                 key: KeyArray,
                 data: SeqData,
                 model: Model) -> int:
