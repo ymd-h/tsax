@@ -19,11 +19,10 @@ from typing import Tuple
 
 import jax
 import jax.numpy as jnp
-from jax import Array
-from jax.typing import ArrayLike
 from flax import linen as nn
 import wblog
 
+from tsax.typing import Array
 from tsax.core import (
     Model,
     ConvSeq,
@@ -99,13 +98,13 @@ class SeriesDecomp(nn.Module):
     kMA: int = K_MOVING_AVG
 
     @nn.compact
-    def __call__(self, x: ArrayLike) -> Tuple[Array, Array]:
+    def __call__(self, x: Array) -> Tuple[Array, Array]:
         """
         Call Series Decomposition
 
         Parameters
         ----------
-        x : ArrayLike
+        x : Array
             Input Series. [B, L, d]
 
         Returns
@@ -144,13 +143,13 @@ class SeasonalLayerNorm(nn.Module):
     eps: float
 
     @nn.compact
-    def __call__(self, x: ArrayLike) -> Array:
+    def __call__(self, x: Array) -> Array:
         """
         Call Seasonal Layer Normalization
 
         Parameters
         ----------
-        x : ArrayLike
+        x : Array
             Input Sequence. [B, L, d]
 
         Returns
@@ -185,19 +184,19 @@ class AutoCorrelationAttention(nn.Module):
 
     @nn.compact
     def __call__(self,
-                 Q: ArrayLike,
-                 K: ArrayLike,
-                 V: ArrayLike) -> Array:
+                 Q: Array,
+                 K: Array,
+                 V: Array) -> Array:
         """
         Call AutoCorrelation Attention Layer
 
         Paremeters
         ----------
-        Q : ArrayLike
+        Q : Array
             Query. [B, L, dm]
-        K : ArrayLike
+        K : Array
             Key. [B, S, dm]
-        V : ArrayLike
+        V : Array
             Value. [B, S, dm]
 
         Returns
@@ -297,14 +296,14 @@ class EncoderLayer(nn.Module):
 
     @nn.compact
     def __call__(self,
-                 inputs: ArrayLike, *,
+                 inputs: Array, *,
                  with_dropout: bool = False) -> Array:
         """
         Call Encoder Layer
 
         Parameters
         ----------
-        inputs : ArrayLike
+        inputs : Array
             Inputs. [B, L, dm]
         with_dropout : bool, optional
             Whether dropout or not.
@@ -366,20 +365,20 @@ class DecoderLayer(nn.Module):
 
     @nn.compact
     def __call__(self,
-                 inputs: ArrayLike,
-                 seasonal_outputs: ArrayLike,
-                 trend_outputs: ArrayLike, *,
+                 inputs: Array,
+                 seasonal_outputs: Array,
+                 trend_outputs: Array, *,
                  with_dropout: bool = False) -> Tuple[Array, Array]:
         """
         Call Decloder Layer
 
         Parameters
         ----------
-        inputs : ArrayLike
+        inputs : Array
             Encoded Inputs. [B, S, dm]
-        seasonal_outputs : ArrayLike
+        seasonal_outputs : Array
             Seasonal Outputs. [B, L, dm]
-        trend_outputs : ArrayLike
+        trend_outputs : Array
             Trend-Cyclical Outputs. [B, L, dm]
         with_dropout : bool, optional
             Whether dropout or not.
@@ -470,14 +469,14 @@ class EncoderStack(nn.Module):
 
     @nn.compact
     def __call__(self,
-                 inputs: ArrayLike,
+                 inputs: Array,
                  with_dropout: bool = False) -> Array:
         """
         Call Encoder Stack
 
         Parameters
         ----------
-        inputs : ArrayLike
+        inputs : Array
             Inputs. [B, L, dm]
         with_dropout : bool, optional
             Whether dropout or not.
@@ -543,20 +542,20 @@ class DecoderStack(nn.Module):
 
     @nn.compact
     def __call__(self,
-                 inputs: ArrayLike,
-                 seasonal_outputs: ArrayLike,
-                 trend_outputs: ArrayLike, *,
+                 inputs: Array,
+                 seasonal_outputs: Array,
+                 trend_outputs: Array, *,
                  with_dropout: bool = False) -> Tuple[Array, Array]:
         """
         Call Decoder Stack
 
         Parameters
         ----------
-        inputs : ArrayLike
+        inputs : Array
             Encoded Inputs. [B, S, dm]
-        seasonal_outputs : ArrayLike
+        seasonal_outputs : Array
             Seasonal Outputs. [B, L, dm]
-        trend_outputs : ArrayLike
+        trend_outputs : Array
             Trend-Cyclical Outputs. [B, L, dm]
         with_dropout : bool
             Whether dropout or not.
@@ -658,17 +657,17 @@ class Autoformer(Model):
         self.ff = nn.Dense(features=self.d)
 
     def encode(self,
-               seq: ArrayLike,
-               cat: Optional[ArrayLike] = None, *,
+               seq: Array,
+               cat: Optional[Array] = None, *,
                with_dropout: bool = False) -> Array:
         """
         Encode with Autoformer
 
         Parameters
         ----------
-        seq : ArrayLike
+        seq : Array
             Inputs. [B, I, d]
-        cat : ArrayLike, optional
+        cat : Array, optional
             Categorical Features. [B, I, C]
         with_dropout : bool
             Whether dropout or not
@@ -692,18 +691,18 @@ class Autoformer(Model):
         return inputs
 
     def decode(self,
-               inputs: ArrayLike,
-               seq: ArrayLike,
-               cat: Optional[ArrayLike] = None, *,
+               inputs: Array,
+               seq: Array,
+               cat: Optional[Array] = None, *,
                with_dropout: bool = False) -> Array:
         """
         Decode with Autoformer
 
         Parameters
         ----------
-        inputs : ArrayLike
+        inputs : Array
             Encoded Inputs. [B, L, d]
-        seq : ArrayLike
+        seq : Array
             Outputs Signal. [B, L, d]
         cat : AllayLike, optional
             Categorical Features. [B, L, d]
@@ -744,17 +743,17 @@ class Autoformer(Model):
         return pred
 
     def __call__(self,
-                 seq: ArrayLike,
-                 cat: Optional[ArrayLike] = None, *,
+                 seq: Array,
+                 cat: Optional[Array] = None, *,
                  train: bool = False) -> Array:
         """
         Call Autoformer
 
         Parameters
         ----------
-        seq : ArrayLike
+        seq : Array
             Inputs Signal. [B, I, d]
-        cat : ArrayLike, optional
+        cat : Array, optional
             Categorical Features. [B, I, C]
         train : bool, optional
             Whether train or not.

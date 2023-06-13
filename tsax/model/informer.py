@@ -19,12 +19,11 @@ import math
 
 import jax
 import jax.numpy as jnp
-from jax import Array
 from jax.random import KeyArray
-from jax.typing import ArrayLike
 from flax import linen as nn
 import wblog
 
+from tsax.typing import Array
 from tsax.core import (
     Model,
     ConvSeq,
@@ -97,13 +96,13 @@ class Distilling(nn.Module):
     kernel: int = KERNEL_SIZE
 
     @nn.compact
-    def __call__(self, x: ArrayLike) -> Array:
+    def __call__(self, x: Array) -> Array:
         """
         Call Distilling Layer
 
         Parameters
         ----------
-        x : ArrayLike
+        x : Array
             Inputs Sequence. [B, L, d]
 
         Returns
@@ -145,19 +144,19 @@ class Attention(nn.Module):
 
     @nn.compact
     def __call__(self,
-                 Q: ArrayLike,
-                 K: ArrayLike,
-                 V: ArrayLike) -> Array:
+                 Q: Array,
+                 K: Array,
+                 V: Array) -> Array:
         """
         Call Attention Layer
 
         Parameters
         ----------
-        Q : ArrayLike
+        Q : Array
             Query. [B, Lq, dm]
-        K : ArrayLike
+        K : Array
             Key. [B, Lk, dm]
-        V : ArrayLike
+        V : Array
             Value. [B, Lk, dm]
 
         Returns
@@ -199,19 +198,19 @@ class ProbSparseAttention(nn.Module):
 
     @nn.compact
     def __call__(self,
-                 Q: ArrayLike,
-                 K: ArrayLike,
-                 V: ArrayLike) -> Array:
+                 Q: Array,
+                 K: Array,
+                 V: Array) -> Array:
         """
         Call ProbSparse self-attention
 
         Parameters
         ----------
-        Q : ArrayLike
+        Q : Array
             Query. [B, LQ, dm]
-        K : ArrayLike
+        K : Array
             Key. [B, LK, dm]
-        V : ArrayLike
+        V : Array
             Value. [B, LK, dm]
 
         Returns
@@ -298,14 +297,14 @@ class EncoderLayer(nn.Module):
 
     @nn.compact
     def __call__(self,
-                 inputs: ArrayLike, *,
+                 inputs: Array, *,
                  with_dropout: bool = False) -> Array:
         """
         Call Encoder Layer
 
         Parameters
         ----------
-        inputs : ArrayLike
+        inputs : Array
             Inputs. [B, L, dm]
         with_dropout : bool, optional
             Whether dropout or not
@@ -354,17 +353,17 @@ class DecoderLayer(nn.Module):
 
     @nn.compact
     def __call__(self,
-                 inputs: ArrayLike,
-                 outputs: ArrayLike, *,
+                 inputs: Array,
+                 outputs: Array, *,
                  with_dropout: bool = False) -> Array:
         """
         Call Decoder Layer
 
         Parameters
         ----------
-        inputs : ArrayLike
+        inputs : Array
             Inputs. [B, Lenc, dm]
-        outputs : ArrayLike
+        outputs : Array
             Outputs. [B, Ldec, dm]
         with_dropout : bool, optional
             Whether dropout or not
@@ -428,14 +427,14 @@ class EncoderStack(nn.Module):
 
     @nn.compact
     def __call__(self,
-                 inputs: ArrayLike, *,
+                 inputs: Array, *,
                  with_dropout: bool = False) -> Array:
         """
         Call Encoder Stack
 
         Parameters
         ----------
-        inputs : ArrayLike
+        inputs : Array
             Inputs. [B, L, dm]
         with_dropout : bool, optional
             Whether dropout or not.
@@ -480,17 +479,17 @@ class DecoderStack(nn.Module):
 
     @nn.compact
     def __call__(self,
-                 inputs: ArrayLike,
-                 outputs: ArrayLike, *,
+                 inputs: Array,
+                 outputs: Array, *,
                  with_dropout: bool = False) -> Array:
         """
         Call Encoder Stack
 
         Parameters
         ----------
-        inputs : ArrayLike
+        inputs : Array
             Encoded Inputs. [B, Lenc, dm]
-        outputs : ArrayLike
+        outputs : Array
             Outputs. [B, Ldec, dm]
         with_dropout : bool, optional
             Whether dropout or not.
@@ -607,17 +606,17 @@ class Informer(Model):
         self.ff = nn.Dense(features=self.d)
 
     def encode(self,
-               seq: ArrayLike,
-               cat: Optional[ArrayLike] = None, *,
+               seq: Array,
+               cat: Optional[Array] = None, *,
                with_dropout: bool = False) -> Array:
         """
         Encode with Informer
 
         Paremeters
         ----------
-        seq : ArrayLike
+        seq : Array
             Inputs. [B, I, d]
-        cat : ArrayLike, optional
+        cat : Array, optional
             Categorical Features. [B, I, C]
         with_dropout : bool
             Whether dropout or not
@@ -642,18 +641,18 @@ class Informer(Model):
         return inputs
 
     def decode(self,
-               inputs: ArrayLike,
-               seq: ArrayLike,
-               cat: Optional[ArrayLike] = None, *,
+               inputs: Array,
+               seq: Array,
+               cat: Optional[Array] = None, *,
                with_dropout: bool = False) -> Array:
         """
         Decode with Informer
 
         Parameters
         ----------
-        inputs : ArrayLike
+        inputs : Array
             Encoded Inputs. [B, L, dm]
-        seq : ArrayLike
+        seq : Array
             Outputs Signal. [B, L, d]
         cat : AllayLike, optional
             Categorical Features. [B, L, d]
@@ -691,17 +690,17 @@ class Informer(Model):
         return pred
 
     def __call__(self,
-                 seq: ArrayLike,
-                 cat: Optional[ArrayLike] = None, *,
+                 seq: Array,
+                 cat: Optional[Array] = None, *,
                  train: bool = False) -> Array:
         """
         Call Informer
 
         Parameters
         ----------
-        seq : ArrayLike
+        seq : Array
             Inputs Signal. [B, I, d]
-        cat : ArrayLike, optional
+        cat : Array, optional
             Categorical Features. [B, I, C]
         train : bool, optional
             Whether train or not.

@@ -6,7 +6,7 @@ import jax.numpy as jnp
 from flax import linen as nn
 
 from tsax.core import ConvSeq
-from tsax.typing import Array, ArrayLike
+from tsax.typing import Array
 
 
 __all__ = [
@@ -106,13 +106,13 @@ class PositionalEncoding:
                                           Lfreq=self.Lfreq,
                                           dtype=dtype)
 
-    def __call__(self, x: ArrayLike, shift: int = 0) -> Array:
+    def __call__(self, x: Array, shift: int = 0) -> Array:
         """
         Positional Encoding
 
         Parameters
         ----------
-        x : ArrayLike
+        x : Array
             Inputs. [B, L, dm]
         shift : int
             Position Offset Shift.
@@ -123,7 +123,6 @@ class PositionalEncoding:
         PE : Array
             Positional Encoding. [L, dm]
         """
-        x = jnp.asarray(x)
         assert x.shape[1:] == (self.L, self.dm), f"BUG: {x.shape}"
 
         if self.lazy:

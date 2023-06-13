@@ -6,7 +6,7 @@ import jax
 import jax.numpy as jnp
 import flax.linen as nn
 
-from tsax.typing import ArrayLike, Array
+from tsax.typing import Array
 
 __all__ = [
     "ConvSeq",
@@ -91,7 +91,7 @@ class FeedForward(nn.Module):
     bias: bool = True
 
     @nn.compact
-    def __call__(self, x: ArrayLike, *, with_dropout = False) -> Array:
+    def __call__(self, x: Array, *, with_dropout = False) -> Array:
         """
         Call Feed Foward Network
 
@@ -107,8 +107,6 @@ class FeedForward(nn.Module):
         y : Array
             Outputs. [B, L, dm]
         """
-        x = jnp.asarray(x)
-
         B, L, dm = x.shape
 
         activation = {

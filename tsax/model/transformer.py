@@ -19,10 +19,9 @@ from typing import Optional
 
 import jax
 import jax.numpy as jnp
-from jax import Array
-from jax.typing import ArrayLike
 from flax import linen as nn
 
+from tsax.typing import Array
 from tsax.core import ResidualLayerNorm, PositionalEncoding
 
 __all__ = [
@@ -101,13 +100,13 @@ class Embedding(nn.Module):
 
         self.drop = nn.Dropout(self.Pdrop, deterministic=False)
 
-    def __call__(self, text: ArrayLike, *, with_dropout: bool = False) -> Array:
+    def __call__(self, text: Array, *, with_dropout: bool = False) -> Array:
         """
         Call Embedding
 
         Parameters
         ----------
-        text : ArrayLike
+        text : Array
             Input Tokenized Text. [B, L]
         with_dropout : bool
             Whether to use dropout or not.
@@ -128,18 +127,18 @@ class Embedding(nn.Module):
 
         return embedded
 
-    def attend(self, query: ArrayLike) -> Array:
+    def attend(self, query: Array) -> Array:
         """
         De-embed Embedded Features
 
         Parameters
         ----------
-        query : ArrayLike
+        query : Array
             Query. [B, L, dm]
 
         Returns
         -------
-        value : ArrayLike
+        value : Array
             Attended. [B, L, V]
         """
         return self.embed.attend(query)
@@ -160,13 +159,13 @@ class FeedForward(nn.Module):
     Pdrop: float = PDROP
 
     @nn.compact
-    def __call__(self, x: ArrayLike, *, with_dropout: bool = False) -> Array:
+    def __call__(self, x: Array, *, with_dropout: bool = False) -> Array:
         """
         Call Position-wise Feed Forward Network
 
         Parameters
         ----------
-        x : ArrayLike
+        x : Array
             Inputs. [B, L, dm]
         with_dropout : bool, optional
             Whether dropout or not.
@@ -205,22 +204,22 @@ class Attention(nn.Module):
 
     @nn.compact
     def __call__(self,
-                 Q: ArrayLike,
-                 K: ArrayLike,
-                 V: ArrayLike,
-                 mask: Optional[ArrayLike] = None) -> Array:
+                 Q: Array,
+                 K: Array,
+                 V: Array,
+                 mask: Optional[Array] = None) -> Array:
         """
         Call Attention Layer
 
         Parameters
         ----------
-        Q : ArrayLike
+        Q : Array
             Query. [B, L, dm]
-        K : ArrayLike
+        K : Array
             Key. [B, L, dm]
-        V : ArrayLike
+        V : Array
             Value. [B, L, dm]
-        mask : ArrayLike, optional
+        mask : Array, optional
             Mask. [B, 1, L]/[B, L, L]
 
         Returns
@@ -276,23 +275,23 @@ class MultiHeadAttention(nn.Module):
 
     @nn.compact
     def __call__(self,
-                 Q: ArrayLike,
-                 K: ArrayLike,
-                 V: ArrayLike,
-                 mask: Optional[ArrayLike] = None, *,
+                 Q: Array,
+                 K: Array,
+                 V: Array,
+                 mask: Optional[Array] = None, *,
                  with_dropout: bool = False) -> Array:
         """
         Multi Head Attention
 
         Parameters
         ----------
-        Q : ArrayLike
+        Q : Array
             Query. [B, L, dm]
-        K : ArrayLike
+        K : Array
             Key. [B, L, dm]
-        V : ArrayLike
+        V : Array
             Value. [B, L, dm]
-        mask : ArrayLike, optional
+        mask : Array, optional
             Batched Token Mask. [B, 1, L]/[B, L, L]
         with_dropout : bool, optional
             Whether dropout or not.
@@ -349,17 +348,17 @@ class EncoderLayer(nn.Module):
 
     @nn.compact
     def __call__(self,
-                 inputs: ArrayLike,
-                 inputs_mask: ArrayLike, *,
+                 inputs: Array,
+                 inputs_mask: Array, *,
                  with_dropout: bool = False) -> Array:
         """
         Call Encoder Layer
 
         Parameters
         ----------
-        inputs : ArrayLike
+        inputs : Array
             Inputs. [B, L, dm]
-        inputs_mask : ArrayLike
+        inputs_mask : Array
             Padding Mask. [B, 1, L]
         with_dropout : bool, optional
             Whether dropout or not.
@@ -412,23 +411,23 @@ class DecoderLayer(nn.Module):
 
     @nn.compact
     def __call__(self,
-                 inputs: ArrayLike,
-                 inputs_mask: ArrayLike,
-                 outputs: ArrayLike,
-                 outputs_mask: ArrayLike, *,
+                 inputs: Array,
+                 inputs_mask: Array,
+                 outputs: Array,
+                 outputs_mask: Array, *,
                  with_dropout: bool = False) -> Array:
         """
         Call Decoder Layer
 
         Parameters
         ----------
-        inputs : ArrayLike
+        inputs : Array
             Encoded Inputs. [B, L, dm]
-        inputs_mask : ArrayLike
+        inputs_mask : Array
             Padding Mask. [B, 1, L]
-        outputs : ArrayLike
+        outputs : Array
             Outputs. [B, L, dm]
-        outputs_mask : ArrayLike
+        outputs_mask : Array
             Paddding & Subsequent Mask. [B, L, L]
         with_dropout : bool, optional
             Whether dropout or not.
@@ -491,17 +490,17 @@ class EncoderStack(nn.Module):
 
     @nn.compact
     def __call__(self,
-                 inputs: ArrayLike,
-                 mask: ArrayLike, *,
+                 inputs: Array,
+                 mask: Array, *,
                  with_dropout: bool = False) -> Array:
         """
         Call Encoder Stack
 
         Parameters
         ----------
-        inputs : ArrayLike
+        inputs : Array
             Inputs. [B, L, dm]
-        mask : ArrayLike
+        mask : Array
             Batched Token Mask. [B, L]
         with_dropout : bool, optional
             Whether dropout or not.
@@ -559,10 +558,10 @@ class DecoderStack(nn.Module):
 
     @nn.compact
     def __call__(self,
-                 inputs: ArrayLike,
-                 inputs_mask: ArrayLike,
-                 outputs: ArrayLike,
-                 outputs_mask: ArrayLike, *,
+                 inputs: Array,
+                 inputs_mask: Array,
+                 outputs: Array,
+                 outputs_mask: Array, *,
                  with_dropout: bool = False) -> Array:
         """
         Call Decoder Stack
@@ -571,11 +570,11 @@ class DecoderStack(nn.Module):
         ----------
         inputs : ArrrayLike
             Encoded Inputs. [B, L, dm]
-        inputs_mask : ArrayLike
+        inputs_mask : Array
             Batched Token Mask for Inputs. [B, L]
-        outputs : ArrayLike
+        outputs : Array
             Outputs. [B, L, dm]
-        outputs_mask : ArrayLike
+        outputs_mask : Array
             Batched Token Mask for Outputs. [B, L]
         with_dropout : bool, optional
             Whether dropout or not.
@@ -665,7 +664,7 @@ class Transformer(nn.Module):
                                     Pdrop=self.Pdrop)
 
     def encode(self,
-               inputs: ArrayLike,
+               inputs: Array,
                inputs_mask, *,
                with_dropout: bool = False) -> Array:
         """
@@ -673,9 +672,9 @@ class Transformer(nn.Module):
 
         Parameters
         ----------
-        inputs : ArrayLike
+        inputs : Array
             Batched Tokenized Input Text. [B, L]
-        inputs_mask : ArrayLike
+        inputs_mask : Array
             Batched Token Mask for Inputs. [B, L]
         with_dropout : bool, optional
             Whether to use dropout or not.
@@ -694,10 +693,10 @@ class Transformer(nn.Module):
         return inputs
 
     def decode(self,
-               inputs: ArrayLike,
-               inputs_mask: ArrayLike,
-               outputs: ArrayLike,
-               outputs_mask: ArrayLike, *,
+               inputs: Array,
+               inputs_mask: Array,
+               outputs: Array,
+               outputs_mask: Array, *,
                with_dropout: bool = False,
                only_next: bool = False) -> Array:
         """
@@ -705,13 +704,13 @@ class Transformer(nn.Module):
 
         Parameters
         ----------
-        inputs : ArrayLike
+        inputs : Array
             Batched Encoded Input. [B, L]
-        inputs_mask : ArrayLike
+        inputs_mask : Array
             Batched Token Mask for Inputs. [B, L]
-        outputs : ArrayLike
+        outputs : Array
             Batched Tokenized Output Text. [B, L]
-        outputs_mask : ArrayLike
+        outputs_mask : Array
             Batched Token Mask for Outputs. [B, L]
         with_dropout : bool, optional
             Whether dropout or not.
@@ -748,10 +747,10 @@ class Transformer(nn.Module):
         return p
 
     def __call__(self,
-                 inputs: ArrayLike,
-                 inputs_mask: ArrayLike,
-                 outputs: ArrayLike,
-                 outputs_mask: ArrayLike, *,
+                 inputs: Array,
+                 inputs_mask: Array,
+                 outputs: Array,
+                 outputs_mask: Array, *,
                  with_dropout: bool = False,
                  only_next: bool = False) -> Array:
         """
@@ -759,13 +758,13 @@ class Transformer(nn.Module):
 
         Parameters
         ----------
-        inputs : ArrayLike
+        inputs : Array
             Batched Tokenized Input Text. [B, L]
-        inputs_mask : ArrayLike
+        inputs_mask : Array
             Batched Token Mask for Inputs. [B, L]
-        outputs : ArrayLike
+        outputs : Array
             Batched Tokenized Output Text. [B, L]
-        outputs_mask : ArrayLike
+        outputs_mask : Array
             Batched Token Mask for Outputs. [B, L]
         with_dropout : bool, optional
             Whether dropout or not.

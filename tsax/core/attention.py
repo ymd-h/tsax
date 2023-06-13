@@ -8,7 +8,7 @@ import jax.numpy as jnp
 import flax.linen as nn
 
 
-from tsax.typing import ArrayLike, Array
+from tsax.typing import Array
 
 
 class MultiHeadAttention(nn.Module):
@@ -36,9 +36,9 @@ class MultiHeadAttention(nn.Module):
 
     @nn.compact
     def __call__(self,
-                 Q: ArrayLike,
-                 K: ArrayLike,
-                 V: ArrayLike, *,
+                 Q: Array,
+                 K: Array,
+                 V: Array, *,
                  with_dropout: bool = False) -> Array:
         """
         Call Multi Head Attention

@@ -43,7 +43,7 @@ from orbax.checkpoint import (
 from tqdm import tqdm
 import wblog
 
-from tsax.typing import Array, ArrayLike, KeyArray, DataT
+from tsax.typing import Array, KeyArray, DataT
 from tsax.core import Model
 from tsax.data import SeqData, ensure_BatchSeqShape, data_shape
 
@@ -156,7 +156,7 @@ class PredictState(PyTreeNode):
 
         key_p, key = model.split_key(key, train=False)
         key["params"] = key_p
-        if isinstance(x, Union[Tuple,List]):
+        if isinstance(x, Union[Tuple[Array], List[Array]]):
             params = model.init(key, *x)
             def apply_fn(variables, _x, *args, **kwargs):
                 return model.apply(variables, *_x, *args, **kwargs)
@@ -439,7 +439,7 @@ def predict(key: KeyArray,
         return state.apply_fn(state.params, x, train=False, rngs=k)
 
 
-    if isinstance(data, SeqData):
+    if isinstance(data, SeqData[DataT]):
         idx = jnp.arange(data.nbatch)
         key = jax.random.split(key, data.nbath)
 
