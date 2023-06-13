@@ -179,7 +179,10 @@ def read_csv(
     if timestamp is not None:
         kwargs = {**kwargs, "index_col": timestamp, "parse_dates": True}
 
-    d = pd.read_csv(filepath_or_buffer, **kwargs)
+    kwargs.pop("iterator")
+    kwargs.pop("chunksize")
+
+    d = pd.read_csv(filepath_or_buffer, **kwargs, iterator=False, chunksize=None)
 
     seq = jnp.asarray(d, dtype=float)
     logger.debug("Sequence Shape: %s", seq.shape)
