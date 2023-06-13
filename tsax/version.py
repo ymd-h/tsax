@@ -30,7 +30,7 @@ def get_version(pkg: str = "tsax") -> str:
     return version(pkg)
 
 
-def get_version_tuple(pkg: str = "tsax") -> Tuple[int, int, int]:
+def get_version_tuple(pkg: str = "tsax") -> Tuple[int, ...]:
     """
     Get Version as tuple
 
