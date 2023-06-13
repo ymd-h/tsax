@@ -12,7 +12,7 @@ from argparse import ArgumentDefaultsHelpFormatter
 from dataclasses import dataclass
 from logging import INFO, DEBUG, StreamHandler, Formatter
 import sys
-from typing import Any, Callable, Literal, Optional, Tuple, Union
+from typing import Any, Callable, Literal, Optional, Tuple, Type, Union
 
 import jax
 import optax
@@ -157,6 +157,7 @@ def createModel(args: CLIArgs, data: SeqData, Vs: Tuple[int, ...]) -> Model:
         Pdrop=args.Pdrop,
     )
 
+    model_class: Type[Model]
     logger.info("Model: %s", args.model)
     if args.model == "informer":
         model_class = Informer
@@ -181,6 +182,7 @@ def train_cli(args: CLIArgs,
     if args.load_dir is not None:
         state = load(state, args.load_dir, args.load_which)
 
+    valid_data: Optional[SeqData]
     if args.valid_ratio is not None:
         logger.info("Split Train / Valid Data")
         data, valid_data = data.train_test_split(args.valid_ratio)
@@ -189,8 +191,8 @@ def train_cli(args: CLIArgs,
         timestamp = args.valid_data_timestamp
         if timestamp is None:
             timestamp = args.data_timestamp
-        valid_data, _ = read_csv(args.valid_data, timestamp)
-        valid_data = SeqData(valid_data, xLen=args.I, yLen=args.O,
+        v, _ = read_csv(args.valid_data, timestamp)
+        valid_data = SeqData(v, xLen=args.I, yLen=args.O,
                              batch_size=args.batch, stride=args.data_stride)
     else:
         logger.info("No Valid Data")
