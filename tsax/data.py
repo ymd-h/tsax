@@ -1,9 +1,10 @@
 from __future__ import annotations
-from typing import Callable, Generic, Tuple, Union
+from typing import cast, Callable, Generic, Tuple, Union
 
 import jax
 import jax.numpy as jnp
 from jax.tree_util import tree_flatten, tree_map
+from typing_extensions import Self
 import wblog
 
 from tsax.typing import ArrayLike, Array, KeyArray, CarryT, DataT
@@ -42,7 +43,7 @@ def ensure_SeqShape(data: DataT) -> DataT:
         logger.debug("Ensured Shape: %s", d.shape)
         return d
 
-    return tree_map(f, data)
+    return cast(DataT, tree_map(f, data))
 
 
 def ensure_BatchSeqShape(data: DataT) -> DataT:
@@ -71,7 +72,7 @@ def ensure_BatchSeqShape(data: DataT) -> DataT:
 
         return d
 
-    return tree_map(f, data)
+    return cast(DataT, tree_map(f, data))
 
 
 class SeqData(Generic[DataT]):
