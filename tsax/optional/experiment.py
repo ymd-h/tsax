@@ -64,7 +64,7 @@ class TrainState(train_state.TrainState):
     """
     TSax Experiment Training State
     """
-    split_fn: Callable[[KeyArray], Dict[str, KeyArray]] = field(pytree_node=False)
+    split_fn: SplitFn = field(pytree_node=False)
 
     @staticmethod
     def create_for(key: KeyArray,
@@ -101,7 +101,7 @@ class TrainState(train_state.TrainState):
 
         key_p, key = model.split_key(key, train=False)
         key["params"] = key_p
-        if isinstance(x, Union[Tuple,List]):
+        if isinstance(x, (Tuple[Array, ...], List[Array])):
             params = model.init(key, *x)
             def apply_fn(variables, _x, *args, **kwargs):
                 return model.apply(variables, *_x, *args, **kwargs)
@@ -153,11 +153,11 @@ class PredictState(PyTreeNode):
         else:
             x = data
 
-        logger.info("Create TrainState for Shape: %s", x.shape)
+        logger.info("Create TrainState for Shape: %s", data_shape(x))
 
         key_p, key = model.split_key(key, train=False)
         key["params"] = key_p
-        if isinstance(x, (Tuple[Array], List[Array])):
+        if isinstance(x, (Tuple[Array, ...], List[Array])):
             params = model.init(key, *x)
             def apply_fn(variables, _x, *args, **kwargs):
                 return model.apply(variables, *_x, *args, **kwargs)
