@@ -4,6 +4,7 @@ TSax Random (:mod:`tsax.random`)
 """
 from __future__ import annotations
 import os
+from typing import Optional
 
 import jax
 import wblog
