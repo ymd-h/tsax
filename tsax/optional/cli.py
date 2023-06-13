@@ -12,7 +12,7 @@ from argparse import ArgumentDefaultsHelpFormatter
 from dataclasses import dataclass
 from logging import INFO, DEBUG, StreamHandler, Formatter
 import sys
-from typing import Any, Callable, Literal, Optional, Union
+from typing import Any, Callable, Literal, Optional, Tuple, Union
 
 import jax
 import optax
