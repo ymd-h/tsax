@@ -20,6 +20,7 @@ from typing import (
     Dict,
     List,
     Literal,
+    Mapping,
     Optional,
     Tuple,
     Union,
@@ -122,7 +123,7 @@ class PredictState(PyTreeNode):
     TSax Experiment Predict State
     """
     apply_fn: Callable = field(pytree_node=False)
-    params: fcore.FrozenDict[str, Any] = field(pytree_node=True)
+    params: fcore.FrozenDict[str, Mapping[str, Any]] = field(pytree_node=True)
     split_fn: SplitFn = field(pytree_node=False)
 
     @staticmethod
