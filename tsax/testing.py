@@ -16,7 +16,7 @@ class TestCase(unittest.TestCase):
 
     def assertNotAllclose(self, x: ArrayLike, y: ArrayLike, **kwargs):
         self.longMessage = False
-        self.assertEqual(x.shape, y.shape,
+        self.assertEqual(jnp.asarray(x).shape, jnp.asarray(y).shape,
                          msg=f"Array Shape mismatch:\n{x.shape} != {y.shape}")
         self.assertFalse(jnp.allclose(x, y, **kwargs),
                          msg=f"Arrays are all close:\nx: {x}\ny: {y}")
