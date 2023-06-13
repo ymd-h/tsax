@@ -46,6 +46,7 @@ from tqdm import tqdm
 import wblog
 
 from tsax.typing import Array, KeyArray, DataT, SplitFn
+from tsax.typed_jax import jit
 from tsax.core import Model
 from tsax.data import SeqData, ensure_BatchSeqShape, data_shape
 
@@ -435,8 +436,8 @@ def predict(key: KeyArray,
     pred : Array
         Predicted
     """
-    @jax.jit
-    def pred_fn(k, x) -> Array:
+    @jit
+    def pred_fn(k: KeyArray, x: Array) -> Array:
         _, k = state.split_fn(k, train=False)
         return cast(Array, state.apply_fn(state.params, x, train=False, rngs=k))
 
@@ -446,11 +447,11 @@ def predict(key: KeyArray,
         key = jax.random.split(key, data.nbatch)
 
         return jax.vmap(
-            lambda i, k: cast(Array, pred_fn(k, cast(SeqData, data)._vxget(i)))
+            lambda i, k: pred_fn(k, cast(SeqData, data)._vxget(i))
         )(idx, key)
 
 
     data = ensure_BatchSeqShape(data)
-    pred = cast(Array, pred_fn(key, data))
+    pred = pred_fn(key, data)
 
     return pred
