@@ -293,6 +293,11 @@ class SeqData(Generic[DataT]):
         return cast(Array, D[0]).shape[-1]
 
 
+def _extract_1st(data: DataT) -> Array:
+    d, _ = tree_flatten(data)
+    return cast(Array, d[0])
+
+
 def data_shape(data: Union[SeqData[DataT], DataT]) -> Tuple[int, ...]:
     """
     Get Shape
@@ -310,7 +315,4 @@ def data_shape(data: Union[SeqData[DataT], DataT]) -> Tuple[int, ...]:
     if isinstance(data, SeqData):
         data, _ = data.ibatch(0)
 
-    data, _ = tree_flatten(data)
-    data = data[0]
-
-    return data.shape
+    return _extract_1st(data).shape
