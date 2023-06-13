@@ -239,13 +239,14 @@ class SeqData(Generic[DataT]):
             Return Values
         """
         @jax.vmap
-        def f(i):
+        def f(i) -> Array:
             return fn(self._vxget(i), self._vyget(i))
 
         return f(self._bidx())
 
     def train_test_split(self,
-                         test_size: Union[int, float]) -> Tuple[SeqData, SeqData]:
+                         test_size: Union[int, float]) -> Tuple[SeqData[DataT],
+                                                                SeqData[DataT]]:
         """
         Split for Train / Test
 
@@ -268,7 +269,9 @@ class SeqData(Generic[DataT]):
                 Len = Len[0]
             test_size = int(Len * test_size)
 
-        def f(d: DataT) -> SeqData:
+        test_size = int(test_size)
+
+        def f(d: DataT) -> SeqData[DataT]:
             return SeqData(d, xLen=self.xLen, yLen=self.yLen,
                            batch_size=self.batch_size, stride=self.stride)
 
@@ -287,10 +290,10 @@ class SeqData(Generic[DataT]):
             Data Dimension
         """
         D, _ = tree_flatten(self.data)
-        return D[0].shape[-1]
+        return cast(Array, D[0]).shape[-1]
 
 
-def data_shape(data: Union[SeqData, ArrayLike]) -> Tuple[int, ...]:
+def data_shape(data: Union[SeqData[DataT], DataT]) -> Tuple[int, ...]:
     """
     Get Shape
 

@@ -1,11 +1,15 @@
 from __future__ import annotations
-from typing import Callable
+from typing import cast, Callable
 
 import jax
 import jax.numpy as jnp
-from jax import Array
-from jax.typing import Array
 import flax.linen as nn
+
+from tsax.typing import Array
+
+__all__ = [
+    "ResidualLayerNorm",
+]
 
 
 class ResidualLayerNorm(nn.Module):

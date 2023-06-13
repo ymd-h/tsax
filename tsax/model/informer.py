@@ -14,7 +14,7 @@ References
 """
 from __future__ import annotations
 import functools
-from typing import Dict, Optional, Tuple
+from typing import cast, Dict, Optional, Tuple
 import math
 
 import jax
@@ -462,7 +462,7 @@ class EncoderStack(nn.Module):
                                     name=f"DistillingLayer_{i}")(inputs)
                 assert inputs.shape == (B, (L+1)//2, dm), "BUG"
 
-        return nn.LayerNorm(epsilon=self.eps)(inputs)
+        return cast(Array, nn.LayerNorm(epsilon=self.eps)(inputs))
 
 
 class DecoderStack(nn.Module):
@@ -515,7 +515,7 @@ class DecoderStack(nn.Module):
                                    )
             assert outputs.shape == (B, L, dm), "BUG"
 
-        return nn.LayerNorm(epsilon=self.eps)(outputs)
+        return cast(Array, nn.LayerNorm(epsilon=self.eps)(outputs))
 
 
 class Informer(Model):
