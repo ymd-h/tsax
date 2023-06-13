@@ -170,13 +170,13 @@ class CategoricalEncoding(nn.Module):
     dm: int
 
     @nn.compact
-    def __call__(self, x: ArrayLike) -> Array:
+    def __call__(self, x: Array) -> Array:
         """
         Call Categorical Encoding
 
         Parameters
         ----------
-        x : ArrayLike
+        x : Array
             Input Categorical Sequence. [B, L, C]
 
         Returns
@@ -226,17 +226,17 @@ class Embedding(nn.Module):
 
     @nn.compact
     def __call__(self,
-                 seq: ArrayLike,
-                 cat: Optional[ArrayLike] = None, *,
+                 seq: Array,
+                 cat: Optional[Array] = None, *,
                  with_dropout: bool = False) -> Array:
         """
         Call Embedding Layer
 
         Parameters
         ----------
-        seq : ArrayLike
+        seq : Array
             Numerical Sequence. [B, L, d_seq]
-        cat : ArrayLike, optional
+        cat : Array, optional
             Categorical Sequence for Temporal Information. [B, L, d_cat]
         with_dropout : bool
             Whether dropout or not
