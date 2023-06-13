@@ -444,7 +444,7 @@ def predict(key: KeyArray,
         idx = jnp.arange(data.nbatch)
         key = jax.random.split(key, data.nbatch)
 
-        return jax.vmap(lambda i, k: pred_fn(k, data._vxget(i)))(idx, key)
+        return jax.vmap(lambda i, k: pred_fn(k, cast(SeqData, data)._vxget(i)))(idx, key)
 
 
     data = ensure_BatchSeqShape(data)
