@@ -20,4 +20,5 @@ setup(name="tsax",
       version="0.0.0",
       install_requires = ["jax", "flax", "typing_extensions", "well-behaved-logging"],
       extras_require=extras_require,
-      packages=find_packages())
+      packages=find_packages(),
+      package_data={"tsax": ["py.typed"]})
