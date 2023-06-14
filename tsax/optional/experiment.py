@@ -437,7 +437,7 @@ def predict(key: KeyArray,
         Predicted
     """
     @jit
-    def pred_fn(k: KeyArray, x: Array) -> Array:
+    def pred_fn(k: KeyArray, x: DataT) -> Array:
         _, k = state.split_fn(k, train=False)
         return cast(Array, state.apply_fn(state.params, x, train=False, rngs=k))
 
