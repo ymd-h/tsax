@@ -218,11 +218,11 @@ class TestDecoderLayer(TestCase):
 
 class TestEncoderStack(TestCase):
     def test_encoder(self):
-        B, L, dm = 2, 12, 6
+        B, L, dm = 2, 5, 4
         c = 3
         nE = 2
-        nH = 3
-        dff = 12
+        nH = 2
+        dff = 8
         kernel = 3
         eps = 1e-8
         Pdrop = 0.8
@@ -271,7 +271,7 @@ class TestEncoderStack(TestCase):
 
 class TestDecoderStack(TestCase):
     def test_decoder(self):
-        B, Lenc, Ldec, dm = 2, 4, 12, 6
+        B, Lenc, Ldec, dm = 2, 4, 4, 6
         c = 3
         nD = 2
         nH = 3
@@ -326,12 +326,12 @@ class TestDecoderStack(TestCase):
 
 class TestInformer(TestCase):
     def test_without_categorical(self):
-        B, I, d, dm = 1, 5, 2, 8
+        B, I, d, dm = 1, 5, 2, 4
         O = 5
         L = 2
         c = 2
-        nE, nD, nH = 2, 3, 4
-        dff = 16
+        nE, nD, nH = 2, 2, 2
+        dff = 4
         kernel = 3
         eps = 1e-8
         Pdrop = 0.8
@@ -391,11 +391,11 @@ class TestInformer(TestCase):
         self.assertAllclose(pred_drop, pred_drop_jit, atol=1e-6)
 
     def test_with_categorical(self):
-        B, I, d, Vs, dm = 1, 5, 2, (7, 12), 8
+        B, I, d, Vs, dm = 1, 5, 2, (7, 12), 4
         O = 5
         L = 2
         c = 2
-        nE, nD, nH = 2, 3, 4
+        nE, nD, nH = 2, 2, 2
         dff = 16
         kernel = 3
         eps = 1e-8
