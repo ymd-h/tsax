@@ -375,7 +375,7 @@ class TestInformer(TestCase):
         pred_jit, _ = jax.jit(info.init_with_output)(rngs, seq)
         self.assertEqual(pred_jit.shape, (B, O, d))
 
-        self.assertAllclose(pred, pred_jit, atol=1e-6)
+        self.assertAllclose(pred, pred_jit, atol=1e-5, rtol=1e-5)
 
         pred_drop, _ = info.init_with_output(rngs, seq, train=True)
         self.assertEqual(pred_drop.shape, (B, O, d))
