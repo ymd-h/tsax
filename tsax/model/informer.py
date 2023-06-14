@@ -683,7 +683,7 @@ class Informer(Model):
             self.decoder(inputs, outputs, with_dropout=with_dropout)
         )
 
-        outputs = outputs.at[:].set(self.ff(outputs))
+        outputs = self.ff(outputs)
         assert outputs.shape == (B, self.Ltoken+self.O, self.d), "BUG"
 
         pred = outputs.at[:,-self.O:,:].get()
