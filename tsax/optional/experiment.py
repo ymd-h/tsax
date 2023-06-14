@@ -182,7 +182,7 @@ def train(
         state: TrainState,
         train_data: SeqData[DataT],
         epoch: int,
-        loss_fn: Callable[[DataT, DataT], Array],
+        loss_fn: Callable[[Array, DataT], Array],
         valid_data: Optional[SeqData[DataT]] = None,
         valid_freq: int = 10,
         checkpoint_directory: str = "./tsax-ckpt",
