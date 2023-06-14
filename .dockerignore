@@ -1,0 +1,12 @@
+#*
+*#
+~*
+*~
+.git
+build
+dist
+*.egg-info
+*.whl
+*pycache*
+*.pyo
+*.pyc
