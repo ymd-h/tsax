@@ -2,6 +2,8 @@
 Attention (:mod:`tsax.core.attention`)
 """
 from __future__ import annotations
+from functools import partial
+from typing import Union, Type
 
 import jax
 import jax.numpy as jnp
@@ -28,7 +30,7 @@ class MultiHeadAttention(nn.Module):
     bias : bool
         Whether use bias or not
     """
-    attention: nn.Module
+    attention: Union[Type[nn.Module], partial[nn.Module]]
     dm: int
     nH: int
     Pdrop: float
