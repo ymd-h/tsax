@@ -22,6 +22,7 @@ import jax.numpy as jnp
 from flax import linen as nn
 
 from tsax.typing import Array
+from tsax.typed_jax import Dense
 from tsax.core import ResidualLayerNorm, PositionalEncoding
 
 __all__ = [
@@ -233,11 +234,11 @@ class Attention(nn.Module):
                 (mask.shape == (Q.shape[0], Q.shape[1], Q.shape[1]))), "BUG"
 
         # Q, K: [B, L, dm] -> [B, L, dk]
-        Q = nn.Dense(features=self.dk, use_bias=False, name="WQ")(Q) # type: ignore
-        K = nn.Dense(features=self.dk, use_bias=False, name="WK")(K) # type: ignore
+        Q = Dense(features=self.dk, use_bias=False, name="WQ")(Q)
+        K = Dense(features=self.dk, use_bias=False, name="WK")(K)
 
         # V: [B, L, dm] -> [B, L, dv]
-        V = nn.Dense(features=self.dv, use_bias=False, name="WV")(V) # type: ignore
+        V = Dense(features=self.dv, use_bias=False, name="WV")(V)
 
         # QK^T: [B, L, L]
         QK: Array = jnp.matmul(Q, jnp.transpose(K, (0, 2, 1)))
@@ -314,7 +315,7 @@ class MultiHeadAttention(nn.Module):
         assert x.shape == (*Q.shape[:2], d * self.nH), "BUG"
 
         # MHA: [B, L, dm]
-        MHA: Array = nn.Dense(features=self.dm, use_bias=False, name="WO")(x) # type: ignore
+        MHA: Array = Dense(features=self.dm, use_bias=False, name="WO")(x)
         assert Q.shape == MHA.shape, "BUG"
 
         if with_dropout:

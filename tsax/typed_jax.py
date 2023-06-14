@@ -30,6 +30,7 @@ __all__ = [
     "vmap",
     "relu",
     "gelu",
+    "Dense",
 ]
 
 
@@ -84,3 +85,10 @@ def relu(x: Array) -> Array:
 @functools.wraps(nn.activation.gelu)
 def gelu(x: Array, approximate: bool=True) -> Array:
     return cast(Array, nn.activation.gelu(x, approximate=approximate))
+
+
+@functools.wraps(nn.Dense)
+def Dense(features: int,
+          use_bias: bool=True,
+          name: Optional[str]=None) -> Callable[[Array], Array]:
+    return nn.Dense(features=features, use_bias=use_bias, name=name) # type: ignore[call-arg]

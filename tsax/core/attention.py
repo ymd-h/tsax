@@ -11,6 +11,7 @@ import flax.linen as nn
 
 
 from tsax.typing import Array
+from tsax.typed_jax import Dense
 
 
 class MultiHeadAttention(nn.Module):
@@ -90,7 +91,7 @@ class MultiHeadAttention(nn.Module):
 
         a = jnp.reshape(a, (B, L, d*self.nH))
 
-        MHA: Array = nn.Dense(features=self.dm, name="WO", use_bias=self.bias)(a) # type: ignore
+        MHA: Array = Dense(features=self.dm, name="WO", use_bias=self.bias)(a)
         assert MHA.shape == (B, L, self.dm), "BUG"
 
         if with_dropout:
