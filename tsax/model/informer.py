@@ -501,19 +501,28 @@ class DecoderStack(nn.Module):
         """
         B, L, dm = outputs.shape
 
-        for i in range(self.nD):
-            outputs = DecoderLayer(c=self.c, # type: ignore[call-arg]
-                                   dm=self.dm,
-                                   nH=self.nH,
-                                   dff=self.dff,
-                                   eps=self.eps,
-                                   Pdrop=self.Pdrop,
-                                   name=f"DecoderLayer_{i}")(
-                                       inputs,
-                                       outputs,
-                                       with_dropout=with_dropout
-                                   )
-            assert outputs.shape == (B, L, dm), "BUG"
+        D = DecoderLayer(c=self.c,
+                         dm=self.dm,
+                         nH=self.nH,
+                         dff=self.dff,
+                         eps=self.eps,
+                         Pdrop=self.Pdrop)
+
+        def f(dec: DecoderLayer, out: Array, _: None) -> Tuple[Array, None]:
+            out = dec(inputs, out, with_dropout=with_dropout)
+            return out, None
+
+        outputs, _ = nn.scan(
+            f,
+            variable_axes={"params": 0},
+            variable_broadcast=False,
+            variable_carry=False,
+            split_rngs={"params": True,
+                        "dropout": True,
+                        "attention": True},
+            length=self.nD
+        )(D, outputs, None)
+        assert outputs.shape == (B, L, dm), "BUG"
 
         return cast(Array, nn.LayerNorm(epsilon=self.eps)(outputs))
 
