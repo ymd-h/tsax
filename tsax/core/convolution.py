@@ -1,11 +1,12 @@
 from __future__ import annotations
-from typing import cast, Callable, Literal, Union
+from typing import Callable, Literal, Union
 
 import jax
 import jax.numpy as jnp
 import flax.linen as nn
 
-from tsax.typing import Array, ActivationFn
+from tsax.typing import Array
+from tsax.typed_jax import relu, gelu
 
 __all__ = [
     "ConvSeq",
@@ -108,10 +109,10 @@ class FeedForward(nn.Module):
         """
         B, L, dm = x.shape
 
-        activation: ActivationFn = cast(ActivationFn, {
-            "ReLU": nn.activation.relu,
-            "GELU": nn.activation.gelu,
-        }[self.activation])
+        activation = {
+            "ReLU": relu,
+            "GELU": gelu,
+        }[self.activation]
 
         # h: [B, L, dff]
         h = activation(ConvSeq(dm=self.dff, kernel=self.kernel, bias=self.bias)(x))
