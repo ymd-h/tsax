@@ -7,6 +7,7 @@ from jax.tree_util import tree_flatten, tree_map
 import wblog
 
 from tsax.typing import ArrayLike, Array, KeyArray, CarryT, DataT
+from tsax.typed_jax import vmap
 
 __all__ = [
     "SeqData",
@@ -162,8 +163,8 @@ class SeqData(Generic[DataT]):
         self._xget = _get(self.xLen, 0)
         self._yget = _get(self.yLen, self.xLen)
 
-        self._vxget = jax.vmap(self._xget)
-        self._vyget = jax.vmap(self._yget)
+        self._vxget = vmap(self._xget)
+        self._vyget = vmap(self._yget)
 
     def shuffle(self, key: KeyArray) -> None:
         """
