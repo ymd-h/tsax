@@ -182,7 +182,7 @@ def read_csv(
     kwargs.pop("iterator")
     kwargs.pop("chunksize")
 
-    d: pd.DataFrame = pd.read_csv(filepath_or_buffer, # type: ignore
+    d: pd.DataFrame = pd.read_csv(filepath_or_buffer, # type: ignore[call-overload]
                                   **kwargs,
                                   iterator=False,
                                   chunksize=None)

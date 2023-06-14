@@ -491,7 +491,7 @@ class EncoderStack(nn.Module):
         shape = inputs.shape
 
         for i in range(self.nE):
-            inputs = EncoderLayer(c=self.c, # type: ignore
+            inputs = EncoderLayer(c=self.c, # type: ignore[call-arg]
                                   dm=self.dm,
                                   nH=self.nH,
                                   dff=self.dff,
@@ -572,7 +572,7 @@ class DecoderStack(nn.Module):
         assert inputs.shape[2] == seasonal_outputs.shape[2] == self.dm, "BUG"
 
         for i in range(self.nD):
-            seasonal_outputs, trend_outputs = DecoderLayer( # type: ignore
+            seasonal_outputs, trend_outputs = DecoderLayer( # type: ignore[call-arg]
                 c=self.c,
                 dm=self.dm,
                 nH=self.nH,

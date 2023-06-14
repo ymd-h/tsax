@@ -309,9 +309,12 @@ class MultiHeadAttention(nn.Module):
 
         # x: [B, L, dm (= dm/nH * nH)]
         d: int = self.dm // self.nH
-        x = jnp.concatenate([Attention(dk=d, dv=d, name=f"head_{i}")(Q, K, V, mask) # type: ignore
-                             for i in range(self.nH)],
-                            axis=2)
+        x = jnp.concatenate([
+            Attention(dk=d, dv=d, name=f"head_{i}")( # type: ignore[call-arg]
+                Q, K, V, mask
+            )
+            for i in range(self.nH)
+        ], axis=2)
         assert x.shape == (*Q.shape[:2], d * self.nH), "BUG"
 
         # MHA: [B, L, dm]
@@ -445,9 +448,11 @@ class DecoderLayer(nn.Module):
         assert ((inputs_mask.shape[1] in [1, inputs.shape[1]]) and
                 (outputs_mask.shape[1] in [1, outputs.shape[1]])), "BUG"
 
-        mmha = MultiHeadAttention(nH=self.nH, dm=self.dm, Pdrop=self.Pdrop, # type: ignore
+        mmha = MultiHeadAttention(nH=self.nH, # type: ignore[call-arg]
+                                  dm=self.dm, Pdrop=self.Pdrop,
                                   name="MaskedMultiHeadAttention")
-        mha  = MultiHeadAttention(nH=self.nH, dm=self.dm, Pdrop=self.Pdrop, # type: ignore
+        mha  = MultiHeadAttention(nH=self.nH, # type: ignore[call-arg]
+                                  dm=self.dm, Pdrop=self.Pdrop,
                                   name="MultiHeadAttention")
         ff = FeedForward(dff=self.dff, Pdrop=self.Pdrop)
 

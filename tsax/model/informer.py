@@ -446,7 +446,7 @@ class EncoderStack(nn.Module):
         """
         for i in range(self.nE):
             B, L, dm = inputs.shape
-            inputs = EncoderLayer(c=self.c, # type: ignore
+            inputs = EncoderLayer(c=self.c, # type: ignore[call-arg]
                                   dm=self.dm,
                                   nH=self.nH,
                                   dff=self.dff,
@@ -458,7 +458,7 @@ class EncoderStack(nn.Module):
 
             if i < self.nE - 1:
                 # Last Layer doesn't have following Distilling Layer.
-                inputs = Distilling(kernel=self.kernel, # type: ignore
+                inputs = Distilling(kernel=self.kernel, # type: ignore[call-arg]
                                     name=f"DistillingLayer_{i}")(inputs)
                 assert inputs.shape == (B, (L+1)//2, dm), "BUG"
 
@@ -502,7 +502,7 @@ class DecoderStack(nn.Module):
         B, L, dm = outputs.shape
 
         for i in range(self.nD):
-            outputs = DecoderLayer(c=self.c, # type: ignore
+            outputs = DecoderLayer(c=self.c, # type: ignore[call-arg]
                                    dm=self.dm,
                                    nH=self.nH,
                                    dff=self.dff,

@@ -91,4 +91,6 @@ def gelu(x: Array, approximate: bool=True) -> Array:
 def Dense(features: int,
           use_bias: bool=True,
           name: Optional[str]=None) -> Callable[[Array], Array]:
-    return nn.Dense(features=features, use_bias=use_bias, name=name) # type: ignore[call-arg]
+    return nn.Dense(features=features, # type: ignore[call-arg]
+                    use_bias=use_bias,
+                    name=name)
