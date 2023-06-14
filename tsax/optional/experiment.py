@@ -32,7 +32,6 @@ import jax
 import jax.numpy as jnp
 import flax
 import flax.linen as nn
-import flax.core as fcore
 from flax.training import train_state, orbax_utils
 from flax.struct import PyTreeNode, field
 import optax
@@ -45,8 +44,8 @@ from orbax.checkpoint import (
 from tqdm import tqdm
 import wblog
 
-from tsax.typing import Array, KeyArray, DataT, SplitFn
-from tsax.typed_jax import jit
+from tsax.typing import Array, KeyArray, DataT, ModelCall, SplitFn, ModelParam
+from tsax.typed_jax import jit, value_and_grad
 from tsax.core import Model
 from tsax.data import SeqData, ensure_BatchSeqShape, data_shape
 
@@ -66,6 +65,7 @@ class TrainState(train_state.TrainState):
     """
     TSax Experiment Training State
     """
+    apply_fn: ModelCall = field(pytree_node=False)
     split_fn: SplitFn = field(pytree_node=False)
 
     @staticmethod
@@ -112,19 +112,19 @@ class TrainState(train_state.TrainState):
             def apply_fn(variables, _x, *args, **kwargs):
                 return model.apply(variables, _x, *args, **kwargs)
 
-        return TrainState.create(
-            apply_fn=apply_fn,
+        return cast(TrainState, TrainState.create(
+            apply_fn=cast(ModelCall, apply_fn),
             params=params,
             tx=tx,
             split_fn=model.split_key,
-        )
+        ))
 
 class PredictState(PyTreeNode):
     """
     TSax Experiment Predict State
     """
-    apply_fn: Callable = field(pytree_node=False)
-    params: fcore.FrozenDict[str, Any] = field(pytree_node=True)
+    apply_fn: ModelCall = field(pytree_node=False)
+    params: ModelParam = field(pytree_node=True)
     split_fn: SplitFn = field(pytree_node=False)
 
     @staticmethod
@@ -169,8 +169,8 @@ class PredictState(PyTreeNode):
                 return model.apply(variables, _x, *args, **kwargs)
 
         return PredictState(
-            apply_fn=apply_fn,
-            params=cast(fcore.FrozenDict[str, Any], params),
+            apply_fn=cast(ModelCall, apply_fn),
+            params=cast(ModelParam, params),
             split_fn=model.split_key,
         )
 
@@ -260,12 +260,14 @@ def train(
         logger.info("Valid Data: Batch Size: %d, # of Batch: %d",
                     valid_data.batch_size, valid_data.nbatch)
 
-    train_fn = jax.value_and_grad(
-        lambda p, k, x, y: loss_fn(state.apply_fn(p, x, train=True, rngs=k), y)
-    )
-    valid_fn = jax.jit(
-        lambda p, k, x, y: loss_fn(state.apply_fn(p, x, train=False, rngs=k), y)
-    )
+    @value_and_grad
+    def train_fn(p: ModelParam, k: KeyArray, x: DataT, y: Array) -> Array:
+        return loss_fn(state.apply_fn(p, x, train=True, rngs=k), y)
+
+    @jit
+    def valid_fn(p: ModelParam, k: KeyArray, x: DataT, y: Array) -> Array:
+        return loss_fn(state.apply_fn(p, x, train=False, rngs=k), y)
+
 
     # @jax.jit # JIT compile is too slow
     def train_step_fn(s, k, l, x, y):

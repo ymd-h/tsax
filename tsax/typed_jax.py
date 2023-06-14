@@ -26,6 +26,7 @@ from tsax.typing import Array
 
 __all__ = [
     "jit",
+    "value_and_grad",
     "vmap",
     "relu",
     "gelu",
@@ -44,6 +45,22 @@ def jit(f: Callable[P, T], *,
         Callable[P, T],
         jax.jit(f, static_argnums=static_argnums, static_argnames=static_argnames)
     )
+
+
+@functools.wraps(jax.value_and_grad)
+def value_and_grad(f: Callable[P, T], *,
+                   argnums: Union[int, Sequence[int]]=0,
+                   has_aux: bool=False,
+                   holomorphic: bool=False,
+                   allow_int: bool=False,
+                   reduce_axes: Sequence[Hashable]=()) -> Callable[P, Tuple[T, T]]:
+    return cast(
+        Callable[P, Tuple[T, T]],
+        jax.value_and_grad(f,
+                           argnums=argnums, has_aux=has_aux,
+                           holomorphic=holomorphic, reduce_axes=reduce_axes)
+    )
+
 
 @functools.wraps(jax.vmap)
 def vmap(
