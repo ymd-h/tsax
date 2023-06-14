@@ -261,11 +261,11 @@ def train(
                     valid_data.batch_size, valid_data.nbatch)
 
     @value_and_grad
-    def train_fn(p: ModelParam, k: KeyArray, x: DataT, y: Array) -> Array:
+    def train_fn(p: ModelParam, k: KeyArray, x: DataT, y: DataT) -> Array:
         return loss_fn(state.apply_fn(p, x, train=True, rngs=k), y)
 
     @jit
-    def valid_fn(p: ModelParam, k: KeyArray, x: DataT, y: Array) -> Array:
+    def valid_fn(p: ModelParam, k: KeyArray, x: DataT, y: DataT) -> Array:
         return loss_fn(state.apply_fn(p, x, train=False, rngs=k), y)
 
 
