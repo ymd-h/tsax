@@ -490,15 +490,27 @@ class EncoderStack(nn.Module):
 
         shape = inputs.shape
 
-        for i in range(self.nE):
-            inputs = EncoderLayer(c=self.c, # type: ignore[call-arg]
-                                  dm=self.dm,
-                                  nH=self.nH,
-                                  dff=self.dff,
-                                  kMA=self.kMA,
-                                  Pdrop=self.Pdrop,
-                                  name=f"EncoderLayer_{i}")(inputs,
-                                                            with_dropout=with_dropout)
+        E = EncoderLayer(c=self.c,
+                         dm=self.dm,
+                         nH=self.nH,
+                         dff=self.dff,
+                         kMA=self.kMA,
+                         Pdrop=self.Pdrop)
+
+        def f(enc: EncoderLayer, inp: Array, _: None) -> Tuple[Array, None]:
+            inp = enc(inp, with_dropout=with_dropout)
+            return inp, None
+
+        inputs, _ = nn.scan(
+            f,
+            variable_axes={"params": 0},
+            variable_broadcast=False,
+            variable_carry=False,
+            split_rngs={"params": True,
+                        "dropout": True,
+                        "attention": True},
+            length=self.nE
+        )(E, inputs, None)
 
         inputs = inputs.at[:].set(SeasonalLayerNorm(eps=self.eps)(inputs))
 
