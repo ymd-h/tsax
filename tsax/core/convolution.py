@@ -5,7 +5,7 @@ import jax
 import jax.numpy as jnp
 import flax.linen as nn
 
-from tsax.typing import Array
+from tsax.typing import Array, ActivationFn
 from tsax.typed_jax import relu, gelu
 
 __all__ = [
@@ -109,10 +109,13 @@ class FeedForward(nn.Module):
         """
         B, L, dm = x.shape
 
-        activation = {
-            "ReLU": relu,
-            "GELU": gelu,
-        }[self.activation]
+        activation: ActivationFn
+        if self.activation == "ReLU":
+            activation = relu
+        elif self.activation == "GELU":
+            activation = gelu
+        else:
+            raise ValueError("Unknown Activation")
 
         # h: [B, L, dff]
         h = activation(ConvSeq(dm=self.dff, kernel=self.kernel, bias=self.bias)(x))
