@@ -10,8 +10,8 @@ class TestCase(unittest.TestCase):
     def assertAllclose(self, x: ArrayLike, y: ArrayLike, **kwargs):
         self.longMessage = False
         self.assertTrue(jnp.allclose(x, y, **kwargs),
-                        msg=f"Arrays are not all close:\n" +
-                        "x: {x}\ny: {y}\nmax|x-y|: {jnp.max(jnp.abs(x-y))}")
+                        msg="Arrays are not all close:\n" +
+                        f"x: {x}\ny: {y}\nmax|x-y|: {jnp.max(jnp.abs(x-y))}")
         self.longMessage = True
 
     def assertNotAllclose(self, x: ArrayLike, y: ArrayLike, **kwargs):
