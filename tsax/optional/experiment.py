@@ -103,14 +103,14 @@ class TrainState(train_state.TrainState):
 
         key_p, key = model.split_key(key, train=False)
         key["params"] = key_p
-        if isinstance(x, (Tuple[Array, ...], List[Array])):
+        if not isinstance(x, Array):
             params = model.init(key, *x)
             def apply_fn(variables, _x, *args, **kwargs):
                 return model.apply(variables, *_x, *args, **kwargs)
         else:
             params = model.init(key, x)
-            def apply_fn(variables, *args, **kwargs):
-                return model.apply(variables, *args, **kwargs)
+            def apply_fn(variables, _x, *args, **kwargs):
+                return model.apply(variables, _x, *args, **kwargs)
 
         return TrainState.create(
             apply_fn=apply_fn,
@@ -159,14 +159,14 @@ class PredictState(PyTreeNode):
 
         key_p, key = model.split_key(key, train=False)
         key["params"] = key_p
-        if isinstance(x, (Tuple[Array, ...], List[Array])):
+        if not isinstance(x, Array):
             params = model.init(key, *x)
             def apply_fn(variables, _x, *args, **kwargs):
                 return model.apply(variables, *_x, *args, **kwargs)
         else:
             params = model.init(key, x)
-            def apply_fn(variables, *args, **kwargs):
-                return model.apply(variables, *args, **kwargs)
+            def apply_fn(variables, _x, *args, **kwargs):
+                return model.apply(variables, _x, *args, **kwargs)
 
         return PredictState(
             apply_fn=apply_fn,
