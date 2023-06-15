@@ -583,21 +583,30 @@ class DecoderStack(nn.Module):
         assert inputs.shape[0] == seasonal_outputs.shape[0], "BUG"
         assert inputs.shape[2] == seasonal_outputs.shape[2] == self.dm, "BUG"
 
-        for i in range(self.nD):
-            seasonal_outputs, trend_outputs = DecoderLayer( # type: ignore[call-arg]
-                c=self.c,
-                dm=self.dm,
-                nH=self.nH,
-                dff=self.dff,
-                kMA=self.kMA,
-                Pdrop=self.Pdrop,
-                name=f"DecoderLayer_{i}"
-            )(
-                inputs,
-                seasonal_outputs,
-                trend_outputs,
-                with_dropout=with_dropout
-            )
+        D = DecoderLayer(c=self.c,
+                         dm=self.dm,
+                         nH=self.nH,
+                         dff=self.dff,
+                         kMA=self.kMA,
+                         Pdrop=self.Pdrop)
+
+        def f(dec: DecoderLayer,
+              st: Tuple[Array, Array],
+              _: None) -> Tuple[Tuple[Array, Array], None]:
+            s, t = st
+            s, t = dec(inputs, s, t, with_dropout=with_dropout)
+            return (s, t), None
+
+        (seasonal_outputs, trend_outputs), _ = nn.scan(
+            f,
+            variable_axes={"params": 0},
+            variable_broadcast=False,
+            variable_carry=False,
+            split_rngs={"params": True,
+                        "dropout": True,
+                        "attention": True},
+            length=self.nD
+        )(D, (seasonal_outputs, trend_outputs), None)
 
         seasonal_outputs = seasonal_outputs.at[:].set(
             SeasonalLayerNorm(eps=self.eps)(seasonal_outputs)
