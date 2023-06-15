@@ -42,8 +42,6 @@ __all__ = [
     "EncoderLayer",
     "DecoderLayer",
     "Distilling",
-    "MultiHeadAttention",
-    "MultiHeadProbSparseAttention",
     "Attention",
     "ProbSparseAttention",
 ]
