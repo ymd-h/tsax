@@ -38,6 +38,10 @@ def LayerStack(layer: nn.Module,
     f : Callable[[nn.Module, DataT], DataT], optional
         Conversion function when I/O signature of ``layer``
         is different from ``x``
+
+    Notes
+    -----
+    This function is a convenient wrapper of ``flax.linen.scan``.
     """
     if f is None:
        def F(L: nn.Module, carry: C, _: None) -> Tuple[C, None]:
