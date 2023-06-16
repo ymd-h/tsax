@@ -32,6 +32,7 @@ from tsax.core import (
     ResidualLayerNorm,
     SubsequentMask,
     MultiHeadAttention,
+    LayerStack,
 )
 from tsax.core.encoding import EMBEDDING_ALPHA
 
@@ -506,20 +507,10 @@ class DecoderStack(nn.Module):
                          eps=self.eps,
                          Pdrop=self.Pdrop)
 
-        def f(dec: DecoderLayer, out: Array, _: None) -> Tuple[Array, None]:
-            out = dec(inputs, out, with_dropout=with_dropout)
-            return out, None
+        def f(dec: DecoderLayer, out: Array) -> Array:
+            return dec(inputs, out, with_dropout=with_dropout)
 
-        outputs, _ = nn.scan(
-            f,
-            variable_axes={"params": 0},
-            variable_broadcast=False,
-            variable_carry=False,
-            split_rngs={"params": True,
-                        "dropout": True,
-                        "attention": True},
-            length=self.nD
-        )(D, outputs, None)
+        outputs = LayerStack(D, outputs, self.nD, f)
         assert outputs.shape == (B, L, dm), "BUG"
 
         return cast(Array, nn.LayerNorm(epsilon=self.eps)(outputs))
