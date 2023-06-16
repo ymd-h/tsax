@@ -54,7 +54,7 @@ def LayerStack(layer: nn.Module,
         split_rngs={"params": True,
                     "dropout": True,
                     "attention": True},
-        length=self.nD
+        length=n
     )(layer, x, None)
 
     return x
