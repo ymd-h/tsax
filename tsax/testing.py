@@ -8,6 +8,8 @@ from tsax.typing import Array, ArrayLike
 
 class TestCase(unittest.TestCase):
     def assertAllclose(self, x: ArrayLike, y: ArrayLike, **kwargs):
+        x = jnp.asarray(x)
+        y = jnp.asarray(y)
         self.longMessage = False
         self.assertTrue(jnp.allclose(x, y, **kwargs),
                         msg="Arrays are not all close:\n" +
