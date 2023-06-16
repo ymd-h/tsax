@@ -29,6 +29,7 @@ from tsax.core import (
     Embedding,
     FeedForward,
     MultiHeadAttention,
+    LayerStack,
 )
 from tsax.core.encoding import EMBEDDING_ALPHA
 
@@ -497,21 +498,10 @@ class EncoderStack(nn.Module):
                          kMA=self.kMA,
                          Pdrop=self.Pdrop)
 
-        def f(enc: EncoderLayer, inp: Array, _: None) -> Tuple[Array, None]:
-            inp = enc(inp, with_dropout=with_dropout)
-            return inp, None
+        def f(enc: EncoderLayer, ins: Array) -> Array:
+            return enc(ins, with_dropout=with_dropout)
 
-        inputs, _ = nn.scan(
-            f,
-            variable_axes={"params": 0},
-            variable_broadcast=False,
-            variable_carry=False,
-            split_rngs={"params": True,
-                        "dropout": True,
-                        "attention": True},
-            length=self.nE
-        )(E, inputs, None)
-
+        inputs = LayerStack(E, inputs, self.nE, f)
         inputs = inputs.at[:].set(SeasonalLayerNorm(eps=self.eps)(inputs))
 
         assert inputs.shape == shape, "BUG"
@@ -590,23 +580,13 @@ class DecoderStack(nn.Module):
                          kMA=self.kMA,
                          Pdrop=self.Pdrop)
 
-        def f(dec: DecoderLayer,
-              st: Tuple[Array, Array],
-              _: None) -> Tuple[Tuple[Array, Array], None]:
+        def f(dec: DecoderLayer, st: Tuple[Array, Array]) -> Tuple[Array, Array]:
             s, t = st
-            s, t = dec(inputs, s, t, with_dropout=with_dropout)
-            return (s, t), None
+            return dec(inputs, s, t, with_dropout=with_dropout)
 
-        (seasonal_outputs, trend_outputs), _ = nn.scan(
-            f,
-            variable_axes={"params": 0},
-            variable_broadcast=False,
-            variable_carry=False,
-            split_rngs={"params": True,
-                        "dropout": True,
-                        "attention": True},
-            length=self.nD
-        )(D, (seasonal_outputs, trend_outputs), None)
+        seasonal_outputs, trend_outputs = LayerStack(
+            D, (seasonal_outputs, trend_outputs), self.nD, f
+        )
 
         seasonal_outputs = seasonal_outputs.at[:].set(
             SeasonalLayerNorm(eps=self.eps)(seasonal_outputs)
