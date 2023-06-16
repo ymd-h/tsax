@@ -179,8 +179,8 @@ def read_csv(
     if timestamp is not None:
         kwargs = {**kwargs, "index_col": timestamp, "parse_dates": True}
 
-    kwargs.pop("iterator")
-    kwargs.pop("chunksize")
+    kwargs.pop("iterator", None)
+    kwargs.pop("chunksize", None)
 
     d: pd.DataFrame = pd.read_csv(filepath_or_buffer, # type: ignore[call-overload]
                                   **kwargs,
