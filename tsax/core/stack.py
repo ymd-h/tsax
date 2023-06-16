@@ -3,7 +3,7 @@ Layer Stack (:mod:`tsax.core.stack`)
 ====================================
 """
 from __future__ import annotations
-from typing import Callable, TypeVar, Tuple
+from typing import Callable, Optional, TypeVar, Tuple
 
 import jax
 import flax.linen as nn
