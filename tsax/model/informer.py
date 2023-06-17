@@ -161,19 +161,19 @@ class Attention(nn.Module):
         Returns
         -------
         A : Array
-            Attention. [B, Lk, dv]
+            Attention. [B, Lq, dv]
         """
         assert K.shape == V.shape, "BUG"
         assert Q.shape[0] == K.shape[0], "BUG"
         assert Q.shape[2] == K.shape[2], "BUG"
 
-        # QK^T: [B, Lk, Lq]
+        # QK^T: [B, Lq, Lk]
         QK: Array = jnp.matmul(Q, jnp.transpose(K, (0, 2, 1)))
         assert QK.shape == (*Q.shape[:2], K.shape[1]), "BUG"
 
         QK = QK.at[:].multiply(1./math.sqrt(self.dk))
 
-        # A: [B, Lk, dv]
+        # A: [B, Lq, dv]
         A: Array = jnp.matmul(nn.activation.softmax(QK), V)
         assert A.shape == (*Q.shape[:2], self.dv), "BUG"
 
