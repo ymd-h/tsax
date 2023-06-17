@@ -19,6 +19,7 @@ import optax
 
 from tsax.random import initPRNGKey
 from tsax.data import SeqData
+from tsax.loss import SE
 from tsax.optional.experiment import train, predict, load, TrainState
 from tsax.logging import enable_logging
 from tsax import Informer
@@ -121,12 +122,8 @@ def example01(L: int,
     key, key_use = jax.random.split(key, 2)
     state = TrainState.create_for(key_use, informer, train_seq, tx)
 
-    def loss_fn(pred_y, true_y):
-        assert pred_y.shape == true_y.shape, "BUG"
-        return jnp.sum((pred_y - true_y) ** 2)
-
     key, key_use = jax.random.split(key, 2)
-    state, ckpt = train(key_use, state, train_seq, epoch, loss_fn, valid_seq,
+    state, ckpt = train(key_use, state, train_seq, epoch, SE, valid_seq,
                         checkpoint_directory=checkpoint_directory)
 
     state = load(state, ckpt, "best")
