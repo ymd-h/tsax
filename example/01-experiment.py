@@ -1,6 +1,6 @@
 """
-Example 01: Informer
-====================
+Example 01: Experiment
+======================
 
 Require Optional Dependencies (`pip install tsax[experiment]`)
 * optax: https://optax.readthedocs.io/
@@ -11,6 +11,7 @@ Require Additional Dependencies (`pip install matplotlib`)
 """
 import argparse
 from logging import getLogger, INFO, DEBUG
+from typing import Literal
 
 import jax
 import jax.numpy as jnp
@@ -22,7 +23,7 @@ from tsax.data import SeqData
 from tsax.loss import SE
 from tsax.optional.experiment import train, predict, load, TrainState
 from tsax.logging import enable_logging
-from tsax import Informer
+from tsax import Informer, Autoformer
 
 
 logger = getLogger("tsax.example.example01")
@@ -31,6 +32,7 @@ def example01(L: int,
               stride: int,
               xL: int,
               yL: int,
+              model: Literal["informer", "autoformer"],
               c: int,
               nE: int,
               nD: int,
@@ -57,6 +59,8 @@ def example01(L: int,
         Lookback Horizon
     yL : int
         Prediction Horizon
+    model : str
+        Model
     c : int
         Hyperparameter: Sampling Factor
     nE : int
@@ -105,7 +109,7 @@ def example01(L: int,
                marker=".", linestyle=":", label="valid")
         a.legend()
     plt.title("Original Data")
-    plt.savefig("01-informer-data.png")
+    plt.savefig("01-experiment-data.png")
     plt.close()
 
     train_seq = SeqData(seq.at[:train_size].get(),
@@ -113,14 +117,18 @@ def example01(L: int,
     valid_seq = SeqData(seq.at[train_size:].get(),
                         xLen=xL, yLen=yL, batch_size=batch, stride=stride)
 
-    informer = Informer(c=c, d=d, I=xL, O=yL, Ltoken=xL, dm=dm,
-                        nE=nE, nD=nD, nH=nH, dff=dff, Pdrop=Pdrop)
+    if model == "informer":
+        m = Informer(c=c, d=d, I=xL, O=yL, Ltoken=xL, dm=dm,
+                     nE=nE, nD=nD, nH=nH, dff=dff, Pdrop=Pdrop)
+    elif model == "autoformer":
+        m = Autoformer(c=c, d=d, I=xL, O=yL,
+                       nE=nE, nD=nD, nH=nH, dff=dff, Pdrop=Pdrop)
 
     logger.info("Adam(lr=%f)", lr)
     tx = optax.adam(lr)
 
     key, key_use = jax.random.split(key, 2)
-    state = TrainState.create_for(key_use, informer, train_seq, tx)
+    state = TrainState.create_for(key_use, m, train_seq, tx)
 
     key, key_use = jax.random.split(key, 2)
     state, ckpt = train(key_use, state, train_seq, epoch, SE, valid_seq,
@@ -146,9 +154,9 @@ def example01(L: int,
             axes[j][i].legend()
             axes[j][i].set_title(f"{t} / dimension[{i}]")
 
-    plt.savefig("01-informer.png")
+    plt.savefig("01-experiment.png")
     plt.close()
-    logger.info("Draw: 01-informer.png")
+    logger.info("Draw: 01-experiment.png")
 
 
 if __name__ == "__main__":
@@ -159,19 +167,21 @@ if __name__ == "__main__":
     d.add_argument("--L", type=int, default=3000, help="Data Length")
     d.add_argument("--stride", type=int, default=1, help="Stride for Sequence")
 
-    i = p.add_argument_group("Informer")
-    i.add_argument("--xL", type=int, default=20, help="X Length")
-    i.add_argument("--yL", type=int, default=10, help="Y Length")
-    i.add_argument("--c", type=int, default=5, help="Hyperparameter: Sampling Factor")
-    i.add_argument("--nE", type=int, default=3,
+    m = p.add_argument_group("Model")
+    m.add_argument("--model", choices=["informer", "autoformer"],
+                   help="Model", default="autoformer")
+    m.add_argument("--xL", type=int, default=20, help="X Length")
+    m.add_argument("--yL", type=int, default=10, help="Y Length")
+    m.add_argument("--c", type=int, default=5, help="Hyperparameter: Sampling Factor")
+    m.add_argument("--nE", type=int, default=3,
                    help="Number of Layers at Encoder Stack")
-    i.add_argument("--nD", type=int, default=2,
+    m.add_argument("--nD", type=int, default=2,
                    help="Number of Layers at Decoder Stack")
-    i.add_argument("--nH", type=int, default=8, help="Number of Multi Head")
-    i.add_argument("--dm", type=int, default=64, help="Number of Model Dimension")
-    i.add_argument("--dff", type=int, default=64,
+    m.add_argument("--nH", type=int, default=8, help="Number of Multi Head")
+    m.add_argument("--dm", type=int, default=64, help="Number of Model Dimension")
+    m.add_argument("--dff", type=int, default=64,
                    help="Number of Units at Hidden Layer in Feed Forward")
-    i.add_argument("--drop-rate", type=float, default=0.1,
+    m.add_argument("--drop-rate", type=float, default=0.1,
                    help="Rate of Dropout for Training")
 
     e = p.add_argument_group("Experiment")
@@ -187,6 +197,7 @@ if __name__ == "__main__":
               stride=args.stride,
               xL=args.xL,
               yL=args.yL,
+              model=args.model,
               c=args.c,
               nE=args.nE,
               nD=args.nD,
