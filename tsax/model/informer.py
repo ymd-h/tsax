@@ -171,7 +171,7 @@ class Attention(nn.Module):
         QK: Array = jnp.matmul(Q, jnp.transpose(K, (0, 2, 1)))
         assert QK.shape == (*Q.shape[:2], K.shape[1]), "BUG"
 
-        QK = QK.at[:].divide(jnp.sqrt(self.dk))
+        QK = QK.at[:].multiply(1./math.sqrt(self.dk))
 
         # A: [B, Lk, dv]
         A: Array = jnp.matmul(nn.activation.softmax(QK), V)
