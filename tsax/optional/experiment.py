@@ -307,8 +307,10 @@ def train(
             state, key, epoch_loss = train_step_fn(state, key, epoch_loss, x, y)
 
         dt = (time.perf_counter() - t)
-        logger.info("Train: Epoch: %d, Loss: %.6f, Elapssed: %.3f sec",
-                    ep, float(epoch_loss) / train_size, dt)
+        logger.info("Train: Epoch: %d, Loss: %.6f, Loss/Length: %.6f, "
+                    "Elapssed: %.3f sec",
+                    ep, float(epoch_loss) / train_size,
+                    float(epoch_loss)/(train_size * train_data.yLen), dt)
 
         save_args = orbax_utils.save_args_from_target(state.params)
         ckpt.save(ep,
@@ -324,8 +326,9 @@ def train(
                 x, y = valid_data.ibatch(i)
                 key, valid_loss = valid_step_fn(state, key, valid_loss, x, y)
 
-            logger.info("Valid: Epoch: %d, Loss: %.6f",
-                        ep, float(valid_loss) / valid_size)
+            logger.info("Valid: Epoch: %d, Loss: %.6f, Loss/Length: %.6f",
+                        ep, float(valid_loss) / valid_size,
+                        float(valid_loss)/(valid_size * valid_data.yLen))
 
 
     if valid_data is not None:
@@ -336,8 +339,11 @@ def train(
             x, y = valid_data.ibatch(i)
             key, final_loss = valid_step_fn(state, key, final_loss, x, y)
 
-        logger.info("Final Valid: Total Epoch %d, Loss: %.6f, Elapsed: %.3f sec",
-                    epoch, float(final_loss) / valid_size, time.perf_counter() - t0)
+        logger.info("Final Valid: Total Epoch %d, Loss: %.6f, Loss/Length: %.6f, "
+                    "Elapsed: %.3f sec",
+                    epoch, float(final_loss) / valid_size,
+                    float(final_loss)/(valid_size * valid_data.yLen),
+                    time.perf_counter() - t0)
 
     getLogger("tsax").removeHandler(h)
     return state, directory
