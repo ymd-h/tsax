@@ -261,27 +261,30 @@ def train(
                     valid_data.batch_size, valid_data.nbatch)
 
     @value_and_grad
-    def train_fn(p: ModelParam, k: KeyArray, x: DataT, y: DataT) -> Array:
-        return loss_fn(state.apply_fn(p, x, train=True, rngs=k), y)
+    def train_fn(p: ModelParam, s: TrainState, k: KeyArray,
+                 x: DataT, y: DataT) -> Array:
+        return loss_fn(s.apply_fn(p, x, train=True, rngs=k), y)
 
     @jit
-    def valid_fn(p: ModelParam, k: KeyArray, x: DataT, y: DataT) -> Array:
-        return loss_fn(state.apply_fn(p, x, train=False, rngs=k), y)
+    def valid_fn(s: TrainState, k: KeyArray, x: DataT, y: DataT) -> Array:
+        return loss_fn(s.apply_fn(s.params, x, train=False, rngs=k), y)
 
 
-    # @jax.jit # JIT compile is too slow
-    def train_step_fn(s, k, l, x, y):
+    @jit
+    def train_step_fn(s: TrainState, k: KeyArray, l: Array,
+                      x: DataT, y: DataT) -> Tuple[TrainState, KeyArray, Array]:
         k, k_use = s.split_fn(k, train=True)
-        loss, grad = train_fn(s.params, k_use, x, y)
+        loss, grad = train_fn(s.params, s, k_use, x, y)
 
         s = s.apply_gradients(grads=grad)
 
         return s, k, l+loss
 
-    # @jax.jit # JIT compile is too slow.
-    def valid_step_fn(s, k, l, x, y):
+    @jit
+    def valid_step_fn(s: TrainState, k: KeyArray, l: Array,
+                      x: DataT, y: DataT) -> Tuple[KeyArray, Array]:
         k, k_use = s.split_fn(k, train=False)
-        loss = valid_fn(s.params, k_use, x, y)
+        loss = valid_fn(s, k_use, x, y)
 
         return k, l+loss
 
