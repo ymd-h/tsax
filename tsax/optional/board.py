@@ -66,7 +66,7 @@ def train_metrics(args: CLIArgs) -> None:
     st.title("Training Metrics")
 
     d = pathlib.Path(args.directory)
-    chkpt = [g for g in d.glob("*") if g.is_dir()]
+    chkpt = sorted([g for g in d.glob("*") if g.is_dir()], key=lambda g: g.name)
     logger.debug("Load Dir: %s", chkpt)
 
     checkbox = [st.checkbox(c.name) for c in chkpt]
@@ -108,7 +108,7 @@ def visualize_weight(args: CLIArgs) -> None:
     chkpt = [g for g in d.glob("*") if g.is_dir()]
     logger.debug("Load Dir: %s", chkpt)
 
-    radio = st.radio("checkpoint", options=[c.name for c in chkpt])
+    radio = st.radio("checkpoint", options=sorted([c.name for c in chkpt]))
 
     steps, w = load_weight(next(c for c in chkpt if c.name == radio))
 
