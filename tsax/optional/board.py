@@ -8,7 +8,7 @@ This module requires optional dependancies.
 from __future__ import annotations
 from dataclasses import dataclass
 import pathlib
-from typing import Callable, Dict, List
+from typing import Callable, Dict, List, Tuple
 
 import jax
 import jax.numpy as jnp
@@ -74,7 +74,7 @@ def train_metrics(args: CLIArgs) -> None:
     st.button("Draw", on_click=draw_train_metrics, args=(chkpt, checkbox))
 
 
-def flatten(data):
+def flatten(data: List[DataT]) -> Dict[str, Array]:
     leaves = []
     keys = []
     for d in data:
@@ -82,22 +82,22 @@ def flatten(data):
         keys.append([kl[0] for kl in KL])
         leaves.append([kl[1] for kl in KL])
 
-    leaves = zip(*leaves)
+    leaves_zip = zip(*leaves)
     ret = {}
-    for k, l in zip(keys[0], leaves):
+    for k, l in zip(keys[0], leaves_zip):
         ret[''.join(str(_k) for _k in k[1:])] = jnp.stack(l)
 
     return ret
 
 
 @st.cache_data
-def load_weight(path: pathlib.Path) -> DataT:
+def load_weight(path: pathlib.Path) -> Tuple[List[int], Dict[str, Array]]:
     ckpt = CheckpointManager(path,
                              Checkpointer(PyTreeCheckpointHandler()),
                              CheckpointManagerOptions(best_fn=best_fn))
-    steps = ckpt.all_steps()
+    steps: List[int] = ckpt.all_steps()
 
-    params = flatten([ckpt.restore(s)["params"] for s in steps])
+    params: Dict[str, Array] = flatten([ckpt.restore(s)["params"] for s in steps])
 
     return steps, params
 
@@ -114,8 +114,9 @@ def visualize_weight(args: CLIArgs) -> None:
 
     radio_w = st.radio("weight", options=w.keys())
 
-    data = pd.DataFrame(jnp.reshape(w[radio_w], (len(steps), -1)), index=steps)
-    st.line_chart(data)
+    if radio_w is not None:
+        data = pd.DataFrame(jnp.reshape(w[radio_w], (len(steps), -1)), index=steps)
+        st.line_chart(data)
 
 features: Dict[str, Callable[[CLIArgs], None]] = {
     "Training Metrics": train_metrics,
@@ -128,4 +129,5 @@ args = ArgumentParser(
 ).parse_args()
 
 selected = st.sidebar.selectbox("Features", features.keys())
-features[selected](args)
+if selected is not None:
+    features[selected](args)
