@@ -79,11 +79,11 @@ class MultiHeadAttention(nn.Module):
                                 "dropout": True,
                                 "attention": True})
 
-        Q = jnp.reshape(nn.Dense(features=d*self.nH, use_bias=self.bias)(Q),
+        Q = jnp.reshape(Dense(features=d*self.nH, use_bias=self.bias, name="WQ")(Q),
                         (B, L, d, self.nH))
-        K = jnp.reshape(nn.Dense(features=d*self.nH, use_bias=self.bias)(K),
+        K = jnp.reshape(Dense(features=d*self.nH, use_bias=self.bias, name="WK")(K),
                         (B, S, d, self.nH))
-        V = jnp.reshape(nn.Dense(features=d*self.nH, use_bias=self.bias)(V),
+        V = jnp.reshape(Dense(features=d*self.nH, use_bias=self.bias, name="WV")(V),
                         (B, S, d, self.nH))
 
         a = A(dk=d, dv=d)(Q, K, V)
