@@ -11,6 +11,7 @@ from __future__ import annotations
 from argparse import ArgumentDefaultsHelpFormatter
 from dataclasses import dataclass
 from logging import INFO, DEBUG, StreamHandler, Formatter
+import subprocess
 import sys
 from typing import Any, Callable, Literal, Optional, Tuple, Type, Union
 
@@ -52,7 +53,7 @@ class CLIArgs:
     CLI Arguments
     """
     # Generic
-    action: Literal["train", "predict"] = arg(help="CLI Action")
+    action: Literal["train", "predict", "board"] = arg(help="CLI Action")
     seed: Optional[int] = arg(
         default=None,
         help="Seed for PRNG. If None, hardware random is used."
@@ -220,6 +221,18 @@ def predict_cli(args: CLIArgs,
     return EXIT_SUCCESS
 
 
+def board_cli(args: CLIArgs) -> int:
+    ret = subprocess.run([
+        "streamlit",
+        "run",
+        __file__.replace("cli.py", "board.py"),
+        "--",
+        "--directory",
+        args.load_dir or ".",
+    ])
+    return ret.returncode
+
+
 def load_data(args: CLIArgs) -> Tuple[SeqData, Tuple[int, ...]]:
     raw, Vs = read_csv(args.data, args.data_timestamp)
     data = SeqData(raw, xLen=args.I, yLen=args.O,
@@ -238,6 +251,10 @@ def cli(args: Optional[CLIArgs] = None) -> int:
         args = parser.parse_args()
 
     setup_logging(args)
+
+    if args.action == "board":
+        return board_cli(args)
+
     key: KeyArray = initPRNGKey(args.seed)
 
     data, Vs = load_data(args)

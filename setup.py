@@ -5,6 +5,7 @@ extras_require = {
     "io": ["pandas", "pyarrow"],
     "oam": ["argparse_dataclass"],
     "dev": ["coverage", "mypy", "pandas-stubs", "types-tqdm", "unittest-xml-reporting"],
+    "board": ["streamlit"],
 }
 extras_require["cli"] = list(
     set(extras_require["experiment"] +
