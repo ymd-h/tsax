@@ -9,7 +9,7 @@ from jax import Array
 from jax.typing import ArrayLike
 from jax.random import KeyArray
 from flax import core as fcore
-from typing_extensions import Protocol, TypeAlias
+from typing_extensions import Never, Protocol, TypeAlias
 
 __all__ = [
     "Array",
@@ -21,6 +21,7 @@ __all__ = [
     "SplitFn",
     "ActivationFn",
     "ModelParam",
+    "CallNever",
 ]
 
 
@@ -46,3 +47,7 @@ class SplitFn(Protocol):
 
 class ActivationFn(Protocol):
     def __call__(self, x: Array) -> Array: ...
+
+
+def CallNever(_: Never) -> Never:
+    raise AssertionError("BUG")

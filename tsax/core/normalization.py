@@ -1,11 +1,11 @@
 from __future__ import annotations
-from typing import cast, Callable
+from typing import cast, Callable, Literal
 
 import jax
 import jax.numpy as jnp
 import flax.linen as nn
 
-from tsax.typing import Array
+from tsax.typing import Array, CallNever
 
 __all__ = [
     "ResidualLayerNorm",
@@ -25,6 +25,7 @@ class ResidualLayerNorm(nn.Module):
     """
     sublayer: Callable[[Array], Array]
     eps: float
+    position: Literal["post", "pre"] = "post"
 
     @nn.compact
     def __call__(self, x: Array) -> Array:
@@ -41,4 +42,10 @@ class ResidualLayerNorm(nn.Module):
         x : Array
             Layer Normalized
         """
-        return cast(Array, nn.LayerNorm(epsilon=self.eps)(x + self.sublayer(x)))
+        LN = nn.LayerNorm(epsilon=self.eps)
+        if self.position == "post":
+            return cast(Array, LN(x + self.sublayer(x)))
+        elif self.position == "pre":
+            return x + self.sublayer(cast(Array, LN(x)))
+        else:
+            CallNever(self.position)
