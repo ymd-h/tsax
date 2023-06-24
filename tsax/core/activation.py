@@ -3,6 +3,7 @@ Activation (:mod:`tsax.core.activation`)
 ========================================
 """
 from __future__ import annotations
+from typing import cast
 
 import jax
 import jax.numpy as jnp
@@ -26,7 +27,7 @@ def Softmax(x: ArrayLike) -> Array:
     x : Array
         Activated Value
     """
-    return nn.activation.softmax(x)
+    return cast(Array, nn.activation.softmax(x))
 
 
 def Sin2MaxShifted(x: ArrayLike) -> Array:
@@ -61,4 +62,5 @@ def SinSoftmax(x: ArrayLike) -> Array:
     x : Array
         Activated Value
     """
-    return nn.activation.softmax(jnp.where(x != -jnp.inf, jnp.sin(x), -jnp.inf))
+    return cast(Array,
+                nn.activation.softmax(jnp.where(x != -jnp.inf, jnp.sin(x), -jnp.inf)))
