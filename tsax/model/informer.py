@@ -23,7 +23,7 @@ from jax.random import KeyArray
 from flax import linen as nn
 import wblog
 
-from tsax.typing import Array
+from tsax.typing import Array, SoftmaxLike
 from tsax.core import (
     Model,
     ConvSeq,
@@ -33,6 +33,7 @@ from tsax.core import (
     SubsequentMask,
     MultiHeadAttention,
     LayerStack,
+    Softmax,
 )
 from tsax.core.encoding import EMBEDDING_ALPHA
 
@@ -140,6 +141,7 @@ class Attention(nn.Module):
     """
     dk: int
     dv: int
+    softmax: SoftmaxLike = Softmax
 
     @nn.compact
     def __call__(self,
@@ -174,7 +176,7 @@ class Attention(nn.Module):
         QK = QK.at[:].multiply(1./math.sqrt(self.dk))
 
         # A: [B, Lq, dv]
-        A: Array = jnp.matmul(nn.activation.softmax(QK), V)
+        A: Array = jnp.matmul(self.softmax(QK), V)
         assert A.shape == (*Q.shape[:2], self.dv), "BUG"
 
         return A
@@ -194,6 +196,7 @@ class ProbSparseAttention(nn.Module):
     dv: int
     mask: bool = False
     rng_collection: str = "attention"
+    softmax: SoftmaxLike = Softmax
 
     @nn.compact
     def __call__(self,
@@ -262,7 +265,7 @@ class ProbSparseAttention(nn.Module):
                     jnp.where(mask.at[_I,:].get()==1, _QbarK, -jnp.inf)
                 )
 
-            _S1 = jnp.matmul(nn.activation.softmax(_QbarK / math.sqrt(d)), _V)
+            _S1 = jnp.matmul(self.softmax(_QbarK / math.sqrt(d)), _V)
             assert _S1.shape == (u, self.dv), "BUG"
 
             _S = jnp.zeros((m, self.dv), dtype=Q.dtype)

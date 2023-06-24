@@ -22,10 +22,11 @@ import jax.numpy as jnp
 from flax import linen as nn
 import wblog
 
-from tsax.typing import Array, KeyArray
+from tsax.typing import Array, KeyArray, SoftmaxLike
 from tsax.core import (
     Model,
     ConvSeq,
+    Softmax,
     Embedding,
     FeedForward,
     MultiHeadAttention,
@@ -182,6 +183,7 @@ class AutoCorrelationAttention(nn.Module):
     dk: int
     dv: int
     c: int
+    softmax: SoftmaxLike = Softmax
 
     @nn.compact
     def __call__(self,
@@ -241,7 +243,7 @@ class AutoCorrelationAttention(nn.Module):
         Wk, Ik = jax.lax.top_k(jnp.moveaxis(Rxx, 1, -1), k)
         assert Wk.shape == Ik.shape == (B, self.dk, k), "BUG"
 
-        Wk = nn.activation.softmax(Wk, axis=-1)
+        Wk = self.softmax(Wk)
 
         @functools.partial(jax.vmap, in_axes=(0, 0, 1), out_axes=1)
         def _per_d(_w, _i, _v):
