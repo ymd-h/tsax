@@ -30,6 +30,15 @@ The name comes from Time Series on
     [aeXiv:2201.12740](https://arxiv.org/abs/2201.12740)
 - ...
 
+
+## Avoid to Vanishing Gradient
+- [ ] ResiDual
+  - [S. Xie et al., "ResiDual: Transformer with Dual Residual Connections", arXiv:2304.14802](https://arxiv.org/abs/2304.14802)
+- [ ] Admin
+  - [L. Liu et al., "Understanding the Difficulty of Training Transformers", Empirical Methods in Natural Language Processing (EMNLP), (2020)](https://aclanthology.org/2020.emnlp-main.463/)
+    [arXiv:2004.08249](https://arxiv.org/abs/2004.08249)
+- ...
+
 ## Development
 
 
