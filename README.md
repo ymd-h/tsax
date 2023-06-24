@@ -37,6 +37,9 @@ The name comes from Time Series on
 - [ ] Admin
   - [L. Liu et al., "Understanding the Difficulty of Training Transformers", Empirical Methods in Natural Language Processing (EMNLP), (2020)](https://aclanthology.org/2020.emnlp-main.463/)
     [arXiv:2004.08249](https://arxiv.org/abs/2004.08249)
+- [x] Sin2-max-shifted, Sin-Softmax
+    - [S. Wang et al., "Escaping the Gradient Vanishing: Periodic Alternatives of Softmax in Attention Mechanism", IEEE Access Vol.9, 168749--168759 (2021), doi: 10.1109/ACCESS.2021.3138201](https://ieeexplore.ieee.org/document/9662308)
+      [arXiv:2108.07153](https://arxiv.org/abs/2108.07153)
 - ...
 
 ## Development
