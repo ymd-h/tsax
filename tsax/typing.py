@@ -18,10 +18,10 @@ __all__ = [
     "CarryT",
     "DataT",
     "LayerNormMode",
+    "ModelParam",
     "ModelCall",
     "SplitFn",
     "ActivationFn",
-    "ModelParam",
     "CallNever",
 ]
 
