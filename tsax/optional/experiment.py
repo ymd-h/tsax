@@ -30,6 +30,7 @@ import time
 from typing_extensions import TypeAlias
 import jax
 import jax.numpy as jnp
+from jax.tree_util import tree_flatten, tree_map
 import flax
 import flax.linen as nn
 from flax.training import train_state, orbax_utils
@@ -271,14 +272,19 @@ def train(
 
 
     @jit
-    def train_step_fn(s: TrainState, k: KeyArray, l: Array,
-                      x: DataT, y: DataT) -> Tuple[TrainState, KeyArray, Array]:
+    def train_step_fn(
+            s: TrainState, k: KeyArray,
+            l: Array, g: Array,
+            x: DataT, y: DataT
+    ) -> Tuple[TrainState, KeyArray, Array, Array]:
         k, k_use = s.split_fn(k, train=True)
         loss, grad = train_fn(s.params, s, k_use, x, y)
 
         s = s.apply_gradients(grads=grad)
 
-        return s, k, l+loss
+        _grad, _ = tree_flatten(tree_map(lambda _g: jnp.sum(jnp.square(_g)), grad))
+
+        return s, k, l+loss, g + jnp.sum(jnp.asarray(_grad))
 
     @jit
     def valid_step_fn(s: TrainState, k: KeyArray, l: Array,
@@ -301,16 +307,23 @@ def train(
         train_data.shuffle(key_use)
 
         epoch_loss = jnp.zeros((1,))
+        epoch_grad2 = jnp.zeros((1,))
         for i in tqdm(range(train_data.nbatch),
                       ascii=True, leave=False, desc=f"Train: Epoch: {ep}"):
             x, y = train_data.ibatch(i)
-            state, key, epoch_loss = train_step_fn(state, key, epoch_loss, x, y)
+            state, key, epoch_loss, epoch_grad2 = train_step_fn(state, key,
+                                                                epoch_loss,
+                                                                epoch_grad2,
+                                                                x, y)
 
         dt = (time.perf_counter() - t)
         logger.info("Train: Epoch: %d, Loss: %.6f, Loss/Length: %.6f, "
+                    "|Grad|^2: %.6e, "
                     "Elapssed: %.3f sec",
                     ep, float(epoch_loss) / train_size,
-                    float(epoch_loss)/(train_size * train_data.yLen), dt)
+                    float(epoch_loss)/(train_size * train_data.yLen),
+                    float(epoch_grad2) / train_size,
+                    dt)
 
         save_args = orbax_utils.save_args_from_target(state.params)
         ckpt.save(ep,
