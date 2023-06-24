@@ -315,3 +315,21 @@ def data_shape(data: Union[SeqData[DataT], DataT]) -> Tuple[int, ...]:
         data, _ = data.ibatch(0)
 
     return _extract_1st(data).shape
+
+
+def data_to_list(data: DataT) -> List[Array]:
+    """
+    Convert DataT to List of Array
+
+    Parameters
+    ----------
+    data : DataT
+        Maybe Structured Data
+
+    Returns
+    -------
+    flattened : list of Array
+        Flattened Data
+    """
+    d, _ = tree_flatten(data)
+    return cast(List[Array], d)
