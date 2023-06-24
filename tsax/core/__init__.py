@@ -2,6 +2,7 @@
 Core (mod:`tsax.core`)
 ======================
 """
+from .activation import Softmax, Sin2MaxShifted, SinSoftmax
 from .normalization import ResidualLayerNorm
 from .convolution import ConvSeq, FeedForward
 from .encoding import PositionalEncoding, CategoricalEncoding, Embedding
