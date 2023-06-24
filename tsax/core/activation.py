@@ -43,8 +43,8 @@ def Sin2MaxShifted(x: ArrayLike) -> Array:
     x : Array
         Activated Value
     """
-    s = (jnp.sin(x + 0.25 * jnp.pi) ** 2)
-    return s / jnp.sum(s, axis=-1, keepdims=True)
+    s = (jnp.where(x != -jnp.inf, jnp.sin(x + 0.25 * jnp.pi), 0) ** 2)
+    return s / (1e-8 + jnp.sum(s, axis=-1, keepdims=True))
 
 
 def SinSoftmax(x: ArrayLike) -> Array:
@@ -61,4 +61,4 @@ def SinSoftmax(x: ArrayLike) -> Array:
     x : Array
         Activated Value
     """
-    return nn.activation.softmax(jnp.sin(x))
+    return nn.activation.softmax(jnp.where(x != -jnp.inf, jnp.sin(x), -jnp.inf))
