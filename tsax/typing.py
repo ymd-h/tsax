@@ -17,6 +17,7 @@ __all__ = [
     "KeyArray",
     "CarryT",
     "DataT",
+    "LayerNormMode",
     "ModelCall",
     "SplitFn",
     "ActivationFn",
@@ -30,6 +31,8 @@ DataT = TypeVar("DataT",
                 bound=Union[Array, List[Array], Tuple[Array, ...]])
 
 ModelParam: TypeAlias = fcore.FrozenDict[str, Any]
+
+LayerNormMode: TypeAlias = Literal["post", "pre"]
 
 class ModelCall(Protocol):
     def __call__(self,
