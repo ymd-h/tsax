@@ -22,6 +22,7 @@ __all__ = [
     "ModelCall",
     "SplitFn",
     "ActivationFn",
+    "SoftmaxLike",
     "CallNever",
 ]
 
@@ -50,6 +51,10 @@ class SplitFn(Protocol):
 
 class ActivationFn(Protocol):
     def __call__(self, x: Array) -> Array: ...
+
+
+class SoftmaxLike(Protocol):
+    def __call__(self, x: ArrayLike) -> Array: ...
 
 
 def CallNever(_: Never) -> Never:
