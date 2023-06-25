@@ -319,7 +319,7 @@ def train(
         dt = (time.perf_counter() - t)
         logger.info("Train: Epoch: %d, Loss: %.6f, Loss/Length: %.6f, "
                     "|Grad|^2: %.6e, "
-                    "Elapssed: %.3f sec",
+                    "Elapsed: %.3f sec",
                     ep, float(epoch_loss) / train_size,
                     float(epoch_loss)/(train_size * train_data.yLen),
                     float(epoch_grad2) / train_size,
