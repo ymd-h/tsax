@@ -688,7 +688,9 @@ class Autoformer(Model):
 
         B = seq.shape[0]
 
-        inputs: Array = self.encoder_embed(seq, cat, with_dropout=with_dropout)
+        s, _ = self.decomp(seq)
+
+        inputs: Array = self.encoder_embed(s, cat, with_dropout=with_dropout)
         assert inputs.shape == (B, self.I, self.d), "BUG"
 
         inputs = self.encoder(inputs, with_dropout=with_dropout)
