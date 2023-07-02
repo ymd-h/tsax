@@ -1,19 +1,19 @@
 # API Reference
 
 ```{eval-rst}
-... automodapi:: tsax
+.. automodapi:: tsax
 
-... automodapi:: tsax.core
+.. automodapi:: tsax.core
 
-... automodapi:: tsax.model
+.. automodapi:: tsax.model
 
-... automodapi:: tsax.optional.io
+.. automodapi:: tsax.optional.io
 
-... automodapi:: tsax.optional.experiment
+.. automodapi:: tsax.optional.experiment
 
-... automodapi:: tsax.optional.oam
+.. automodapi:: tsax.optional.oam
 
-... automodapi:: tsax.optional.cli
+.. automodapi:: tsax.optional.cli
 
-... automodapi:: tsax.optional.board
+.. automodapi:: tsax.optional.board
 ```
