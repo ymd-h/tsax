@@ -47,7 +47,7 @@ RUN --mount=type=cache,target=/root/.cache/pip pip install \
     myst-parser
 COPY setup.py pyproject.toml README.md LICENSE .
 COPY tsax tsax
-RUN --mount=type=cache,target=/root/.cache/pip pip install .[doc]
+RUN --mount=type=cache,target=/root/.cache/pip pip install .[all]
 COPY doc doc
 COPY example example
 RUN sphinx-build -W -b html doc /html
