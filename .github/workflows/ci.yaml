@@ -2,6 +2,9 @@ name: CI
 on: [push, pull_request]
 jobs:
   ci:
+    permissions:
+      checks: write
+      pull-requests: write
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
