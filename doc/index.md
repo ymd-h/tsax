@@ -1,8 +1,8 @@
 # TSax
 
-:::{warning}
+```{warning}
 This library is still under development, and doesn't work yet.
-:::
+```
 
 TSax is a Python package providing Time Series Forecasting Models.
 
