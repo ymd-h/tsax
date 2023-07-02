@@ -53,10 +53,19 @@ COPY example example
 RUN sphinx-build -W -b html doc /html
 
 
+FROM python:3.10 AS wheel
+WORKDIR /build
+COPY tsax tsax
+COPY setup.py pyproject.toml README.md LICENSE mypy.ini .
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip wheel /build -w /dist --no-deps
+
+
 FROM scratch AS CI
 COPY --from=test-3.10 /unittest/* /unittest/
 COPY --from=coverage /coverage/* /coverage/
 COPY --from=doc /html /html
+COPY --from=wheel /dist /dist
 CMD [""]
 
 
