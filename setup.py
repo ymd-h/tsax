@@ -16,9 +16,15 @@ extras_require["all"] = list(
     set(sum(extras_require.values(), []))
 )
 
+with open("README.md") as R:
+    long_description = R.read()
+
+
 setup(name="tsax",
       description="TSax: Time Series Forecasting",
       version="0.0.0",
+      long_description=long_description,
+      long_description_content_type="text/markdown",
       install_requires = ["jax", "flax", "typing_extensions", "well-behaved-logging"],
       extras_require=extras_require,
       packages=find_packages(),
