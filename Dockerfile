@@ -36,9 +36,27 @@ RUN coverage combine && \
     mkdir -p /coverage/html && coverage html -d /coverage/html
 
 
+FROM python:3.10 AS doc
+WORKDIR /ci
+RUN --mount=type=cache,target=/var/lib/apt/lists \
+    apt update && apt -y --no-install-recommends install graphviz
+RUN --mount=type=cache,target=/root/.cache/pip pip install \
+    sphinx \
+    furo \
+    sphinx-automodapi \
+    myst-parser
+COPY setup.py pyproject.toml README.md LICENSE .
+COPY tsax tsax
+RUN --mount=type=cache,target=/root/.cache/pip pip install .[doc]
+COPY doc doc
+COPY example example
+RUN sphinx-build -W -b html doc /html
+
+
 FROM scratch AS CI
 COPY --from=test-3.10 /unittest/* /unittest/
 COPY --from=coverage /coverage/* /coverage/
+COPY --from=doc /html /html
 CMD [""]
 
 
