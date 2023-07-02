@@ -5,3 +5,8 @@ relative_files = True
 
 [report]
 show_missing = True
+
+[paths]
+source =
+    tsax/
+    /usr/local/lib/Python3.*/site-packages/tsax
