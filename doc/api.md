@@ -7,5 +7,13 @@
 
 ... automodapi:: tsax.model
 
-... automodapi:: tsax.option
+... automodapi:: tsax.optional.io
+
+... automodapi:: tsax.optional.experiment
+
+... automodapi:: tsax.optional.oam
+
+... automodapi:: tsax.optional.cli
+
+... automodapi:: tsax.optional.board
 ```
