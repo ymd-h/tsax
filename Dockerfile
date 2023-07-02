@@ -18,7 +18,7 @@ COPY test test
 WORKDIR /work/test
 COPY .coveragerc .
 RUN coverage run --source tsax -m xmlrunner discover || true
-RUN mkdir -p /coverage && cp -v *.coverage.* /coverage && \
+RUN mkdir -p /coverage && cp -v .coverage.* /coverage && \
     mkdir -p /unittest && cp -v *.xml /unittest
 
 
