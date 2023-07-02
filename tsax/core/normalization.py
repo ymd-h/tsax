@@ -5,7 +5,7 @@ import jax
 import jax.numpy as jnp
 import flax.linen as nn
 
-from tsax.typing import Array, CallNever
+from tsax.typing import Array, CallNever, LayerNormMode
 
 __all__ = [
     "ResidualLayerNorm",
@@ -25,7 +25,7 @@ class ResidualLayerNorm(nn.Module):
     """
     sublayer: Callable[[Array], Array]
     eps: float
-    position: Literal["post", "pre"] = "post"
+    position: LayerNormMode = "post"
 
     @nn.compact
     def __call__(self, x: Array) -> Array:
