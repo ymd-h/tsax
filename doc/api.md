@@ -14,6 +14,4 @@
 .. automodapi:: tsax.optional.oam
 
 .. automodapi:: tsax.optional.cli
-
-.. automodapi:: tsax.optional.board
 ```
