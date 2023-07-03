@@ -6,6 +6,10 @@ import jax.numpy as jnp
 
 from tsax.typing import Array, ArrayLike
 
+__all__ = [
+    "TestCase",
+]
+
 class TestCase(unittest.TestCase):
     def assertAllclose(self, x: ArrayLike, y: ArrayLike, **kwargs):
         x = jnp.asarray(x)
