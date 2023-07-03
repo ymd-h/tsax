@@ -1,5 +1,5 @@
 from __future__ import annotations
-from logging import getLogger, Handler
+from logging import Handler
 from typing import Iterable, Optional, Union
 
 import wblog
