@@ -4,6 +4,10 @@ from typing import Iterable, Optional, Union
 
 import wblog
 
+__all__ = [
+    "enable_logging",
+    "disable_logging",
+]
 
 def enable_logging(level: Optional[int] = None,
                    handlers:  Union[Handler, Iterable[Handler], None] = None,
