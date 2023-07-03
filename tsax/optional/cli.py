@@ -41,6 +41,11 @@ from tsax.optional.experiment import (
 from tsax.optional.oam import arg, ArgumentParser
 
 
+__all__ = [
+    "CLIArgs",
+    "cli",
+]
+
 EXIT_SUCCESS: int = 0
 EXIT_FAILURE: int = 1
 
