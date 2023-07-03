@@ -5,7 +5,7 @@ WORKDIR /work
 COPY tsax tsax
 COPY setup.py pyproject.toml README.md LICENSE mypy.ini .
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install jax[cpu] .[all] && \
+    pip install "jax[cpu]<=0.4.10" .[all] && \
     mypy -p tsax && \
     rm -rf tsax && \
     rm setup.py pyproject.toml README.md LICENSE mypy.ini
@@ -47,7 +47,7 @@ RUN --mount=type=cache,target=/root/.cache/pip pip install \
     myst-parser
 COPY setup.py pyproject.toml README.md LICENSE .
 COPY tsax tsax
-RUN --mount=type=cache,target=/root/.cache/pip pip install .[all]
+RUN --mount=type=cache,target=/root/.cache/pip pip install "jax[cpu]<=0.4.10" .[all]
 COPY doc doc
 COPY example example
 RUN sphinx-build -W -b html doc /html
