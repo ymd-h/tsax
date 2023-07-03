@@ -50,7 +50,7 @@ COPY tsax tsax
 RUN --mount=type=cache,target=/root/.cache/pip pip install "jax[cpu]<=0.4.10" .[all]
 COPY doc doc
 COPY example example
-RUN sphinx-build -W -b html doc /html
+RUN sphinx-build -v -W -b html doc /html
 
 
 FROM python:3.10 AS wheel
