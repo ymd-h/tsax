@@ -5,9 +5,9 @@ Tsax Typing (:mod:`tsax.typing`)
 from __future__ import annotations
 from typing import Any, Dict, List, Literal, Optional, Tuple, TypeVar, Union
 
-from jax import Array
-from jax.typing import ArrayLike
-from jax.random import KeyArray
+from jax import Array as jaxArray
+from jax.typing import ArrayLike as jaxArrayLike
+from jax.random import KeyArray as jaxKeyArray
 from flax import core as fcore
 from typing_extensions import Never, Protocol, TypeAlias
 
@@ -26,14 +26,27 @@ __all__ = [
     "CallNever",
 ]
 
+# For Sphinx AutoSummary, we re-define JAX's typing
+
+Array: TypeAlias = jaxArray
+Array.__doc__ = """Array"""
+
+ArrayLike: TypeAlias = jaxArrayLike
+ArrayLike.__doc__ = """Array Like"""
+
+KeyArray: TypeAlias = jaxKeyArray
+KeyArray.__doc__ = """Key Array"""
 
 CarryT = TypeVar("CarryT")
 DataT = TypeVar("DataT",
                 bound=Union[Array, List[Array], Tuple[Array, ...]])
 
 ModelParam: TypeAlias = fcore.FrozenDict[str, Any]
+"""Model Parameter"""
 
 LayerNormMode: TypeAlias = Literal["post", "pre"]
+"""Layer Normalization Mode"""
+
 
 class ModelCall(Protocol):
     def __call__(self,

@@ -14,4 +14,24 @@
 .. automodapi:: tsax.optional.oam
 
 .. automodapi:: tsax.optional.cli
+
+.. automodapi:: tsax.data
+
+.. automodapi:: tsax.logging
+
+.. automodapi:: tsax.loss
+
+.. automodapi:: tsax.random
+
+.. automodapi:: tsax.stat
+
+.. automodapi:: tsax.testing
+
+.. automodapi:: tsax.typed_jax
+
+.. automodapi:: tsax.typing
+   :include-all-objects:
+   :allowed-package-names: typing,tsax.typing,jax,jax.random,flax.core
+
+.. automodapi:: tsax.version
 ```
