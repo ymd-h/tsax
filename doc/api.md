@@ -2,10 +2,9 @@
 
 ```{eval-rst}
 .. automodapi:: tsax
+   :no-inherited-members:
 
 .. automodapi:: tsax.core
-
-.. automodapi:: tsax.model
 
 .. automodapi:: tsax.optional.io
 
