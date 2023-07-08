@@ -139,7 +139,7 @@ class CategoricalEncoding(nn.Module):
     """
     Categorical Encoding
 
-    Attributes
+    Parameters
     ----------
     Vs : tuple of ints
         Vocabulary Sizes
@@ -202,7 +202,7 @@ class Embedding(nn.Module):
     """
     Embedding Layer
 
-    Attributes
+    Parameters
     ----------
     dm : int
         Model Dimension

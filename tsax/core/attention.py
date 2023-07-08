@@ -18,7 +18,7 @@ class MultiHeadAttention(nn.Module):
     """
     Multi Head Attention Layer
 
-    Attributes
+    Parameters
     ----------
     attention: nn.Module
         Attention

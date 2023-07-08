@@ -28,6 +28,15 @@ Default Kernel Size for Positional Feed Forward Layer
 class ConvSeq(nn.Module):
     """
     Convolution on Sequence
+
+    Parameters
+    ----------
+    dm : int
+        Model Dimension
+    kernel : int
+        Kernel Size for Convolution
+    bias : bool
+        Whether use bias or not
     """
     dm: int
     kernel: int = KERNEL_SIZE
@@ -77,12 +86,18 @@ class FeedForward(nn.Module):
     """
     Feed Forward Layer
 
-    Attributes
+    Parameters
     ----------
     dff : int
         Hidden Layer Units
     Pdrop : float
         Probability of Dropout
+    activation : {"ReLU", "GELU"}
+        Activation Function
+    kernel : int
+        Feed Forward Kernel Size
+    bias : bool
+        Whether use bias or not
     """
     dff: int
     Pdrop: float

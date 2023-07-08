@@ -5,6 +5,7 @@
    :no-inherited-members:
 
 .. automodapi:: tsax.core
+   :no-inherited-members:
 
 .. automodapi:: tsax.optional.io
 

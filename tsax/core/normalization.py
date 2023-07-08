@@ -16,7 +16,7 @@ class ResidualLayerNorm(nn.Module):
     """
     Residual Layer Normalization
 
-    Attributes
+    Parameters
     ----------
     sublayer : callable
         Sub Layer
