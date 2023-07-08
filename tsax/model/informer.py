@@ -523,7 +523,7 @@ class Informer(Model):
     """
     Informer
 
-    Attributes
+    Parameters
     ----------
     d : int
         Dimension of Sequence Data

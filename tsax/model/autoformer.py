@@ -607,7 +607,7 @@ class Autoformer(Model):
     """
     Autoformer
 
-    Attributes
+    Parameters
     ----------
     c : int
         Coefficient for Selecting Top K Correlation.
