@@ -560,8 +560,8 @@ class Informer(Model):
     d: int
     I: int
     O: int
-    Ltoken: int
     c: int
+    Ltoken: int
     dm: int
     Vs: Tuple[int, ...] = tuple()
     alpha: float = EMBEDDING_ALPHA

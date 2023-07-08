@@ -609,15 +609,40 @@ class Autoformer(Model):
 
     Parameters
     ----------
+    d : int
+        Dimension of Sequence Data
+    I : int
+        Input Length (aka. Lookback Horizon)
+    O : int
+        Output Length (aka. Prediction Horizon)
     c : int
         Coefficient for Selecting Top K Correlation.
         floor(c * logL) Correlation is used.
         ``1 <= c <= 3``
+    Vs : tuple of ints, optional
+        Dimensions of Categorical Features
+    alpha : float
+        Rescale Facotor after Embedding. If input sequence is normalized,
+        ``alpha=1.0`` is enough.
+    nE : int, optional
+        Number of Encoder Layers
+    nD : int, optional
+        Number of Decoder Layers
+    nH : int
+        Number of Multi Head
+    dff : int, optional
+        Hidden Layer Units at Feed Forward Layer
+    kMA : int, optional
+        Kernel Size for Moving Average Distilling Layer
+    eps : float, optional
+        Small Positive Value for Layer Normalization
+    Pdrop : foat, optional
+        Dropout Probability
     """
-    c: int
     d: int
     I: int
     O: int
+    c: int
     dm: int = _UNUSED
     Vs: Tuple[int, ...] = tuple()
     alpha: float = EMBEDDING_ALPHA
