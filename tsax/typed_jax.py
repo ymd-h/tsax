@@ -66,7 +66,7 @@ def value_and_grad(f: Callable[P, T], *,
 @functools.wraps(jax.vmap)
 def vmap(
         f: Callable[P, T], *,
-        in_axes: Union[int, None, Sequence[Any]]=0,
+        in_axes: Union[int, Sequence[Any]]=0,
         out_axes: Any=0,
         axis_name: Optional[Hashable]=None,
         axis_size: Optional[int]=None,
