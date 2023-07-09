@@ -1,6 +1,6 @@
 """
-Core (mod:`tsax.core`)
-======================
+Core (:mod:`tsax.core`)
+=======================
 """
 __all__ = [
     "Softmax",
