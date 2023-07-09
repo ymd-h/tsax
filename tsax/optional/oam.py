@@ -13,7 +13,7 @@ See Also
 tsax.optional.cli
 """
 from __future__ import annotations
-from dataclasses import field, fields, MISSING, Field
+from dataclasses import field, fields, MISSING
 from typing import (
     get_args,
     get_origin,
@@ -49,7 +49,7 @@ def _patch_fields(cls, *args, **kwargs):
 argparse_dataclass.fields = _patch_fields
 
 
-def arg(**kwargs) -> Field:
+def arg(**kwargs): # To assign any field value, don't set any type hints.
     """
     Argument for Data Model
 
