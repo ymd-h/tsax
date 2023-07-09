@@ -5,7 +5,7 @@ extras_require = {
     "io": ["pandas", "pyarrow"],
     "oam": ["argparse_dataclass"],
     "dev": ["coverage", "mypy", "pandas-stubs", "types-tqdm", "unittest-xml-reporting"],
-    "doc": ["sphinx", "sphinx-rtd-theme", "myst-parser"],
+    "doc": ["sphinx", "furo", "myst-parser"],
     "board": ["streamlit"],
 }
 extras_require["cli"] = list(
