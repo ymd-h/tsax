@@ -5,6 +5,9 @@ import flax.linen as nn
 
 from tsax.typing import KeyArray
 
+__all__ = [
+    "Model",
+]
 
 class Model(nn.Module):
     @staticmethod

@@ -11,6 +11,10 @@ import wblog
 
 from tsax.typing import KeyArray
 
+__all__ = [
+    "initPRNGKey",
+]
+
 
 logger = wblog.getLogger()
 

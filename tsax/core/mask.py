@@ -6,6 +6,10 @@ import jax.numpy as jnp
 
 from tsax.typing import Array
 
+__all__ = [
+    "SubsequentMask",
+]
+
 
 def SubsequentMask(L: int) -> Array:
     """

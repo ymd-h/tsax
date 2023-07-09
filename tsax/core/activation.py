@@ -12,6 +12,11 @@ import flax.linen as nn
 
 from tsax.typing import ArrayLike, Array
 
+__all__ = [
+    "Softmax",
+    "Sin2MaxShifted",
+    "SinSoftmax",
+]
 
 def Softmax(x: ArrayLike) -> Array:
     """

@@ -14,6 +14,11 @@ from tsax.typing import Array
 from tsax.typed_jax import Dense
 
 
+__all__ = [
+    "MultiHeadAttention",
+]
+
+
 class MultiHeadAttention(nn.Module):
     """
     Multi Head Attention Layer

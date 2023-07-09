@@ -2,6 +2,22 @@
 Core (mod:`tsax.core`)
 ======================
 """
+__all__ = [
+    "Softmax",
+    "Sin2MaxShifted",
+    "SinSoftmax",
+    "ResidualLayerNorm",
+    "ConvSeq",
+    "FeedForward",
+    "PositionalEncoding",
+    "CategoricalEncoding",
+    "Embedding",
+    "SubsequentMask",
+    "MultiHeadAttention",
+    "LayerStack",
+    "Model",
+]
+
 from .activation import Softmax, Sin2MaxShifted, SinSoftmax
 from .normalization import ResidualLayerNorm
 from .convolution import ConvSeq, FeedForward
