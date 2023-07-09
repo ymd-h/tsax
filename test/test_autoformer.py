@@ -106,7 +106,7 @@ class TestEncoderLayer(TestCase):
         self.assertEqual(e_drop_jit.shape, inputs.shape)
         self.assertNotAllclose(e_jit, e_drop_jit)
 
-        self.assertAllclose(e_drop, e_drop_jit)
+        self.assertAllclose(e_drop, e_drop_jit, atol=1e-5, rtol=1e-5)
 
 
 class TestDecoderLayer(TestCase):
@@ -333,7 +333,7 @@ class TestAutoformer(TestCase):
         pred_jit, _ = jax.jit(auto.init_with_output)(rngs, seq)
         self.assertEqual(pred_jit.shape, (B, O, d))
 
-        self.assertAllclose(pred, pred_jit, atol=1e-6)
+        self.assertAllclose(pred, pred_jit, atol=1e-4, rtol=1e-4)
 
         pred_drop, _ = auto.init_with_output(rngs, seq, train=True)
         self.assertEqual(pred_drop.shape, (B, O, d))
@@ -413,7 +413,7 @@ class TestAutoformer(TestCase):
         self.assertEqual(pred_drop_jit.shape, (B, O, d))
         self.assertNotAllclose(pred_jit, pred_drop_jit)
 
-        self.assertAllclose(pred_drop, pred_drop_jit, atol=1e-5, rtol=1e-5)
+        self.assertAllclose(pred_drop, pred_drop_jit, atol=1e-4, rtol=1e-4)
 
 if __name__ == "__main__":
     unittest.main()

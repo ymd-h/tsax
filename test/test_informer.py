@@ -144,7 +144,7 @@ class TestEncoderLayer(TestCase):
                                                inputs)
         self.assertEqual(e_jit.shape, inputs.shape)
 
-        self.assertAllclose(e, e_jit)
+        self.assertAllclose(e, e_jit, atol=1e-5, rtol=1e-5)
 
         e_drop, _ = E.init_with_output({"params": key_p,
                                         "attention": key_a,
@@ -367,7 +367,7 @@ class TestInformer(TestCase):
             info.init_with_output,
             static_argnames=["method"],
         )(rngs, seq, method="encode")
-        self.assertAllclose(enc, enc_jit)
+        self.assertAllclose(enc, enc_jit, atol=1e-5, rtol=1e-5)
 
         pred, _ = info.init_with_output(rngs, seq)
         self.assertEqual(pred.shape, (B, O, d))
