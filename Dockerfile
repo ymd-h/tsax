@@ -1,25 +1,30 @@
 ARG PY_VERSION=3.10
 
-FROM python:3.10 AS build-3.10
-WORKDIR /work
+FROM scratch AS test
+WORKDIR /test
+COPY setup.py pyproject.toml README.md LICENSE mypy.ini .coveragerc ci.sh .
 COPY tsax tsax
-COPY setup.py pyproject.toml README.md LICENSE mypy.ini .
-RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install "jax[cpu]<=0.4.10" .[all] && \
-    mypy -p tsax && \
-    rm -rf tsax && \
-    rm setup.py pyproject.toml README.md LICENSE mypy.ini
-
-
-FROM build-3.10 AS test-3.10
-RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install coverage unittest-xml-reporting
 COPY test test
-WORKDIR /work/test
-COPY .coveragerc .
-RUN coverage run --source tsax -m xmlrunner discover || true
-RUN mkdir -p /coverage && cp -v .coverage.* /coverage && \
-    mkdir -p /unittest && cp -v *.xml /unittest
+
+FROM python:3.8 AS test-3.8
+WORKDIR /work
+COPY --from=test /test .
+RUN --mount=type=cache,target=/root/.cache/pip ./ci.sh
+
+FROM python:3.9 AS test-3.9
+WORKDIR /work
+COPY --from=test /test .
+RUN --mount=type=cache,target=/root/.cache/pip ./ci.sh
+
+FROM python:3.10 AS test-3.10
+WORKDIR /work
+COPY --from=test /test .
+RUN --mount=type=cache,target=/root/.cache/pip ./ci.sh
+
+FROM python:3.11 AS test-3.11
+WORKDIR /work
+COPY --from=test /test .
+RUN --mount=type=cache,target=/root/.cache/pip ./ci.sh
 
 
 FROM python:3.10 AS coverage
@@ -28,7 +33,10 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     pip install coverage
 COPY tsax tsax
 COPY .coveragerc .
+COPY --from=test-3.8 /coverage/* .
+COPY --from=test-3.9 /coverage/* .
 COPY --from=test-3.10 /coverage/* .
+COPY --from=test-3.11 /coverage/* .
 RUN coverage combine && \
     echo "## Test Coverage\n\`\`\`\n" >> summary.md && \
     coverage report | tee -a summary.md && \
@@ -69,5 +77,11 @@ COPY --from=wheel /dist /dist
 CMD [""]
 
 
-FROM build-${PY_VERSION} AS tsax
-
+FROM python:${PY_VERSION} AS tsax
+WORKDIR /work
+COPY tsax tsax
+COPY setup.py pyproject.toml README.md LICENSE .
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install "jax[cpu]<=0.4.10" .[cli,board] && \
+    rm -rf tsax && \
+    rm setup.py pyproject.toml README.md LICENSE
