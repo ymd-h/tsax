@@ -1,6 +1,6 @@
 """
-CLI module (:mod:`tsax.cli`)
-============================
+CLI module (:mod:`tsax.optional.cli`)
+=====================================
 
 See Also
 --------
