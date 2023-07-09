@@ -6,9 +6,14 @@ Notes
 -----
 This module requires optional dependancies.
 ``pip install tsax["oam"]``
+
+
+See Also
+--------
+tsax.optional.cli
 """
 from __future__ import annotations
-from dataclasses import field, fields, MISSING
+from dataclasses import field, fields, MISSING, Field
 from typing import (
     get_args,
     get_origin,
@@ -44,7 +49,36 @@ def _patch_fields(cls, *args, **kwargs):
 argparse_dataclass.fields = _patch_fields
 
 
-def arg(**kwargs):
+def arg(**kwargs) -> Field:
+    """
+    Argument for Data Model
+
+    Pass keyword arguments to ``dataclass`` or ``ArgumentParser.add_argument``.
+
+    Parameters
+    ----------
+    default
+        Default Value
+    default_factory : callable
+        Factory for default value.
+    init : bool
+        Whether included at ``__init__``.
+    repr : bool
+        Whether included at ``__repr__``.
+    hash : bool | None
+        Whether included at ``__hash__``.
+    compare : bool
+        Whether included at comparison.
+    kw_only : bool
+        Whether keyword only
+    **kwargs
+        Passed to ``ArgumentParser.add_argument()``.
+
+    Returns
+    -------
+    argument : Field
+        ``dataclasses.Field`` with ``ArgumentParser`` config
+    """
     f = {}
     known_list = [
         "default",
@@ -64,7 +98,15 @@ def arg(**kwargs):
 
 
 class ArgumentParser(argparse_dataclass.ArgumentParser):
+    """
+    ArgumentParser for Object-Argument Mapper
+    """
     def add_argument(self, *args, **kwargs):
+        """
+        Add Arguments
+
+        This method is called during constructor for setup.
+        """
         if kwargs.get("default") == MISSING:
             # https://github.com/mivade/argparse_dataclass/issues/32
             name = args[0].replace("--", "").replace("-", "_")
