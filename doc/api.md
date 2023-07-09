@@ -31,7 +31,7 @@
 
 .. automodapi:: tsax.typing
    :include-all-objects:
-   :allowed-package-names: typing,tsax.typing,jax,jax.random,flax.core
+   :skip: Array,ArrayLike,KeyArray,ModelParam,LayerNormMode
 
 .. automodapi:: tsax.version
 ```
