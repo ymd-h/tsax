@@ -12,7 +12,7 @@ tsax.optional.oam
 Notes
 -----
 This module requires optional dependancies.
-`pip install tsax[cli]`
+``pip install tsax[cli]``
 """
 from __future__ import annotations
 from argparse import ArgumentDefaultsHelpFormatter

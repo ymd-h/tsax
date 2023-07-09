@@ -3,7 +3,7 @@ Board (:mod:`tsax.optional.board`)
 ==================================
 
 This module requires optional dependancies.
-`pip install tsax[board]`
+``pip install tsax[board]``
 """
 from __future__ import annotations
 from dataclasses import dataclass

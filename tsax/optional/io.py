@@ -5,7 +5,7 @@ IO (:mod:`tsax.optional.io`)
 Notes
 -----
 This module requires optional dependancies.
-`pip install tsax[io]`
+``pip install tsax[io]``
 """
 from __future__ import annotations
 import io

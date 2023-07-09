@@ -5,7 +5,7 @@ Experiment (:mod:`tsax.optional.experiment`)
 Notes
 -----
 This module requires additional dependencies,
-which can be installed by `pip install tsax[experiment]`
+which can be installed by ``pip install tsax[experiment]``
 """
 from __future__ import annotations
 import dataclasses
