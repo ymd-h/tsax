@@ -2,6 +2,13 @@
 CLI module (:mod:`tsax.cli`)
 ============================
 
+See Also
+--------
+tsax.optional.io
+tsax.optional.experiment
+tsax.optional.oam
+
+
 Notes
 -----
 This module requires optional dependancies.
@@ -132,6 +139,14 @@ class CLIArgs:
 
 
 def setup_logging(args: CLIArgs) -> None:
+    """
+    Set up Logging
+
+    Parameters
+    ----------
+    args : CLIArgs
+        CLI Arguments
+    """
     h = StreamHandler()
     Formatter.default_msec_format = '%s.%03d'
     h.setFormatter(Formatter("%(asctime)s: %(name)s: %(levelname)s: %(message)s"))
@@ -147,6 +162,18 @@ def setup_logging(args: CLIArgs) -> None:
 
 
 def createModel(args: CLIArgs, data: SeqData, Vs: Tuple[int, ...]) -> Model:
+    """
+    Create Model
+
+    Parameters
+    ----------
+    args : CLIArgs
+        CLI Arguments
+    data : SeqData
+        Data for Model
+    Vs : tuple of ints
+        Sizes of Categorical Features.
+    """
     kwargs = dict(
         d=data.dimension(),
         I=args.I,
@@ -180,6 +207,25 @@ def train_cli(args: CLIArgs,
               key: KeyArray,
               data: SeqData,
               model: Model) -> int:
+    """
+    Training CLI
+
+    Parameters
+    ----------
+    args : CLIArgs
+        CLI Arguments
+    key : KeyArray
+        PRNG Key
+    data : SeqData
+        Data for Train
+    model : Model
+        Model for Train
+
+    Returns
+    -------
+    int
+        Return Code
+    """
     logger.info("Adam(lr=%f)", args.lr)
     tx = optax.adam(learning_rate=args.lr)
 
@@ -217,6 +263,25 @@ def predict_cli(args: CLIArgs,
                 key: KeyArray,
                 data: SeqData,
                 model: Model) -> int:
+    """
+    Predict CLI
+
+    Parameters
+    ----------
+    args : CLIArgs
+        CLI Arguments
+    key : KeyArray
+        PRNG Key
+    data : SeqData
+        Data for Predict
+    model : Model
+        Model for Predict
+
+    Returns
+    -------
+    int
+        Return Code
+    """
     key, key_use = jax.random.split(key)
     state = PredictState.create_for(key_use, model, data)
     if args.load_dir is not None:
@@ -227,6 +292,19 @@ def predict_cli(args: CLIArgs,
 
 
 def board_cli(args: CLIArgs) -> int:
+    """
+    Board CLI
+
+    Parameters
+    ----------
+    args : CLIArgs
+        CLI Arguments
+
+    Returns
+    -------
+    int
+        Return Code
+    """
     ret = subprocess.run([
         "streamlit",
         "run",
@@ -239,6 +317,21 @@ def board_cli(args: CLIArgs) -> int:
 
 
 def load_data(args: CLIArgs) -> Tuple[SeqData, Tuple[int, ...]]:
+    """
+    Load Data
+
+    Parameters
+    ----------
+    args : CLIArgs
+        CLI Arguments
+
+    Returns
+    -------
+    data : SeqData
+        Loaded Data
+    Vs : tuple of ints
+        Sizes of Categorical Features
+    """
     raw, Vs = read_csv(args.data, args.data_timestamp)
     data = SeqData(raw, xLen=args.I, yLen=args.O,
                    batch_size=args.batch, stride=args.data_stride)
@@ -246,6 +339,19 @@ def load_data(args: CLIArgs) -> Tuple[SeqData, Tuple[int, ...]]:
 
 
 def cli(args: Optional[CLIArgs] = None) -> int:
+    """
+    CLI
+
+    Parameters
+    ----------
+    args : CLIArgs, optional
+        CLI Arguments. If ``None`` (default), parsed from Command Line Option
+
+    Returns
+    -------
+    int
+        Return Code
+    """
     if args is None:
         parser = ArgumentParser(
             CLIArgs,
