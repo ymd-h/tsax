@@ -65,6 +65,7 @@ class SigmaReparamDense(nn.Module):
                             self.kernel_init,
                             (jnp.shape(inputs)[-1], self.features),
                             self.param_dtype)
+        assert kernel.ndim == 2, "BUG"
         if self.use_bias:
             bias = self.param('bias', self.bias_init, (self.features,),
                               self.param_dtype)
