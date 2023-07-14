@@ -40,12 +40,12 @@ class SigmaReparamDense(nn.Module):
     dtype: Optional[Dtype] = None
     param_dtype: Dtype = jnp.float32
     precision: PrecisionLike = None
-    kernel_init: Callable[[PRNGKey, Shape, Dtype], Array] = default_kernel_init
-    bias_init: Callable[[PRNGKey, Shape, Dtype], Array] = initializers.zeros_init()
-    gamma_init: Callable[[PRNGKey, Shape, Dtype], Array] = initializers.ones
-    dot_general: DotGeneralT = jax.lax.dot_general
+    kernel_init: Callable[[KeyArray, Shape, Dtype], Array] = default_kernel_init
+    bias_init: Callable[[KeyArray, Shape, Dtype], Array] = initializers.zeros_init()
+    gamma_init: Callable[[KeyArray, Shape, Dtype], Array] = initializers.ones
+    dot_general: Callable[..., Array] = jax.lax.dot_general
 
-    @compact
+    @nn.compact
     def __call__(self,
                  inputs: Array, *,
                  training: bool = False) -> Array:
