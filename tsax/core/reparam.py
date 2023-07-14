@@ -79,23 +79,26 @@ class SigmaReparamDense(nn.Module):
                           kernel.shape[1])
 
         uWv = self.variable("sigma_reparam", "uWv",
-                            lambda _: u.value @ kernel @ v.value, None)
+                            lambda _: jnp.einsum("d,dc,c->",
+                                                 u.value, kernel, v.value), None)
 
         if training:
             u.value = jax.lax.stop_gradient(kernel @ v.value)
+            assert u.value.shape == (kernel.shape[0],), f"BUG: {v.value.shape} != {(kernel.shape[0],)}"
             u.value.at[:].divide(jnp.linalg.norm(u.value, keepdims=True))
 
-            v.value = jax.lax.stop_gradient(jnp.transpose(kernel) @ u.value)
+            v.value = jax.lax.stop_gradient(kernel.T @ u.value)
+            assert v.value.shape == (kernel.shape[1],), f"BUG: {u.value.shape} != {(kernel.shape[1],)}"
             v.value.at[:].divide(jnp.linalg.norm(v.value, keepdims=True))
 
-            uWv.value = u.value @ kernel @ v.value
+            uWv.value = jnp.einsum("d,dc,c->", u.value, kernel, v.value)
 
         gamma = self.param("gamma", self.gamma_init, (1,), self.param_dtype)
 
-        inputs, kernel, bias = promote_dtype(inputs,
-                                             gamma / uWv.value * kernel,
-                                             bias,
-                                             dtype=self.dtype)
+        inputs, kernel, bias = nn.dtypes.promote_dtype(inputs,
+                                                       gamma / uWv.value * kernel,
+                                                       bias,
+                                                       dtype=self.dtype)
 
         y = self.dot_general(
             inputs,
