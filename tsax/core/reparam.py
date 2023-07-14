@@ -3,13 +3,14 @@ Reparam (:mod:`tsax.core.reparam`)
 ==================================
 """
 from __future__ import annotations
-from typing import Optional
+from typing import Callable, Optional
 
 import jax
 import jax.numpy as jnp
 import flax.linen as nn
+from flax.linen import initializers
 
-from tsax.typing import Array
+from tsax.typing import Array, Dtype, KeyArray, Shape
 
 __all__ = [
     "SigmaReparamDense",
