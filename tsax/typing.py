@@ -8,6 +8,7 @@ from typing import Any, Dict, List, Literal, Optional, Tuple, TypeVar, Union
 from jax import Array as jaxArray
 from jax.typing import ArrayLike as jaxArrayLike
 from jax.random import KeyArray as jaxKeyArray
+from jax._src.typing import Dtype, Shape
 from flax import core as fcore
 from typing_extensions import Never, Protocol, TypeAlias
 
