@@ -10,12 +10,13 @@ import jax.numpy as jnp
 import flax.linen as nn
 from flax.linen import initializers
 
-from tsax.typing import Array, Dtype, KeyArray, Shape
+from tsax.typing import Array, Dtype, KeyArray, PrecisionLike, Shape
 
 __all__ = [
     "SigmaReparamDense",
 ]
 
+default_kernel_init = initializers.lecun_normal()
 
 
 class SigmaReparamDense(nn.Module):

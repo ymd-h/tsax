@@ -5,10 +5,13 @@ Tsax Typing (:mod:`tsax.typing`)
 from __future__ import annotations
 from typing import Any, Dict, List, Literal, Optional, Tuple, TypeVar, Union
 
+import jax
 from jax import Array as jaxArray
+import jax.numpy as jnp
 from jax.typing import ArrayLike as jaxArrayLike
 from jax.random import KeyArray as jaxKeyArray
-from jax._src.typing import Dtype, Shape
+from jax._src.typing import Shape
+from jax._src.numpy.lax_numpy import _ScalarMeta
 from flax import core as fcore
 from typing_extensions import Never, Protocol, TypeAlias
 
@@ -48,6 +51,20 @@ ModelParam: TypeAlias = fcore.FrozenDict[str, Any]
 LayerNormMode: TypeAlias = Literal["post", "pre"]
 """Layer Normalization Mode"""
 
+
+Dtype: TypeAlias = Union[
+    jnp.dtype,
+    str,
+    _ScalarMeta
+]
+Dtype.__doc__ = """Data Type"""
+
+
+PrecisionLike: TypeAlias = Union[None,
+                                 str, jax.lax.Precision,
+                                 Tuple[str, str],
+                                 Tuple[jax.lax.Precision, jax.lax.Precision]]
+PrecisionLike.__doc__ = """Presicion Like"""
 
 class ModelCall(Protocol):
     def __call__(self,
