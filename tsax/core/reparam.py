@@ -48,13 +48,15 @@ class SigmaReparamDense(nn.Module):
     @nn.compact
     def __call__(self,
                  inputs: Array, *,
-                 training: bool = False) -> Array:
+                 train: bool = False) -> Array:
         """Applies a linear transformation to the inputs along the last dimension.
 
         Parameters
         ----------
         inputs : Array
             The nd-array to be transformed.
+        train : bool
+            Train or not
 
         Returns
         -------
@@ -83,7 +85,7 @@ class SigmaReparamDense(nn.Module):
                             lambda _: jnp.einsum("d,dc,c->",
                                                  u.value, kernel, v.value), None)
 
-        if training:
+        if train:
             u.value = jax.lax.stop_gradient(kernel @ v.value)
             assert u.value.shape == (kernel.shape[0],), f"BUG: {v.value.shape} != {(kernel.shape[0],)}"
             u.value.at[:].divide(jnp.linalg.norm(u.value, keepdims=True))
