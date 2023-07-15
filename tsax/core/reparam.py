@@ -73,10 +73,10 @@ class SigmaReparamDense(nn.Module):
             bias = None
 
         u = self.variable("sigma_reparam", "u",
-                          lambda s: jax.random.normal(self.make_rng("param"), (s,)),
+                          lambda s: jax.random.normal(self.make_rng("params"), (s,)),
                           kernel.shape[0])
         v = self.variable("sigma_reparam", "v",
-                          lambda s: jax.random.normal(self.make_rng("param"), (s,)),
+                          lambda s: jax.random.normal(self.make_rng("params"), (s,)),
                           kernel.shape[1])
 
         uWv = self.variable("sigma_reparam", "uWv",
