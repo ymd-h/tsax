@@ -37,7 +37,6 @@ class SigmaReparamDense(nn.Module):
     """
     features: int
     use_bias: bool = True
-    name: Optional[str] = None
     dtype: Optional[Dtype] = None
     param_dtype: Dtype = jnp.float32
     precision: PrecisionLike = None
