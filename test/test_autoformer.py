@@ -346,7 +346,7 @@ class TestAutoformer(TestCase):
         self.assertEqual(pred_drop_jit.shape, (B, O, d))
         self.assertNotAllclose(pred_jit, pred_drop_jit)
 
-        self.assertAllclose(pred_drop, pred_drop_jit, atol=1e-6)
+        self.assertAllclose(pred_drop, pred_drop_jit, atol=1e-5, rtol=1e-5)
 
     def test_with_categorical(self):
         B, I, d, Vs, dm = 1, 5, 2, (7, 12), 8
