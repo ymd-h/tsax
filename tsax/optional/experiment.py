@@ -10,6 +10,7 @@ which can be installed by ``pip install tsax[experiment]``
 from __future__ import annotations
 import dataclasses
 from datetime import datetime
+import functools
 from logging import getLogger, FileHandler, Formatter
 import os
 from typing import (
@@ -68,6 +69,7 @@ class TrainState(train_state.TrainState):
     """
     apply_fn: ModelCall = field(pytree_node=False)
     split_fn: SplitFn = field(pytree_node=False)
+    sigma_reparam: Optional[ModelParam] = field(pytree_node=True)
 
     @staticmethod
     def create_for(key: KeyArray,
@@ -115,9 +117,10 @@ class TrainState(train_state.TrainState):
 
         return cast(TrainState, TrainState.create(
             apply_fn=cast(ModelCall, apply_fn),
-            params=params,
+            params=params["params"],
             tx=tx,
             split_fn=model.split_key,
+            sigma_reparam=params.get("sigma_reparam", None)
         ))
 
 class PredictState(PyTreeNode):
@@ -127,6 +130,7 @@ class PredictState(PyTreeNode):
     apply_fn: ModelCall = field(pytree_node=False)
     params: ModelParam = field(pytree_node=True)
     split_fn: SplitFn = field(pytree_node=False)
+    sigma_reparam: Optional[ModelParam] = field(pytree_node=True)
 
     @staticmethod
     def create_for(key: KeyArray,
@@ -171,8 +175,9 @@ class PredictState(PyTreeNode):
 
         return PredictState(
             apply_fn=cast(ModelCall, apply_fn),
-            params=cast(ModelParam, params),
+            params=cast(ModelParam, params["params"]),
             split_fn=model.split_key,
+            sigma_reparam=params.get("sigma_reparam", None)
         )
 
 State: TypeAlias = Union[TrainState, PredictState]
@@ -261,14 +266,23 @@ def train(
         logger.info("Valid Data: Batch Size: %d, # of Batch: %d",
                     valid_data.batch_size, valid_data.nbatch)
 
-    @value_and_grad
+    @functools.partial(value_and_grad, has_aux=True)
     def train_fn(p: ModelParam, s: TrainState, k: KeyArray,
-                 x: DataT, y: DataT) -> Array:
-        return loss_fn(s.apply_fn(p, x, train=True, rngs=k), y)
+                 x: DataT, y: DataT) -> Tuple[Array, ModelParam]:
+        col = {"params": p}
+        if s.sigma_reparam is not None:
+            col["sigma_reparam"] = s.sigma_reparam
+        pred, update = s.apply_fn(col, x, train=True, rngs=k,
+                                  mutable=["sigma_reparam"])
+        return loss_fn(pred, y), update
 
     @jit
     def valid_fn(s: TrainState, k: KeyArray, x: DataT, y: DataT) -> Array:
-        return loss_fn(s.apply_fn(s.params, x, train=False, rngs=k), y)
+        col = {"params": s.params}
+        if s.sigma_reparam is not None:
+            col["sigma_reparam"] = s.sigma_reparam
+        return loss_fn(s.apply_fn(col, x, train=False, rngs=k),
+                       y)
 
 
     @jit
@@ -278,13 +292,18 @@ def train(
             x: DataT, y: DataT
     ) -> Tuple[TrainState, KeyArray, Array, Array]:
         k, k_use = s.split_fn(k, train=True)
-        loss, grad = train_fn(s.params, s, k_use, x, y)
+        (loss, update), grad = train_fn(s.params, s, k_use, x, y)
 
         s = s.apply_gradients(grads=grad)
 
         _grad, _ = tree_flatten(tree_map(lambda _g: jnp.sum(jnp.square(_g)), grad))
 
-        return s, k, l+loss, g + jnp.sum(jnp.asarray(_grad))
+        return (
+            s.replace(sigma_reparam=update.get("sigma_reparam", None)),
+            k,
+            l+loss,
+            g + jnp.sum(jnp.asarray(_grad))
+        )
 
     @jit
     def valid_step_fn(s: TrainState, k: KeyArray, l: Array,
