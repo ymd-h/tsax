@@ -82,8 +82,8 @@ class SigmaReparamDense(nn.Module):
                           kernel.shape[1])
 
         uWv = self.variable("sigma_reparam", "uWv",
-                            lambda _: jnp.einsum("d,dc,c->",
-                                                 u.value, kernel, v.value), None)
+                            lambda: jnp.einsum("d,dc,c->",
+                                               u.value, kernel, v.value))
 
         if train:
             u.value = jax.lax.stop_gradient(kernel @ v.value)
