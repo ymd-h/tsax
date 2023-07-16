@@ -228,7 +228,7 @@ class Embedding(nn.Module):
     def __call__(self,
                  seq: Array,
                  cat: Optional[Array] = None, *,
-                 with_dropout: bool = False) -> Array:
+                 train: bool = False) -> Array:
         """
         Call Embedding Layer
 
@@ -238,8 +238,8 @@ class Embedding(nn.Module):
             Numerical Sequence. [B, L, d_seq]
         cat : Array, optional
             Categorical Sequence for Temporal Information. [B, L, d_cat]
-        with_dropout : bool
-            Whether dropout or not
+        train : bool
+            whether train or not
 
         Returns
         -------
@@ -276,7 +276,7 @@ class Embedding(nn.Module):
                 .at[:,:S,:].add(CategoricalEncoding(Vs=self.Vs, dm=self.dm)(cat))
             )
 
-        if with_dropout:
+        if train:
             embedded = embedded.at[:].set(
                 nn.Dropout(self.Pdrop, deterministic=False)(embedded)
             )

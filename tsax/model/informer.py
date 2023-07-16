@@ -300,7 +300,7 @@ class EncoderLayer(nn.Module):
     @nn.compact
     def __call__(self,
                  inputs: Array, *,
-                 with_dropout: bool = False) -> Array:
+                 train: bool = False) -> Array:
         """
         Call Encoder Layer
 
@@ -308,8 +308,8 @@ class EncoderLayer(nn.Module):
         ----------
         inputs : Array
             Inputs. [B, L, dm]
-        with_dropout : bool, optional
-            Whether dropout or not
+        train : bool, optional
+            whether train or not
 
         Returns
         -------
@@ -327,12 +327,12 @@ class EncoderLayer(nn.Module):
         ff = FeedForward(dff=self.dff, Pdrop=self.Pdrop, activation="GELU")
 
         inputs = ResidualLayerNorm(
-            lambda i: mha(i, i, i, with_dropout=with_dropout),
+            lambda i: mha(i, i, i, train=train),
             self.eps
         )(inputs)
         inputs = inputs.at[:].set(
             ResidualLayerNorm(
-                lambda i: ff(i, with_dropout=with_dropout),
+                lambda i: ff(i, train=train),
                 self.eps
             )(inputs)
         )
@@ -357,7 +357,7 @@ class DecoderLayer(nn.Module):
     def __call__(self,
                  inputs: Array,
                  outputs: Array, *,
-                 with_dropout: bool = False) -> Array:
+                 train: bool = False) -> Array:
         """
         Call Decoder Layer
 
@@ -367,8 +367,8 @@ class DecoderLayer(nn.Module):
             Inputs. [B, Lenc, dm]
         outputs : Array
             Outputs. [B, Ldec, dm]
-        with_dropout : bool, optional
-            Whether dropout or not
+        train : bool, optional
+            whether train or not
 
         Returns
         -------
@@ -394,18 +394,18 @@ class DecoderLayer(nn.Module):
         ff = FeedForward(dff=self.dff, Pdrop=self.Pdrop, activation="GELU")
 
         outputs = ResidualLayerNorm(
-            lambda o: mmha(o, o, o, with_dropout=with_dropout),
+            lambda o: mmha(o, o, o, train=train),
             self.eps
         )(outputs)
 
         outputs = outputs.at[:].set(ResidualLayerNorm(
-            lambda o: mha(o, inputs, inputs, with_dropout=with_dropout),
+            lambda o: mha(o, inputs, inputs, train=train),
             self.eps
         )(outputs))
 
         outputs = outputs.at[:].set(
             ResidualLayerNorm(
-                lambda o: ff(o, with_dropout=with_dropout),
+                lambda o: ff(o, train=train),
                 self.eps
             )(outputs)
         )
@@ -430,7 +430,7 @@ class EncoderStack(nn.Module):
     @nn.compact
     def __call__(self,
                  inputs: Array, *,
-                 with_dropout: bool = False) -> Array:
+                 train: bool = False) -> Array:
         """
         Call Encoder Stack
 
@@ -438,8 +438,8 @@ class EncoderStack(nn.Module):
         ----------
         inputs : Array
             Inputs. [B, L, dm]
-        with_dropout : bool, optional
-            Whether dropout or not.
+        train : bool, optional
+            whether train or not.
 
         Returns
         -------
@@ -455,7 +455,7 @@ class EncoderStack(nn.Module):
                                   eps=self.eps,
                                   Pdrop=self.Pdrop,
                                   name=f"EncoderLayer_{i}")(inputs,
-                                                            with_dropout=with_dropout)
+                                                            train=train)
             assert inputs.shape == (B, L, dm), "BUG"
 
             if i < self.nE - 1:
@@ -483,7 +483,7 @@ class DecoderStack(nn.Module):
     def __call__(self,
                  inputs: Array,
                  outputs: Array, *,
-                 with_dropout: bool = False) -> Array:
+                 train: bool = False) -> Array:
         """
         Call Encoder Stack
 
@@ -493,8 +493,8 @@ class DecoderStack(nn.Module):
             Encoded Inputs. [B, Lenc, dm]
         outputs : Array
             Outputs. [B, Ldec, dm]
-        with_dropout : bool, optional
-            Whether dropout or not.
+        train : bool, optional
+            whether train or not.
 
         Returns
         -------
@@ -511,7 +511,7 @@ class DecoderStack(nn.Module):
                          Pdrop=self.Pdrop)
 
         def f(dec: DecoderLayer, out: Array) -> Array:
-            return dec(inputs, out, with_dropout=with_dropout)
+            return dec(inputs, out, train=train)
 
         outputs = LayerStack(D, outputs, self.nD, f)
         assert outputs.shape == (B, L, dm), "BUG"
@@ -609,7 +609,7 @@ class Informer(Model):
     def encode(self,
                seq: Array,
                cat: Optional[Array] = None, *,
-               with_dropout: bool = False) -> Array:
+               train: bool = False) -> Array:
         """
         Encode with Informer
 
@@ -619,8 +619,8 @@ class Informer(Model):
             Inputs. [B, I, d]
         cat : Array, optional
             Categorical Features. [B, I, C]
-        with_dropout : bool
-            Whether dropout or not
+        train : bool
+            whether train or not
 
         Returns
         -------
@@ -632,10 +632,10 @@ class Informer(Model):
 
         B = seq.shape[0]
 
-        inputs: Array = self.encoder_embed(seq, cat, with_dropout=with_dropout)
+        inputs: Array = self.encoder_embed(seq, cat, train=train)
         assert inputs.shape == (B, self.I, self.dm), "BUG"
 
-        inputs = self.encoder(inputs, with_dropout=with_dropout)
+        inputs = self.encoder(inputs, train=train)
         assert inputs.shape[0] == B, "BUG"
         assert inputs.shape[2] == self.dm, "BUG"
 
@@ -645,7 +645,7 @@ class Informer(Model):
                inputs: Array,
                seq: Array,
                cat: Optional[Array] = None, *,
-               with_dropout: bool = False) -> Array:
+               train: bool = False) -> Array:
         """
         Decode with Informer
 
@@ -677,11 +677,11 @@ class Informer(Model):
 
         outputs = (jnp.zeros((B, self.Ltoken+self.O, self.dm), dtype=seq.dtype)
                    .at[:,:self.Ltoken,:]
-                   .set(self.decoder_embed(seq, cat, with_dropout=with_dropout)))
+                   .set(self.decoder_embed(seq, cat, train=train)))
         assert outputs.shape == (B, self.Ltoken+self.O, self.dm), "BUG"
 
         outputs = outputs.at[:].set(
-            self.decoder(inputs, outputs, with_dropout=with_dropout)
+            self.decoder(inputs, outputs, train=train)
         )
 
         # outputs: [B, Ltoken+O, dm] -> [B, Ltoken+O, d]
@@ -718,12 +718,12 @@ class Informer(Model):
 
         B: int = seq.shape[0]
 
-        inputs = self.encode(seq, cat, with_dropout=train)
+        inputs = self.encode(seq, cat, train=train)
         assert inputs.shape[0] == B, "BUG"
         assert inputs.shape[1] <= self.I
         assert inputs.shape[2] == self.dm, "BUG"
 
-        pred = self.decode(inputs, seq, cat, with_dropout=train)
+        pred = self.decode(inputs, seq, cat, train=train)
         assert pred.shape == (B, self.O, self.d), "BUG"
 
         return pred

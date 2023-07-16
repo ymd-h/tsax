@@ -47,7 +47,7 @@ class MultiHeadAttention(nn.Module):
                  Q: Array,
                  K: Array,
                  V: Array, *,
-                 with_dropout: bool = False) -> Array:
+                 train: bool = False) -> Array:
         """
         Call Multi Head Attention
 
@@ -59,8 +59,8 @@ class MultiHeadAttention(nn.Module):
             Key. [B, Lk, dm]
         V : ArrayLike
             Value. [B, Lk, dm]
-        with_dropout : bool, optional
-            Whether dropout or not
+        train : bool, optional
+            whether train or not
 
         Returns
         -------
@@ -99,7 +99,7 @@ class MultiHeadAttention(nn.Module):
         MHA: Array = Dense(features=self.dm, name="WO", use_bias=self.bias)(a)
         assert MHA.shape == (B, L, self.dm), "BUG"
 
-        if with_dropout:
+        if train:
             MHA = MHA.at[:].set(nn.Dropout(self.Pdrop, deterministic=False)(MHA))
 
         return MHA

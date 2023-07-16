@@ -94,15 +94,15 @@ class TestEncoderLayer(TestCase):
 
         e_drop, _ = E.init_with_output({"params": key_p,
                                         "dropout": key_d},
-                                       inputs, with_dropout=True)
+                                       inputs, train=True)
         self.assertEqual(e_drop.shape, inputs.shape)
         self.assertNotAllclose(e, e_drop)
 
         e_drop_jit, _ = jax.jit(
             E.init_with_output,
-            static_argnames=["with_dropout"],
+            static_argnames=["train"],
         )({"params": key_p, "dropout": key_d},
-          inputs, with_dropout=True)
+          inputs, train=True)
         self.assertEqual(e_drop_jit.shape, inputs.shape)
         self.assertNotAllclose(e_jit, e_drop_jit)
 
@@ -150,7 +150,7 @@ class TestDecoderLayer(TestCase):
         (ds_drop, dt_drop), _ = D.init_with_output({"params": key_p,
                                                     "dropout": key_d},
                                                    inputs, s_outputs, t_outputs,
-                                                   with_dropout=True)
+                                                   train=True)
         self.assertEqual(ds_drop.shape, s_outputs.shape)
         self.assertEqual(dt_drop.shape, t_outputs.shape)
         self.assertNotAllclose(ds, ds_drop)
@@ -158,9 +158,9 @@ class TestDecoderLayer(TestCase):
 
         (ds_drop_jit, dt_drop_jit), _ = jax.jit(
             D.init_with_output,
-            static_argnames=["with_dropout"],
+            static_argnames=["train"],
         )({"params": key_p, "dropout": key_d},
-          inputs, s_outputs, t_outputs, with_dropout=True)
+          inputs, s_outputs, t_outputs, train=True)
         self.assertEqual(ds_drop_jit.shape, s_outputs.shape)
         self.assertEqual(dt_drop_jit.shape, t_outputs.shape)
         self.assertNotAllclose(ds_jit, ds_drop_jit)
@@ -207,14 +207,14 @@ class TestEncoderStack(TestCase):
 
         self.assertAllclose(e, e_jit, atol=1e-5, rtol=1e-5)
 
-        e_drop, _ = E.init_with_output(rngs, inputs, with_dropout=True)
+        e_drop, _ = E.init_with_output(rngs, inputs, train=True)
         self.assertEqual(e_drop.shape, (B, L, dm))
         self.assertNotAllclose(e, e_drop)
 
         e_drop_jit, _ = jax.jit(
             E.init_with_output,
-            static_argnames=["with_dropout"],
-        )(rngs, inputs, with_dropout=True)
+            static_argnames=["train"],
+        )(rngs, inputs, train=True)
         self.assertEqual(e_drop_jit.shape, (B, L, dm))
         self.assertNotAllclose(e_jit, e_drop_jit, atol=1e-6, rtol=1e-6)
 
@@ -268,7 +268,7 @@ class TestDecoderStack(TestCase):
         self.assertAllclose(dt, dt_jit, atol=1e-6, rtol=1e-6)
 
         (ds_drop, dt_drop), _ = D.init_with_output(rngs, inputs, s_outputs, t_outputs,
-                                                   with_dropout=True)
+                                                   train=True)
         self.assertEqual(ds_drop.shape, (B, Ldec, dm))
         self.assertEqual(dt_drop.shape, (B, Ldec, dm))
         self.assertNotAllclose(ds, ds_drop, atol=1e-6, rtol=1e-6)
@@ -276,8 +276,8 @@ class TestDecoderStack(TestCase):
 
         (ds_drop_jit, dt_drop_jit), _ = jax.jit(
             D.init_with_output,
-            static_argnames=["with_dropout"],
-        )(rngs, inputs, s_outputs, t_outputs, with_dropout=True)
+            static_argnames=["train"],
+        )(rngs, inputs, s_outputs, t_outputs, train=True)
         self.assertEqual(ds_drop_jit.shape, (B, Ldec, dm))
         self.assertEqual(dt_drop_jit.shape, (B, Ldec, dm))
         self.assertNotAllclose(ds_jit, ds_drop_jit, atol=1e-6, rtol=1e-6)

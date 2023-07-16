@@ -303,7 +303,7 @@ class EncoderLayer(nn.Module):
     @nn.compact
     def __call__(self,
                  inputs: Array, *,
-                 with_dropout: bool = False) -> Array:
+                 train: bool = False) -> Array:
         """
         Call Encoder Layer
 
@@ -311,8 +311,8 @@ class EncoderLayer(nn.Module):
         ----------
         inputs : Array
             Inputs. [B, L, dm]
-        with_dropout : bool, optional
-            Whether dropout or not.
+        train : bool, optional
+            whether train or not.
 
         Returns
         -------
@@ -330,11 +330,11 @@ class EncoderLayer(nn.Module):
         ff = FeedForward(dff=self.dff, Pdrop=self.Pdrop, bias=False)
 
         inputs, _ = SeriesDecomp(kMA=self.kMA)(
-            inputs + mha(inputs, inputs, inputs, with_dropout=with_dropout)
+            inputs + mha(inputs, inputs, inputs, train=train)
         )
 
         inputs, _ = SeriesDecomp(kMA=self.kMA)(
-            inputs + ff(inputs, with_dropout=with_dropout)
+            inputs + ff(inputs, train=train)
         )
 
         assert inputs.shape == shape, "BUG"
@@ -374,7 +374,7 @@ class DecoderLayer(nn.Module):
                  inputs: Array,
                  seasonal_outputs: Array,
                  trend_outputs: Array, *,
-                 with_dropout: bool = False) -> Tuple[Array, Array]:
+                 train: bool = False) -> Tuple[Array, Array]:
         """
         Call Decloder Layer
 
@@ -386,8 +386,8 @@ class DecoderLayer(nn.Module):
             Seasonal Outputs. [B, L, dm]
         trend_outputs : Array
             Trend-Cyclical Outputs. [B, L, dm]
-        with_dropout : bool, optional
-            Whether dropout or not.
+        train : bool, optional
+            whether train or not.
 
         Returns
         -------
@@ -418,18 +418,18 @@ class DecoderLayer(nn.Module):
             seasonal_outputs + s_mha(seasonal_outputs,
                                      seasonal_outputs,
                                      seasonal_outputs,
-                                     with_dropout=with_dropout)
+                                     train=train)
         )
 
         seasonal_outputs, trend2 = SeriesDecomp(kMA=self.kMA)(
             seasonal_outputs + c_mha(seasonal_outputs,
                                      inputs,
                                      inputs,
-                                     with_dropout=with_dropout)
+                                     train=train)
         )
 
         seasonal_outputs, trend3 = SeriesDecomp(kMA=self.kMA)(
-            seasonal_outputs + ff(seasonal_outputs, with_dropout=with_dropout)
+            seasonal_outputs + ff(seasonal_outputs, train=train)
         )
 
         trend_outputs.at[:].add(
@@ -476,7 +476,7 @@ class EncoderStack(nn.Module):
     @nn.compact
     def __call__(self,
                  inputs: Array,
-                 with_dropout: bool = False) -> Array:
+                 train: bool = False) -> Array:
         """
         Call Encoder Stack
 
@@ -484,8 +484,8 @@ class EncoderStack(nn.Module):
         ----------
         inputs : Array
             Inputs. [B, L, dm]
-        with_dropout : bool, optional
-            Whether dropout or not.
+        train : bool, optional
+            whether train or not.
 
         Returns
         -------
@@ -504,7 +504,7 @@ class EncoderStack(nn.Module):
                          Pdrop=self.Pdrop)
 
         def f(enc: EncoderLayer, ins: Array) -> Array:
-            return enc(ins, with_dropout=with_dropout)
+            return enc(ins, train=train)
 
         inputs = LayerStack(E, inputs, self.nE, f)
         inputs = inputs.at[:].set(SeasonalLayerNorm(eps=self.eps)(inputs))
@@ -552,7 +552,7 @@ class DecoderStack(nn.Module):
                  inputs: Array,
                  seasonal_outputs: Array,
                  trend_outputs: Array, *,
-                 with_dropout: bool = False) -> Tuple[Array, Array]:
+                 train: bool = False) -> Tuple[Array, Array]:
         """
         Call Decoder Stack
 
@@ -564,8 +564,8 @@ class DecoderStack(nn.Module):
             Seasonal Outputs. [B, L, dm]
         trend_outputs : Array
             Trend-Cyclical Outputs. [B, L, dm]
-        with_dropout : bool
-            Whether dropout or not.
+        train : bool
+            whether train or not.
 
         Returns
         -------
@@ -587,7 +587,7 @@ class DecoderStack(nn.Module):
 
         def f(dec: DecoderLayer, st: Tuple[Array, Array]) -> Tuple[Array, Array]:
             s, t = st
-            return dec(inputs, s, t, with_dropout=with_dropout)
+            return dec(inputs, s, t, train=train)
 
         seasonal_outputs, trend_outputs = LayerStack(
             D, (seasonal_outputs, trend_outputs), self.nD, f
@@ -690,7 +690,7 @@ class Autoformer(Model):
     def encode(self,
                seq: Array,
                cat: Optional[Array] = None, *,
-               with_dropout: bool = False) -> Array:
+               train: bool = False) -> Array:
         """
         Encode with Autoformer
 
@@ -700,8 +700,8 @@ class Autoformer(Model):
             Inputs. [B, I, d]
         cat : Array, optional
             Categorical Features. [B, I, C]
-        with_dropout : bool
-            Whether dropout or not
+        train : bool
+            whether train or not
 
         Returns
         -------
@@ -713,10 +713,10 @@ class Autoformer(Model):
 
         B = seq.shape[0]
 
-        inputs: Array = self.encoder_embed(seq, cat, with_dropout=with_dropout)
+        inputs: Array = self.encoder_embed(seq, cat, train=train)
         assert inputs.shape == (B, self.I, self.d), "BUG"
 
-        inputs = self.encoder(inputs, with_dropout=with_dropout)
+        inputs = self.encoder(inputs, train=train)
         assert inputs.shape == (B, self.I, self.d), "BUG"
 
         return inputs
@@ -725,7 +725,7 @@ class Autoformer(Model):
                inputs: Array,
                seq: Array,
                cat: Optional[Array] = None, *,
-               with_dropout: bool = False) -> Array:
+               train: bool = False) -> Array:
         """
         Decode with Autoformer
 
@@ -762,11 +762,11 @@ class Autoformer(Model):
 
         # Only seasonal part is embedded.
         cat_pad = cat.at[:,-S:,:].get() if cat is not None else None
-        s_outputs = self.decoder_embed(s_outputs, cat_pad, with_dropout=with_dropout)
+        s_outputs = self.decoder_embed(s_outputs, cat_pad, train=train)
         assert s_outputs.shape == (B, L, self.d)
 
         s_outputs, t_outputs = self.decoder(inputs, s_outputs, t_outputs,
-                                            with_dropout=with_dropout)
+                                            train=train)
         assert s_outputs.shape == t_outputs.shape == (B, L, self.d), "BUG"
 
         pred = s_outputs.at[:,-self.O:,:].get() + t_outputs.at[:,-self.O:,:].get()
@@ -799,10 +799,10 @@ class Autoformer(Model):
 
         B = seq.shape[0]
 
-        inputs = self.encode(seq, cat, with_dropout=train)
+        inputs = self.encode(seq, cat, train=train)
         assert inputs.shape == (B, self.I, self.d), "BUG"
 
-        pred = self.decode(inputs, seq, cat, with_dropout=train)
+        pred = self.decode(inputs, seq, cat, train=train)
         assert pred.shape == (B, self.O, self.d), "BUG"
         return pred
 

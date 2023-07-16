@@ -106,7 +106,7 @@ class FeedForward(nn.Module):
     bias: bool = True
 
     @nn.compact
-    def __call__(self, x: Array, *, with_dropout = False) -> Array:
+    def __call__(self, x: Array, *, train = False) -> Array:
         """
         Call Feed Foward Network
 
@@ -114,8 +114,8 @@ class FeedForward(nn.Module):
         ----------
         x : Array
             Inputs. [B, L, dm]
-        with_dropout : bool, optional
-            Whether dropout or not
+        train : bool, optional
+            whether train or not
 
         Returns
         -------
@@ -136,13 +136,13 @@ class FeedForward(nn.Module):
         h = activation(ConvSeq(dm=self.dff, kernel=self.kernel, bias=self.bias)(x))
         assert h.shape == (B, L, self.dff), "BUG"
 
-        if with_dropout:
+        if train:
             h = h.at[:].set(nn.Dropout(self.Pdrop, deterministic=False)(h))
 
         y = ConvSeq(dm=dm, kernel=self.kernel, bias=self.bias)(h)
         assert y.shape == (B, L, dm), "BUG"
 
-        if with_dropout:
+        if train:
             y = y.at[:].set(nn.Dropout(self.Pdrop, deterministic=False)(y))
 
         return y
