@@ -45,7 +45,8 @@ CarryT = TypeVar("CarryT")
 DataT = TypeVar("DataT",
                 bound=Union[Array, List[Array], Tuple[Array, ...]])
 
-ModelParam: TypeAlias = fcore.FrozenDict[str, Any]
+ModelParam: TypeAlias = Union[Dict[str, fcore.FrozenDict[str, Any]],
+                              fcore.FrozenDict[str, Any]]
 """Model Parameter"""
 
 LayerNormMode: TypeAlias = Literal["post", "pre"]
@@ -71,7 +72,8 @@ class ModelCall(Protocol):
                  variables: ModelParam,
                  data: DataT,
                  rngs: Union[KeyArray, Dict[str, KeyArray], None]=None,
-                 train: bool = False) -> Array: ...
+                 train: bool = False,
+                 mutable: Optional[List[str]] = None) -> Array: ...
 
 
 class SplitFn(Protocol):
