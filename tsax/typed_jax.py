@@ -49,14 +49,15 @@ def jit(f: Callable[P, T], *,
 
 
 @functools.wraps(jax.value_and_grad)
-def value_and_grad(f: Callable[P, T], *,
-                   argnums: Union[int, Sequence[int]]=0,
-                   has_aux: bool=False,
-                   holomorphic: bool=False,
-                   allow_int: bool=False,
-                   reduce_axes: Sequence[Hashable]=()) -> Callable[P, Tuple[T, T]]:
-    return cast(
-        Callable[P, Tuple[T, T]],
+def value_and_grad(
+        f: Callable[P, T],
+        argnums: Union[int, Sequence[int]]=0,
+        has_aux: bool=False,
+        holomorphic: bool=False,
+        allow_int: bool=False,
+        reduce_axes: Sequence[Hashable]=(),
+) -> Callable[P, Tuple[T, Array]]:
+    return cast(Callable[P, Tuple[T, Array]],
         jax.value_and_grad(f,
                            argnums=argnums, has_aux=has_aux,
                            holomorphic=holomorphic, reduce_axes=reduce_axes)
