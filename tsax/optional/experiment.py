@@ -46,7 +46,15 @@ from orbax.checkpoint import (
 from tqdm import tqdm
 import wblog
 
-from tsax.typing import Array, KeyArray, DataT, ModelCall, SplitFn, ModelParam
+from tsax.typing import (
+    Array,
+    KeyArray,
+    DataT,
+    ModelCall,
+    SplitFn,
+    ModelParam,
+    ModelVars,
+)
 from tsax.typed_jax import jit, value_and_grad
 from tsax.core import Model
 from tsax.data import SeqData, ensure_BatchSeqShape, data_shape
@@ -123,6 +131,23 @@ class TrainState(train_state.TrainState):
             sigma_reparam=params.get("sigma_reparam", None)
         ))
 
+    def vars(self) -> ModelVars:
+        """
+        Get Model Variables for ModelCall
+
+        Returns
+        -------
+        ModelVars
+        """
+        v: ModelVars = {
+            "params": self.params,
+        }
+        if self.sigma_reparam is not None:
+            v["sigma_reparam"] = self.sigma_reparam
+
+        return v
+
+
 class PredictState(PyTreeNode):
     """
     TSax Experiment Predict State
@@ -177,8 +202,26 @@ class PredictState(PyTreeNode):
             apply_fn=cast(ModelCall, apply_fn),
             params=cast(ModelParam, params["params"]),
             split_fn=model.split_key,
-            sigma_reparam=params.get("sigma_reparam", None)
+            sigma_reparam=cast(Optional[ModelParam],
+                               params.get("sigma_reparam", None))
         )
+
+    def vars(self) -> ModelVars:
+        """
+        Get Model Variables for ModelCall
+
+        Returns
+        -------
+        ModelVars
+        """
+        v: ModelVars = {
+            "params": self.params,
+        }
+        if self.sigma_reparam is not None:
+            v["sigma_reparam"] = self.sigma_reparam
+
+        return v
+
 
 State: TypeAlias = Union[TrainState, PredictState]
 
@@ -266,23 +309,17 @@ def train(
         logger.info("Valid Data: Batch Size: %d, # of Batch: %d",
                     valid_data.batch_size, valid_data.nbatch)
 
-    @functools.partial(value_and_grad, has_aux=True)
-    def train_fn(p: ModelParam, s: TrainState, k: KeyArray,
+    def _train_fn(p: ModelParam, s: TrainState, k: KeyArray,
                  x: DataT, y: DataT) -> Tuple[Array, ModelParam]:
-        col = {"params": p}
-        if s.sigma_reparam is not None:
-            col["sigma_reparam"] = s.sigma_reparam
-        pred, update = s.apply_fn(col, x, train=True, rngs=k,
+        pred, update = s.apply_fn(s.vars(), x, train=True, rngs=k,
                                   mutable=["sigma_reparam"])
         return loss_fn(pred, y), update
 
+    train_fn = value_and_grad(_train_fn, has_aux=True)
+
     @jit
     def valid_fn(s: TrainState, k: KeyArray, x: DataT, y: DataT) -> Array:
-        col = {"params": s.params}
-        if s.sigma_reparam is not None:
-            col["sigma_reparam"] = s.sigma_reparam
-        return loss_fn(s.apply_fn(col, x, train=False, rngs=k),
-                       y)
+        return loss_fn(s.apply_fn(s.vars(), x, train=False, rngs=k), y)
 
 
     @jit
@@ -292,18 +329,19 @@ def train(
             x: DataT, y: DataT
     ) -> Tuple[TrainState, KeyArray, Array, Array]:
         k, k_use = s.split_fn(k, train=True)
+        loss: Array
+        update: ModelParam
         (loss, update), grad = train_fn(s.params, s, k_use, x, y)
 
         s = s.apply_gradients(grads=grad)
 
         _grad, _ = tree_flatten(tree_map(lambda _g: jnp.sum(jnp.square(_g)), grad))
 
-        return (
-            s.replace(sigma_reparam=update.get("sigma_reparam", None)),
-            k,
-            l+loss,
-            g + jnp.sum(jnp.asarray(_grad))
-        )
+        r: Optional[ModelParam] = update.get("sigma_reparam", None)
+        if r is not None:
+            s = s.replace(sigma_reparam=r)
+
+        return s, k, l+loss, g + jnp.sum(jnp.asarray(_grad))
 
     @jit
     def valid_step_fn(s: TrainState, k: KeyArray, l: Array,
@@ -482,7 +520,7 @@ def predict(key: KeyArray,
     @jit
     def pred_fn(k: KeyArray, x: DataT) -> Array:
         _, k = state.split_fn(k, train=False)
-        return cast(Array, state.apply_fn(state.params, x, train=False, rngs=k))
+        return cast(Array, state.apply_fn(state.vars(), x, train=False, rngs=k))
 
 
     if isinstance(data, SeqData):

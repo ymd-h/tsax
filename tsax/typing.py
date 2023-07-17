@@ -3,7 +3,7 @@ Tsax Typing (:mod:`tsax.typing`)
 ================================
 """
 from __future__ import annotations
-from typing import Any, Dict, List, Literal, Optional, Tuple, TypeVar, Union
+from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, TypeVar, Union
 
 import jax
 from jax import Array as jaxArray
@@ -13,7 +13,7 @@ from jax.random import KeyArray as jaxKeyArray
 from jax._src.typing import Shape
 from jax._src.numpy.lax_numpy import _ScalarMeta
 from flax import core as fcore
-from typing_extensions import Never, Protocol, TypeAlias
+from typing_extensions import Never, NotRequired, Protocol, TypeAlias, TypedDict
 
 __all__ = [
     "Array",
@@ -45,9 +45,17 @@ CarryT = TypeVar("CarryT")
 DataT = TypeVar("DataT",
                 bound=Union[Array, List[Array], Tuple[Array, ...]])
 
-ModelParam: TypeAlias = Union[Dict[str, fcore.FrozenDict[str, Any]],
-                              fcore.FrozenDict[str, Any]]
+ModelParam: TypeAlias = fcore.FrozenDict[str, Any]
 """Model Parameter"""
+
+
+class ModelVars(TypedDict):
+    """
+    Model Variables for 1st Argument of ModelCall
+    """
+    params: ModelParam
+    sigma_reparam: NotRequired[ModelParam]
+
 
 LayerNormMode: TypeAlias = Literal["post", "pre"]
 """Layer Normalization Mode"""
@@ -69,7 +77,7 @@ PrecisionLike.__doc__ = """Presicion Like"""
 
 class ModelCall(Protocol):
     def __call__(self,
-                 variables: ModelParam,
+                 variables: ModelVars,
                  data: DataT,
                  rngs: Union[KeyArray, Dict[str, KeyArray], None]=None,
                  train: bool = False,
