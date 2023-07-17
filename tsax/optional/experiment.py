@@ -309,6 +309,8 @@ def train(
         logger.info("Valid Data: Batch Size: %d, # of Batch: %d",
                     valid_data.batch_size, valid_data.nbatch)
 
+    # Issue: Since partial() cannot pass type-check,
+    #        we define temporary `_train_fn` then wraps it by `value_and_grad`
     def _train_fn(p: ModelParam, s: TrainState, k: KeyArray,
                  x: DataT, y: DataT) -> Tuple[Array, ModelParam]:
         pred, update = s.apply_fn(s.vars(), x, train=True, rngs=k,
