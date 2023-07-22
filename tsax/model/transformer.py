@@ -101,7 +101,7 @@ class Embedding(nn.Module):
 
         self.drop = nn.Dropout(self.Pdrop, deterministic=False)
 
-    def __call__(self, text: Array, *, with_dropout: bool = False) -> Array:
+    def __call__(self, text: Array, *, train: bool = False) -> Array:
         """
         Call Embedding
 
@@ -109,7 +109,7 @@ class Embedding(nn.Module):
         ----------
         text : Array
             Input Tokenized Text. [B, L]
-        with_dropout : bool
+        train : bool
             Whether to use dropout or not.
 
         Returns
@@ -123,7 +123,7 @@ class Embedding(nn.Module):
 
         embedded = embedded.at[:,:,:].add(self.pe(embedded))
 
-        if with_dropout:
+        if train:
             embedded = embedded.at[:].set(self.drop(embedded))
 
         return embedded
@@ -160,7 +160,7 @@ class FeedForward(nn.Module):
     Pdrop: float = PDROP
 
     @nn.compact
-    def __call__(self, x: Array, *, with_dropout: bool = False) -> Array:
+    def __call__(self, x: Array, *, train: bool = False) -> Array:
         """
         Call Position-wise Feed Forward Network
 
@@ -168,8 +168,8 @@ class FeedForward(nn.Module):
         ----------
         x : Array
             Inputs. [B, L, dm]
-        with_dropout : bool, optional
-            Whether dropout or not.
+        train : bool, optional
+            whether train or not.
 
         Returns
         -------
@@ -184,7 +184,7 @@ class FeedForward(nn.Module):
         # y: [B, L, dm]
         y: Array = nn.Dense(dm)(h)
 
-        if with_dropout:
+        if train:
             y = y.at[:].set(nn.Dropout(self.Pdrop, deterministic=False)(y))
 
         return y
@@ -280,7 +280,7 @@ class MultiHeadAttention(nn.Module):
                  K: Array,
                  V: Array,
                  mask: Optional[Array] = None, *,
-                 with_dropout: bool = False) -> Array:
+                 train: bool = False) -> Array:
         """
         Multi Head Attention
 
@@ -294,8 +294,8 @@ class MultiHeadAttention(nn.Module):
             Value. [B, L, dm]
         mask : Array, optional
             Batched Token Mask. [B, 1, L]/[B, L, L]
-        with_dropout : bool, optional
-            Whether dropout or not.
+        train : bool, optional
+            whether train or not.
 
         Returns
         -------
@@ -321,7 +321,7 @@ class MultiHeadAttention(nn.Module):
         MHA: Array = Dense(features=self.dm, use_bias=False, name="WO")(x)
         assert Q.shape == MHA.shape, "BUG"
 
-        if with_dropout:
+        if train:
             MHA = MHA.at[:].set(nn.Dropout(self.Pdrop, deterministic=False)(MHA))
 
         return MHA
@@ -354,7 +354,7 @@ class EncoderLayer(nn.Module):
     def __call__(self,
                  inputs: Array,
                  inputs_mask: Array, *,
-                 with_dropout: bool = False) -> Array:
+                 train: bool = False) -> Array:
         """
         Call Encoder Layer
 
@@ -364,8 +364,8 @@ class EncoderLayer(nn.Module):
             Inputs. [B, L, dm]
         inputs_mask : Array
             Padding Mask. [B, 1, L]
-        with_dropout : bool, optional
-            Whether dropout or not.
+        train : bool, optional
+            whether train or not.
 
         Returns
         -------
@@ -379,10 +379,10 @@ class EncoderLayer(nn.Module):
 
         # x: [B, L, m]
         inputs = ResidualLayerNorm(lambda i: mha(i, i, i, inputs_mask,
-                                                 with_dropout=with_dropout),
+                                                 train=train),
                                    self.eps)(inputs)
         inputs = inputs.at[:].set(
-            ResidualLayerNorm(lambda i: ff(i, with_dropout=with_dropout),
+            ResidualLayerNorm(lambda i: ff(i, train=train),
                               self.eps)(inputs)
         )
 
@@ -419,7 +419,7 @@ class DecoderLayer(nn.Module):
                  inputs_mask: Array,
                  outputs: Array,
                  outputs_mask: Array, *,
-                 with_dropout: bool = False) -> Array:
+                 train: bool = False) -> Array:
         """
         Call Decoder Layer
 
@@ -433,8 +433,8 @@ class DecoderLayer(nn.Module):
             Outputs. [B, L, dm]
         outputs_mask : Array
             Paddding & Subsequent Mask. [B, L, L]
-        with_dropout : bool, optional
-            Whether dropout or not.
+        train : bool, optional
+            whether train or not.
 
         Returns
         -------
@@ -456,9 +456,9 @@ class DecoderLayer(nn.Module):
                                   name="MultiHeadAttention")
         ff = FeedForward(dff=self.dff, Pdrop=self.Pdrop)
 
-        mmha_f = lambda o: mmha(o, o, o, outputs_mask, with_dropout=with_dropout)
-        mha_f = lambda o: mha(o, inputs, inputs, inputs_mask, with_dropout=with_dropout)
-        ff_f = lambda o: ff(o, with_dropout=with_dropout)
+        mmha_f = lambda o: mmha(o, o, o, outputs_mask, train=train)
+        mha_f = lambda o: mha(o, inputs, inputs, inputs_mask, train=train)
+        ff_f = lambda o: ff(o, train=train)
 
         outputs = ResidualLayerNorm(mmha_f, self.eps)(outputs)
         outputs = outputs.at[:].set(ResidualLayerNorm(mha_f, self.eps)(outputs))
@@ -498,7 +498,7 @@ class EncoderStack(nn.Module):
     def __call__(self,
                  inputs: Array,
                  mask: Array, *,
-                 with_dropout: bool = False) -> Array:
+                 train: bool = False) -> Array:
         """
         Call Encoder Stack
 
@@ -508,8 +508,8 @@ class EncoderStack(nn.Module):
             Inputs. [B, L, dm]
         mask : Array
             Batched Token Mask. [B, L]
-        with_dropout : bool, optional
-            Whether dropout or not.
+        train : bool, optional
+            whether train or not.
 
         Returns
         -------
@@ -530,7 +530,7 @@ class EncoderStack(nn.Module):
                                   Pdrop=self.Pdrop,
                                   name=f"EncoderLayer_{i}")(inputs,
                                                             inputs_mask,
-                                                            with_dropout=with_dropout)
+                                                            train=train)
 
         assert inputs.shape == shape, "BUG"
         return inputs
@@ -568,7 +568,7 @@ class DecoderStack(nn.Module):
                  inputs_mask: Array,
                  outputs: Array,
                  outputs_mask: Array, *,
-                 with_dropout: bool = False) -> Array:
+                 train: bool = False) -> Array:
         """
         Call Decoder Stack
 
@@ -582,8 +582,8 @@ class DecoderStack(nn.Module):
             Outputs. [B, L, dm]
         outputs_mask : Array
             Batched Token Mask for Outputs. [B, L]
-        with_dropout : bool, optional
-            Whether dropout or not.
+        train : bool, optional
+            whether train or not.
 
         Returns
         -------
@@ -616,7 +616,7 @@ class DecoderStack(nn.Module):
                                                              inputs_mask,
                                                              outputs,
                                                              outputs_mask,
-                                                             with_dropout=with_dropout)
+                                                             train=train)
 
         assert inputs.shape == outputs.shape, "BUG"
         return outputs
@@ -672,7 +672,7 @@ class Transformer(nn.Module):
     def encode(self,
                inputs: Array,
                inputs_mask, *,
-               with_dropout: bool = False) -> Array:
+               train: bool = False) -> Array:
         """
         Encode with Transformer
 
@@ -682,7 +682,7 @@ class Transformer(nn.Module):
             Batched Tokenized Input Text. [B, L]
         inputs_mask : Array
             Batched Token Mask for Inputs. [B, L]
-        with_dropout : bool, optional
+        train : bool, optional
             Whether to use dropout or not.
 
         Returns
@@ -690,10 +690,10 @@ class Transformer(nn.Module):
         inputs : Array
             Encoded Inputs
         """
-        inputs = self.embed(inputs, with_dropout=with_dropout)
+        inputs = self.embed(inputs, train=train)
 
         # inputs: [B, L, dm]
-        inputs = self.encoder(inputs, inputs_mask, with_dropout=with_dropout)
+        inputs = self.encoder(inputs, inputs_mask, train=train)
         assert inputs.shape == (inputs.shape[0], self.L, self.dm), "BUG"
 
         return inputs
@@ -703,7 +703,7 @@ class Transformer(nn.Module):
                inputs_mask: Array,
                outputs: Array,
                outputs_mask: Array, *,
-               with_dropout: bool = False,
+               train: bool = False,
                only_next: bool = False) -> Array:
         """
         Decode with Transformer
@@ -718,8 +718,8 @@ class Transformer(nn.Module):
             Batched Tokenized Output Text. [B, L]
         outputs_mask : Array
             Batched Token Mask for Outputs. [B, L]
-        with_dropout : bool, optional
-            Whether dropout or not.
+        train : bool, optional
+            whether train or not.
         only_next : bool, optional
             Whether return only the next token or not.
 
@@ -730,12 +730,12 @@ class Transformer(nn.Module):
         """
         B = inputs.shape[0]
 
-        outputs = self.embed(outputs, with_dropout=with_dropout)
+        outputs = self.embed(outputs, train=train)
 
         # outputs: [B, L, dm]
         outputs = self.decoder(inputs, inputs_mask,
                                outputs, outputs_mask,
-                               with_dropout=with_dropout)
+                               train=train)
         assert outputs.shape == (B, self.L, self.dm), "BUG"
 
         if only_next:
@@ -757,7 +757,7 @@ class Transformer(nn.Module):
                  inputs_mask: Array,
                  outputs: Array,
                  outputs_mask: Array, *,
-                 with_dropout: bool = False,
+                 train: bool = False,
                  only_next: bool = False) -> Array:
         """
         Call Transformer
@@ -772,8 +772,8 @@ class Transformer(nn.Module):
             Batched Tokenized Output Text. [B, L]
         outputs_mask : Array
             Batched Token Mask for Outputs. [B, L]
-        with_dropout : bool, optional
-            Whether dropout or not.
+        train : bool, optional
+            whether train or not.
         only_next : bool, optional
             Whether return only the next token or not.
 
@@ -788,10 +788,10 @@ class Transformer(nn.Module):
         """
         assert inputs.shape == outputs.shape, "BUG"
         assert inputs.shape[1] == self.L, "BUG"
-        assert isinstance(with_dropout, bool), "BUG"
+        assert isinstance(train, bool), "BUG"
 
-        inputs = self.encode(inputs, inputs_mask, with_dropout=with_dropout)
+        inputs = self.encode(inputs, inputs_mask, train=train)
 
         return self.decode(inputs, inputs_mask, outputs, outputs_mask,
-                           with_dropout=with_dropout,
+                           train=train,
                            only_next=only_next)

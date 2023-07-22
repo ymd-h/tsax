@@ -51,15 +51,15 @@ class TestMultiHeadAttention(TestCase):
         self.assertAllclose(mha, mha_jit, atol=1e-6, rtol=1e-6)
 
         mha_drop, _ = MHA.init_with_output({"params": key_p, "dropout": key_d},
-                                           Q, K, V, with_dropout=True)
+                                           Q, K, V, train=True)
         self.assertEqual(mha_drop.shape, Q.shape)
         self.assertNotAllclose(mha, mha_drop)
 
         mha_drop_jit, _ = jax.jit(
             MHA.init_with_output,
-            static_argnames=["with_dropout"]
+            static_argnames=["train"]
         )({"params": key_p, "dropout": key_d},
-          Q, K, V, with_dropout=True)
+          Q, K, V, train=True)
         self.assertEqual(mha_drop_jit.shape, Q.shape)
         self.assertNotAllclose(mha_jit, mha_drop_jit)
 
@@ -105,15 +105,15 @@ class TestMultiHeadAttention(TestCase):
         mha_drop, _ = MHA.init_with_output({"params": key_p,
                                             "attention": key_a,
                                             "dropout": key_d},
-                                           Q, K, V, with_dropout=True)
+                                           Q, K, V, train=True)
         self.assertEqual(mha_drop.shape, Q.shape)
         self.assertNotAllclose(mha, mha_drop)
 
         mha_drop_jit, _ = jax.jit(
             MHA.init_with_output,
-            static_argnames=["with_dropout"]
+            static_argnames=["train"]
         )({"params": key_p, "attention": key_a, "dropout": key_d},
-          Q, K, V, with_dropout=True)
+          Q, K, V, train=True)
         self.assertEqual(mha_drop_jit.shape, Q.shape)
         self.assertNotAllclose(mha_jit, mha_drop_jit)
 

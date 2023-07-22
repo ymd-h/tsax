@@ -94,10 +94,10 @@ def example00(V, L, N, dm, nH, dff, Pdrop,
     tx = optax.adam(learning_rate=lr)
     opt_state = tx.init(params)
 
-    @functools.partial(jax.jit, static_argnames="with_dropout")
-    def loss_fn(p, k, i, imask, o, omask, *, with_dropout):
+    @functools.partial(jax.jit, static_argnames="train")
+    def loss_fn(p, k, i, imask, o, omask, *, train):
         prob = T.apply(p, i, imask, o, omask,
-                       with_dropout=with_dropout, only_next=True,
+                       train=train, only_next=True,
                        rngs={"dropout": key})
         true = jax.vmap(lambda _i, _idx: _i.at[_idx].get())(i,
                                                             jnp.argmin(omask, axis=1))
@@ -106,7 +106,7 @@ def example00(V, L, N, dm, nH, dff, Pdrop,
         cross = cross.at[:].set(jnp.where(jnp.isfinite(cross), cross, 1000))
         return jnp.sum(cross), (prob, true)
 
-    train_fn = jax.value_and_grad(functools.partial(loss_fn, with_dropout=True),
+    train_fn = jax.value_and_grad(functools.partial(loss_fn, train=True),
                                   has_aux=True)
 
     @jax.jit
@@ -146,14 +146,14 @@ def example00(V, L, N, dm, nH, dff, Pdrop,
                                                            valid_inputs_mask,
                                                            valid_outputs,
                                                            valid_outputs_mask,
-                                                           with_dropout=False)
+                                                           train=False)
             logger.info("Valid: Epoch: %d, Loss: %.6f, Acc: %.6f",
                         ep, valid_loss / valid_size, acc_fn(valid_prob, valid_true))
 
     (final_loss, (final_prob, final_true)) = loss_fn(params, None,
                                                      valid_inputs, valid_inputs_mask,
                                                      valid_outputs, valid_outputs_mask,
-                                                     with_dropout=False)
+                                                     train=False)
     logger.info("Final Valid: Total Epoch %d, Loss: %.6f, Acc: %.6f",
                 epoch, final_loss / valid_size, acc_fn(final_prob, final_true))
 

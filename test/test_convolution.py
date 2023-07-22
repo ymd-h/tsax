@@ -71,14 +71,14 @@ class TestFeedForward(TestCase):
         self.assertAllclose(ff, ff_jit)
 
         ff_drop, _ = FF.init_with_output({"params": key_p, "dropout": key_d},
-                                         x, with_dropout=True)
+                                         x, train=True)
         self.assertEqual(ff_drop.shape, x.shape)
         self.assertNotAllclose(ff, ff_drop)
 
         ff_drop_jit, _ = jax.jit(
             FF.init_with_output,
-            static_argnames=["with_dropout"],
-        )({"params": key_p, "dropout": key_d}, x, with_dropout=True)
+            static_argnames=["train"],
+        )({"params": key_p, "dropout": key_d}, x, train=True)
         self.assertEqual(ff_drop_jit.shape, x.shape)
         self.assertNotAllclose(ff_jit, ff_drop_jit)
 

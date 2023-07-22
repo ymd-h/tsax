@@ -81,24 +81,24 @@ class TestFeedForward(TestCase):
     def test_dropout_without_jit(self):
         key, key2 = jax.random.split(self.key)
 
-        y = self.ff.apply(self.params, self.x, with_dropout=True, rngs={"dropout": key})
+        y = self.ff.apply(self.params, self.x, train=True, rngs={"dropout": key})
         self.assertEqual(y.shape, self.x.shape)
 
         self.assertNotAllclose(y, self.ff.apply(self.params,
                                                 self.x,
-                                                with_dropout=True,
+                                                train=True,
                                                 rngs={"dropout": key2}))
 
     def test_dropout_with_jit(self):
         key, key2 = jax.random.split(self.key)
 
-        f = jax.jit(self.ff.apply, static_argnames="with_dropout")
-        y = f(self.params, self.x, with_dropout=True, rngs={"dropout": key})
+        f = jax.jit(self.ff.apply, static_argnames="train")
+        y = f(self.params, self.x, train=True, rngs={"dropout": key})
         self.assertEqual(y.shape, self.x.shape)
 
         self.assertNotAllclose(y, f(self.params,
                                     self.x,
-                                    with_dropout=True,
+                                    train=True,
                                     rngs={"dropout": key2}))
 
 
@@ -240,7 +240,7 @@ class TestEncoderLayer(TestCase):
 
     def test_encoder(self):
         f = self.e.apply
-        f_jit = jax.jit(f, static_argnames="with_dropout")
+        f_jit = jax.jit(f, static_argnames="train")
 
         E = f(self.params, self.x, self.mask)
         self.assertEqual(E.shape, (self.B, self.L, self.dm))
@@ -252,13 +252,13 @@ class TestEncoderLayer(TestCase):
 
         self.assertAllclose(E, E_jit, atol=1e-6)
 
-        E_drop = f(self.params, self.x, self.mask, with_dropout=True,
+        E_drop = f(self.params, self.x, self.mask, train=True,
                    rngs={"dropout": self.key})
         self.assertEqual(E_drop.shape, (self.B, self.L, self.dm))
         self.assertNone(E_drop, jnp.isnan)
         self.assertNotAllclose(E, E_drop, atol=1e-5)
 
-        E_drop_jit = f_jit(self.params, self.x, self.mask, with_dropout=True,
+        E_drop_jit = f_jit(self.params, self.x, self.mask, train=True,
                            rngs={"dropout": self.key})
         self.assertEqual(E_drop_jit.shape, (self.B, self.L, self.dm))
         self.assertNone(E_drop_jit, jnp.isnan)
@@ -300,7 +300,7 @@ class TestDecoderLayer(TestCase):
 
     def test_decoder(self):
         f = self.d.apply
-        f_jit = jax.jit(f, static_argnames="with_dropout")
+        f_jit = jax.jit(f, static_argnames="train")
 
         D = f(self.params,
               self.inputs, self.inputs_mask,
@@ -319,7 +319,7 @@ class TestDecoderLayer(TestCase):
         D_drop = f(self.params,
                    self.inputs, self.inputs_mask,
                    self.outputs, self.outputs_mask,
-                   with_dropout=True,
+                   train=True,
                    rngs={"dropout": self.key})
         self.assertEqual(D_drop.shape, (self.B, self.L, self.dm))
         self.assertNone(D_drop, jnp.isnan)
@@ -328,7 +328,7 @@ class TestDecoderLayer(TestCase):
         D_drop_jit = f_jit(self.params,
                            self.inputs, self.inputs_mask,
                            self.outputs, self.outputs_mask,
-                           with_dropout=True,
+                           train=True,
                            rngs={"dropout": self.key})
         self.assertEqual(D_drop_jit.shape, (self.B, self.L, self.dm))
         self.assertNone(D_drop_jit, jnp.isnan)
@@ -361,7 +361,7 @@ class TestEncoderStack(TestCase):
 
     def test_encoder(self):
         f = self.e.apply
-        f_jit = jax.jit(f, static_argnames="with_dropout")
+        f_jit = jax.jit(f, static_argnames="train")
 
         E = f(self.params, self.x, self.mask)
         self.assertEqual(E.shape, (self.B, self.L, self.dm))
@@ -373,13 +373,13 @@ class TestEncoderStack(TestCase):
 
         self.assertAllclose(E, E_jit, atol=1e-6)
 
-        E_drop = f(self.params, self.x, self.mask, with_dropout=True,
+        E_drop = f(self.params, self.x, self.mask, train=True,
                    rngs={"dropout": self.key})
         self.assertEqual(E_drop.shape, (self.B, self.L, self.dm))
         self.assertNone(E_drop, jnp.isnan)
         self.assertNotAllclose(E, E_drop, atol=1e-5)
 
-        E_drop_jit = f_jit(self.params, self.x, self.mask, with_dropout=True,
+        E_drop_jit = f_jit(self.params, self.x, self.mask, train=True,
                            rngs={"dropout": self.key})
         self.assertEqual(E_drop_jit.shape, (self.B, self.L, self.dm))
         self.assertNone(E_drop_jit, jnp.isnan)
@@ -422,7 +422,7 @@ class TestDecoderStack(TestCase):
 
     def test_decoder(self):
         f = self.d.apply
-        f_jit = jax.jit(f, static_argnames="with_dropout")
+        f_jit = jax.jit(f, static_argnames="train")
 
         D = f(self.params,
               self.inputs, self.inputs_mask,
@@ -441,7 +441,7 @@ class TestDecoderStack(TestCase):
         D_drop = f(self.params,
                    self.inputs, self.inputs_mask,
                    self.outputs, self.outputs_mask,
-                   with_dropout=True,
+                   train=True,
                    rngs={"dropout": self.key})
         self.assertEqual(D_drop.shape, (self.B, self.L, self.dm))
         self.assertNone(D_drop, jnp.isnan)
@@ -450,7 +450,7 @@ class TestDecoderStack(TestCase):
         D_drop_jit = f_jit(self.params,
                            self.inputs, self.inputs_mask,
                            self.outputs, self.outputs_mask,
-                           with_dropout=True,
+                           train=True,
                            rngs={"dropout": self.key})
         self.assertEqual(D_drop_jit.shape, (self.B, self.L, self.dm))
         self.assertNone(D_drop_jit, jnp.isnan)
@@ -495,7 +495,7 @@ class TestTransformer(TestCase):
 
     def test_transformer(self):
         f = self.T.apply
-        f_jit = jax.jit(f, static_argnames=["with_dropout", "only_next", "method"])
+        f_jit = jax.jit(f, static_argnames=["train", "only_next", "method"])
 
         p = f(self.params,
               self.inputs, self.inputs_mask,
@@ -512,14 +512,14 @@ class TestTransformer(TestCase):
         p_drop = f(self.params,
                    self.inputs, self.inputs_mask,
                    self.outputs, self.outputs_mask,
-                   with_dropout=True, rngs={"dropout": self.key})
+                   train=True, rngs={"dropout": self.key})
         self.assertEqual(p_drop.shape, (self.B, self.L, self.V))
         self.assertNotAllclose(p, p_drop, atol=1e-5)
 
         p_drop_jit = f_jit(self.params,
                            self.inputs, self.inputs_mask,
                            self.outputs, self.outputs_mask,
-                           with_dropout=True, rngs={"dropout": self.key})
+                           train=True, rngs={"dropout": self.key})
         self.assertEqual(p_drop_jit.shape, (self.B, self.L, self.V))
         self.assertNotAllclose(p_jit, p_drop_jit, atol=1e-5)
 
