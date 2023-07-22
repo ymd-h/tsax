@@ -87,11 +87,15 @@ class SigmaReparamDense(nn.Module):
 
         if train:
             u.value = jax.lax.stop_gradient(kernel @ v.value)
-            assert u.value.shape == (kernel.shape[0],), f"BUG: {v.value.shape} != {(kernel.shape[0],)}"
+            assert u.value.shape == (kernel.shape[0],), (
+                f"BUG: {v.value.shape} != {(kernel.shape[0],)}"
+            )
             u.value.at[:].divide(jnp.linalg.norm(u.value, keepdims=True))
 
             v.value = jax.lax.stop_gradient(kernel.T @ u.value)
-            assert v.value.shape == (kernel.shape[1],), f"BUG: {u.value.shape} != {(kernel.shape[1],)}"
+            assert v.value.shape == (kernel.shape[1],), (
+                f"BUG: {u.value.shape} != {(kernel.shape[1],)}"
+            )
             v.value.at[:].divide(jnp.linalg.norm(v.value, keepdims=True))
 
             uWv.value = jnp.einsum("d,dc,c->", u.value, kernel, v.value)
