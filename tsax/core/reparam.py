@@ -3,6 +3,7 @@ Reparam (:mod:`tsax.core.reparam`)
 ==================================
 """
 from __future__ import annotations
+import functools
 from typing import Callable, Optional
 
 import jax
@@ -11,13 +12,13 @@ import flax.linen as nn
 from flax.linen import initializers
 
 from tsax.typing import Array, Dtype, KeyArray, PrecisionLike, Shape
+from tsax.typed_jax import Dense as typed_Dense
 
 __all__ = [
     "SigmaReparamDense",
 ]
 
 default_kernel_init = initializers.lecun_normal()
-
 
 class SigmaReparamDense(nn.Module):
     """
@@ -118,3 +119,20 @@ class SigmaReparamDense(nn.Module):
             y += jnp.reshape(bias, (1,) * (y.ndim - 1) + (-1,))
 
         return y
+
+
+def Dense(features: int,
+          use_bias: bool=True,
+          name: Optional[str]=None,
+          train: bool=False,
+          reparam: bool=False) -> Callable[[Array], Array]:
+    if reparam:
+        d = SigmaReparamDense(features=features, # type: ignore[call-arg]
+                              use_bias=use_bias,
+                              name=name)
+        return functools.partial(d, train=train)
+    else:
+        return typed_Dense(features=features,
+                           use_bias=use_bias,
+                           name=name)
+
