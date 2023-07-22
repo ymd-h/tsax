@@ -3,7 +3,7 @@ Attention (:mod:`tsax.core.attention`)
 """
 from __future__ import annotations
 from functools import partial
-from typing import Union, Type
+from typing import Callable, Union, Type
 
 import jax
 import jax.numpy as jnp
@@ -11,7 +11,7 @@ import flax.linen as nn
 
 
 from tsax.typing import Array
-from tsax.typed_jax import Dense
+from tsax.core.reparam import Dense
 
 
 __all__ = [
@@ -41,6 +41,7 @@ class MultiHeadAttention(nn.Module):
     nH: int
     Pdrop: float
     bias: bool = False
+    reparam: bool = False
 
     @nn.compact
     def __call__(self,
@@ -79,17 +80,21 @@ class MultiHeadAttention(nn.Module):
 
         A = nn.vmap(self.attention,
                     in_axes=-1, out_axes=-1,
-                    variable_axes={"params": 0},
+                    variable_axes={"params": 0, "sigma_reparam": 0},
                     split_rngs={"params": True,
                                 "dropout": True,
                                 "attention": True})
 
-        Q = jnp.reshape(Dense(features=d*self.nH, use_bias=self.bias, name="WQ")(Q),
-                        (B, L, d, self.nH))
-        K = jnp.reshape(Dense(features=d*self.nH, use_bias=self.bias, name="WK")(K),
-                        (B, S, d, self.nH))
-        V = jnp.reshape(Dense(features=d*self.nH, use_bias=self.bias, name="WV")(V),
-                        (B, S, d, self.nH))
+        def D(name: str) -> Callable[[Array], Array]:
+            return Dense(features=d*self.nH,
+                         use_bias=self.bias,
+                         name=name,
+                         reparam=self.reparam,
+                         train=train)
+
+        Q = jnp.reshape(D(name="WQ")(Q), (B, L, d, self.nH))
+        K = jnp.reshape(D(name="WK")(K), (B, S, d, self.nH))
+        V = jnp.reshape(D(name="WV")(V), (B, S, d, self.nH))
 
         a = A(dk=d, dv=d)(Q, K, V)
         assert a.shape == (B, L, d, self.nH), "BUG"
