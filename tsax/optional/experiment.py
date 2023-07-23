@@ -312,7 +312,7 @@ def train(
     # Issue: Since partial() cannot pass type-check,
     #        we define temporary `_train_fn` then wraps it by `value_and_grad`
     def _train_fn(p: ModelParam, s: TrainState, k: KeyArray,
-                 x: DataT, y: DataT) -> Tuple[Array, ModelParam]:
+                  x: DataT, y: DataT) -> Tuple[Array, ModelParam]:
         pred, update = s.apply_fn(s.vars(), x, train=True, rngs=k,
                                   mutable=["sigma_reparam"])
         return loss_fn(pred, y), update
