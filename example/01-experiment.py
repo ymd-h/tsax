@@ -125,7 +125,12 @@ def example01(L: int,
                        nE=nE, nD=nD, nH=nH, dff=dff, Pdrop=Pdrop)
 
     logger.info("Adam(lr=%f)", lr)
-    tx = optax.adam(lr)
+    tx = optax.adam(learning_rate=optax.warmup_cosine_decay_schedule(
+        init_value=lr * 1e-4,
+        peak_value=lr,
+        warmup_steps=int(0.05*epoch*train_seq.nbatch),
+        decay_steps=int(0.95*epoch*train_seq.nbatch),
+    ))
 
     key, key_use = jax.random.split(key, 2)
     state = TrainState.create_for(key_use, m, train_seq, tx)
