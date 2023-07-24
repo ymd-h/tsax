@@ -56,7 +56,7 @@ def LayerStack(layer: Layer,
 
     x, _ = nn.scan(
         F,
-        variable_axes={"params": 0},
+        variable_axes={"params": 0, "sigma_reparam": 0},
         variable_broadcast=False,
         variable_carry=False,
         split_rngs={"params": True,
