@@ -99,7 +99,8 @@ class SigmaReparamDense(nn.Module):
             )
             v.value = v.value.at[:].divide(jnp.linalg.norm(v.value, keepdims=True))
 
-            uWv.value = jnp.einsum("d,dc,c->", u.value, kernel, v.value)
+            uWv.value = jnp.clip(jnp.einsum("d,dc,c->", u.value, kernel, v.value),
+                                 a_min=1e-8)
 
         gamma = self.param("gamma", self.gamma_init, (1,), self.param_dtype)
 
