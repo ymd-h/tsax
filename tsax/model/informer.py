@@ -296,6 +296,7 @@ class EncoderLayer(nn.Module):
     dff: int = DFF
     eps: float = EPS
     Pdrop: float = PDROP
+    reparam: bool = True
 
     @nn.compact
     def __call__(self,
@@ -323,6 +324,7 @@ class EncoderLayer(nn.Module):
             dm=self.dm,
             nH=self.nH,
             Pdrop=self.Pdrop,
+            reparam=self.reparam,
         )
         ff = FeedForward(dff=self.dff, Pdrop=self.Pdrop, activation="GELU")
 
@@ -351,6 +353,7 @@ class DecoderLayer(nn.Module):
     dff: int = DFF
     eps: float = EPS
     Pdrop: float = PDROP
+    reparam: bool = True
 
 
     @nn.compact
@@ -384,12 +387,14 @@ class DecoderLayer(nn.Module):
             dm=self.dm,
             nH=self.nH,
             Pdrop=self.Pdrop,
+            reparam=self.reparam,
         )
         mha = MultiHeadAttention(
             attention=Attention,
             dm=self.dm,
             nH=self.nH,
             Pdrop=self.Pdrop,
+            reparam=self.reparam,
         )
         ff = FeedForward(dff=self.dff, Pdrop=self.Pdrop, activation="GELU")
 
@@ -426,6 +431,7 @@ class EncoderStack(nn.Module):
     kernel: int = KERNEL_SIZE
     eps: float = EPS
     Pdrop: float = PDROP
+    reparam: bool = True
 
     @nn.compact
     def __call__(self,
@@ -454,6 +460,7 @@ class EncoderStack(nn.Module):
                                   dff=self.dff,
                                   eps=self.eps,
                                   Pdrop=self.Pdrop,
+                                  reparam=self.reparam,
                                   name=f"EncoderLayer_{i}")(inputs,
                                                             train=train)
             assert inputs.shape == (B, L, dm), "BUG"
@@ -478,6 +485,7 @@ class DecoderStack(nn.Module):
     dff: int = DFF
     eps: float = EPS
     Pdrop: float = PDROP
+    reparam: bool = True
 
     @nn.compact
     def __call__(self,
@@ -508,7 +516,8 @@ class DecoderStack(nn.Module):
                          nH=self.nH,
                          dff=self.dff,
                          eps=self.eps,
-                         Pdrop=self.Pdrop)
+                         Pdrop=self.Pdrop,
+                         reparam=self.reparam)
 
         def f(dec: DecoderLayer, out: Array) -> Array:
             return dec(inputs, out, train=train)
@@ -556,6 +565,8 @@ class Informer(Model):
         Small Positive Value for Layer Normalization
     Pdrop : foat, optional
         Dropout Probability
+    reparam : bool, optional
+        Whether to use Sigma Reparam at Multi Head Attention
     """
     d: int
     I: int
@@ -572,6 +583,7 @@ class Informer(Model):
     kernel: int = KERNEL_SIZE
     eps: float = EPS
     Pdrop: float = PDROP
+    reparam: bool = True
 
     def setup(self):
         assert self.I >= self.Ltoken, "BUG"
@@ -583,7 +595,8 @@ class Informer(Model):
                                     dff=self.dff,
                                     kernel=self.kernel,
                                     eps=self.eps,
-                                    Pdrop=self.Pdrop)
+                                    Pdrop=self.Pdrop,
+                                    reparam=self.reparam)
         self.encoder_embed = Embedding(dm=self.dm,
                                        Vs=self.Vs,
                                        alpha=self.alpha,
@@ -597,7 +610,8 @@ class Informer(Model):
                                     nH=self.nH,
                                     dff=self.dff,
                                     eps=self.eps,
-                                    Pdrop=self.Pdrop)
+                                    Pdrop=self.Pdrop,
+                                    reparam=self.reparam)
         self.decoder_embed = Embedding(dm=self.dm,
                                        Vs=self.Vs,
                                        alpha=self.alpha,
