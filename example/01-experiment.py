@@ -169,14 +169,14 @@ if __name__ == "__main__":
     p.add_argument("--debug", action="store_true", help="Enable Debug")
 
     d = p.add_argument_group("Data")
-    d.add_argument("--L", type=int, default=3000, help="Data Length")
+    d.add_argument("--L", type=int, default=10000, help="Data Length")
     d.add_argument("--stride", type=int, default=1, help="Stride for Sequence")
 
     m = p.add_argument_group("Model")
     m.add_argument("--model", choices=["informer", "autoformer"],
                    help="Model", default="autoformer")
-    m.add_argument("--xL", type=int, default=20, help="X Length")
-    m.add_argument("--yL", type=int, default=10, help="Y Length")
+    m.add_argument("--xL", type=int, default=80, help="X Length")
+    m.add_argument("--yL", type=int, default=40, help="Y Length")
     m.add_argument("--c", type=int, default=5, help="Hyperparameter: Sampling Factor")
     m.add_argument("--nE", type=int, default=3,
                    help="Number of Layers at Encoder Stack")
@@ -191,8 +191,8 @@ if __name__ == "__main__":
 
     e = p.add_argument_group("Experiment")
     e.add_argument("--lr", type=float, default=1e-4, help="Learning Rate")
-    e.add_argument("--batch", type=int, default=32, help="Batch Size")
-    e.add_argument("--epoch", type=int, default=10, help="Number of Epoch")
+    e.add_argument("--batch", type=int, default=64, help="Batch Size")
+    e.add_argument("--epoch", type=int, default=1000, help="Number of Epoch")
     e.add_argument("--seed", type=int, default=None, help="Random Seed")
     e.add_argument("--checkpoint-directory", default="./tsax-ckpt",
                    help="Checkpoint Directory")
