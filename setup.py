@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 extras_require = {
-    "experiment": ["optax", "orbax", "tqdm"],
+    "experiment": ["optax", "orbax-checkpoint", "tqdm"],
     "io": ["pandas", "pyarrow"],
     "oam": ["argparse_dataclass"],
     "dev": ["coverage", "mypy", "pandas-stubs", "types-tqdm", "unittest-xml-reporting"],
