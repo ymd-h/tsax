@@ -434,7 +434,7 @@ class DecoderLayer(nn.Module):
             seasonal_outputs + ff(seasonal_outputs, train=train)
         )
 
-        trend_outputs.at[:].add(
+        trend_outputs = trend_outputs.at[:].add(
             ConvSeq(dm=self.dm, kernel=3, bias=False)(trend1 + trend2 + trend3)
         )
 
