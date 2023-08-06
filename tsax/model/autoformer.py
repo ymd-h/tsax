@@ -225,9 +225,11 @@ class AutoCorrelationAttention(nn.Module):
         Q_freq = jnp.fft.rfft(Q, axis=1)
         K_freq = jnp.fft.rfft(K, axis=1)
         shape = (B, L//2+1, self.dk)
-        assert Q_freq.shape == K_freq.shape == shape, (f"BUG: Q_freq: {Q_freq.shape} "
-                                                       f"vs K_freq: {K_freq.shape} "
-                                                       f"vs Expected: {shape}")
+        assert Q_freq.shape == K_freq.shape == shape, (
+            f"BUG: Q_freq: {Q_freq.shape} "
+            f"vs K_freq: {K_freq.shape} "
+            f"vs Expected: {shape}"
+        )
 
         # Rxx: [B, L, dk]
         Rxx = jnp.fft.irfft(Q_freq * jnp.conjugate(K_freq), n=L, axis=1)
