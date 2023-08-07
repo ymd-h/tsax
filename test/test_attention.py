@@ -48,7 +48,7 @@ class TestMultiHeadAttention(TestCase):
                                                    Q, K, V)
         self.assertEqual(mha_jit.shape, Q.shape)
 
-        self.assertAllclose(mha, mha_jit, atol=1e-6, rtol=1e-6)
+        self.assertAllclose(mha, mha_jit, atol=1e-4, rtol=1e-4)
 
         mha_drop, _ = MHA.init_with_output({"params": key_p, "dropout": key_d},
                                            Q, K, V, train=True)

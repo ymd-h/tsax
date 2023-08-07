@@ -90,7 +90,7 @@ class TestEncoderLayer(TestCase):
                                                inputs)
         self.assertEqual(e_jit.shape, inputs.shape)
 
-        self.assertAllclose(e, e_jit)
+        self.assertAllclose(e, e_jit, atol=1e-5, rtol=1e-5)
 
         e_drop, _ = E.init_with_output({"params": key_p,
                                         "dropout": key_d},

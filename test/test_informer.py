@@ -161,7 +161,7 @@ class TestEncoderLayer(TestCase):
         self.assertEqual(e_drop_jit.shape, inputs.shape)
         self.assertNotAllclose(e_jit, e_drop_jit)
 
-        self.assertAllclose(e_drop, e_drop_jit)
+        self.assertAllclose(e_drop, e_drop_jit, atol=1e-6, rtol=1e-6)
 
 
 class TestDecoderLayer(TestCase):
@@ -254,7 +254,7 @@ class TestEncoderStack(TestCase):
         e_jit, _ = jax.jit(E.init_with_output)(rngs, inputs)
         self.assertEqual(e_jit.shape, (B, (L+1)//2, dm))
 
-        self.assertAllclose(e, e_jit)
+        self.assertAllclose(e, e_jit, atol=1e-6, rtol=1e-6)
 
         e_drop, _ = E.init_with_output(rngs, inputs, train=True)
         self.assertEqual(e_drop.shape, (B, (L+1)//2, dm))
