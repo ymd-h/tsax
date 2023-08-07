@@ -154,7 +154,7 @@ class TestDecoderLayer(TestCase):
         self.assertEqual(ds_drop.shape, s_outputs.shape)
         self.assertEqual(dt_drop.shape, t_outputs.shape)
         self.assertNotAllclose(ds, ds_drop)
-        self.assertAllclose(dt, dt_drop)
+        self.assertNotAllclose(dt, dt_drop)
 
         (ds_drop_jit, dt_drop_jit), _ = jax.jit(
             D.init_with_output,
@@ -164,7 +164,7 @@ class TestDecoderLayer(TestCase):
         self.assertEqual(ds_drop_jit.shape, s_outputs.shape)
         self.assertEqual(dt_drop_jit.shape, t_outputs.shape)
         self.assertNotAllclose(ds_jit, ds_drop_jit)
-        self.assertAllclose(dt_jit, dt_drop_jit)
+        self.assertNotAllclose(dt_jit, dt_drop_jit)
 
         self.assertAllclose(ds_drop, ds_drop_jit, atol=1e-6)
         self.assertAllclose(dt_drop, dt_drop_jit, atol=1e-6)
@@ -272,7 +272,7 @@ class TestDecoderStack(TestCase):
         self.assertEqual(ds_drop.shape, (B, Ldec, dm))
         self.assertEqual(dt_drop.shape, (B, Ldec, dm))
         self.assertNotAllclose(ds, ds_drop, atol=1e-6, rtol=1e-6)
-        self.assertAllclose(dt, dt_drop, atol=1e-6, rtol=1e-6)
+        self.assertNotAllclose(dt, dt_drop, atol=1e-6, rtol=1e-6)
 
         (ds_drop_jit, dt_drop_jit), _ = jax.jit(
             D.init_with_output,
@@ -281,7 +281,7 @@ class TestDecoderStack(TestCase):
         self.assertEqual(ds_drop_jit.shape, (B, Ldec, dm))
         self.assertEqual(dt_drop_jit.shape, (B, Ldec, dm))
         self.assertNotAllclose(ds_jit, ds_drop_jit, atol=1e-6, rtol=1e-6)
-        self.assertAllclose(dt_jit, dt_drop_jit, atol=1e-6, rtol=1e-6)
+        self.assertNotAllclose(dt_jit, dt_drop_jit, atol=1e-6, rtol=1e-6)
 
         self.assertAllclose(ds_drop, ds_drop_jit, atol=1e-5, rtol=1e-5)
         self.assertAllclose(dt_drop, dt_drop_jit, atol=1e-5, rtol=1e-5)
