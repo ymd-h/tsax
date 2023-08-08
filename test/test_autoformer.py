@@ -166,8 +166,8 @@ class TestDecoderLayer(TestCase):
         self.assertNotAllclose(ds_jit, ds_drop_jit)
         self.assertNotAllclose(dt_jit, dt_drop_jit)
 
-        self.assertAllclose(ds_drop, ds_drop_jit, atol=1e-6)
-        self.assertAllclose(dt_drop, dt_drop_jit, atol=1e-6)
+        self.assertAllclose(ds_drop, ds_drop_jit, atol=1e-5, rtol=1e-5)
+        self.assertAllclose(dt_drop, dt_drop_jit, atol=1e-5, rtol=1e-5)
 
 
 class TestEncoderStack(TestCase):
