@@ -17,7 +17,7 @@ class TestCase(unittest.TestCase):
         self.longMessage = False
         self.assertTrue(jnp.allclose(x, y, **kwargs),
                         msg="Arrays are not all close:\n" +
-                        f"x: {x}\ny: {y}\nmax|x-y|: {jnp.max(jnp.abs(x-y))}")
+                        f"\n{x} !=\n{y}\nmax|x-y|: {jnp.max(jnp.abs(x-y))}")
         self.longMessage = True
 
     def assertNotAllclose(self, x: ArrayLike, y: ArrayLike, **kwargs):
@@ -27,7 +27,7 @@ class TestCase(unittest.TestCase):
         self.assertEqual(x.shape, y.shape,
                          msg=f"Array Shape mismatch:\n{x.shape} != {y.shape}")
         self.assertFalse(jnp.allclose(x, y, **kwargs),
-                         msg=f"Arrays are all close:\nx: {x}\ny: {y}")
+                         msg=f"Arrays are all close:\n{x} ==\n{y}")
         self.longMessage = True
 
     def assertAll(self,
@@ -39,7 +39,7 @@ class TestCase(unittest.TestCase):
         else:
             _x = x
 
-        self.assertTrue(jnp.all(_x), msg=f"\nx: {x}")
+        self.assertTrue(jnp.all(_x), msg=f"\n{x}")
 
     def assertAny(self,
                   x: ArrayLike,
@@ -50,7 +50,7 @@ class TestCase(unittest.TestCase):
         else:
             _x = x
 
-        self.assertTrue(jnp.any(_x), msg=f"\nx: {x}")
+        self.assertTrue(jnp.any(_x), msg=f"\n{x}")
 
     def assertNone(self,
                    x: ArrayLike,
@@ -61,4 +61,4 @@ class TestCase(unittest.TestCase):
         else:
             _x = x
 
-        self.assertFalse(jnp.any(_x), msg=f"\nx: {x}")
+        self.assertFalse(jnp.any(_x), msg=f"\n{x}")
